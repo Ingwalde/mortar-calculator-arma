@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Планшет мінометника</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8eae1;--surface:#f5f6f0;--raised:#ffffff;--line:#c7ccbd;--ink:#1d2721;--muted:#5a675d;
+  --mortar:#27628f;--target:#b9481a;--point:#5e4f8c;--grid:rgba(29,39,33,.42);--gridfine:rgba(29,39,33,.14);
+  --mapblank:#dfe3d6;--focus:#27628f;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#161c18;--surface:#1f2721;--raised:#27302a;--line:#37433b;--ink:#e3e1d4;--muted:#98a399;
+    --mortar:#7db0d8;--target:#f0975a;--point:#b2a3d8;--grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);
+    --mapblank:#1b221d;--focus:#7db0d8;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#161c18;--surface:#1f2721;--raised:#27302a;--line:#37433b;--ink:#e3e1d4;--muted:#98a399;
+  --mortar:#7db0d8;--target:#f0975a;--point:#b2a3d8;--grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);
+  --mapblank:#1b221d;--focus:#7db0d8;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
+*,*::before,*::after{box-sizing:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+[hidden]{display:none!important}
+
+.app{display:flex;flex-direction:column;height:100%}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px 8px;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:.01em}
+.hl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+#terrainSel{background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-height:36px;font-weight:600;max-width:60vw}
+#status{font-size:13px;color:var(--muted);text-align:right}
+.body{flex:1;min-height:0;display:flex;flex-direction:column}
+.map{position:relative;flex:0 0 54%;min-height:240px;background:var(--mapblank);overflow:hidden;touch-action:none}
+canvas{display:block;width:100%;height:100%;cursor:grab}
+canvas:active{cursor:grabbing}
+.cross{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none}
+.cross::before,.cross::after{content:"";position:absolute;background:var(--target)}
+.cross::before{left:21px;top:0;width:2px;height:44px;clip-path:polygon(0 0,100% 0,100% 38%,0 38%,0 62%,100% 62%,100% 100%,0 100%)}
+.cross::after{top:21px;left:0;height:2px;width:44px;clip-path:polygon(0 0,38% 0,38% 100%,0 100%,0 0,62% 0,100% 0,100% 100%,62% 100%)}
+.readout{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:8px;align-items:stretch}
+.coords{flex:1;min-width:0;background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:6px 10px;line-height:1.2}
+.coords .grid{font-size:20px;font-weight:700;letter-spacing:.04em}
+.coords .m{font-size:13px;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--raised);border-radius:6px;padding:8px 12px;min-height:40px;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:600}
+.btn.danger{color:var(--target)}
+.btn.small{min-height:34px;padding:5px 10px;font-size:14px}
+.mapbtns{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
+.mapbtns .btn{width:40px;padding:0;font-size:20px;line-height:1}
+
+.panel{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--surface)}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:0;background:none;padding:11px 6px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.pane{flex:1;overflow:auto;padding:12px 14px 18px}
+.pane[hidden]{display:none}
+.empty{color:var(--muted);padding:6px 0}
+ul.list{list-style:none;margin:0;padding:0}
+ul.list li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+ul.list li.sel{background:linear-gradient(90deg,color-mix(in srgb,var(--mortar) 10%,transparent),transparent)}
+.badge{flex:0 0 28px;height:28px;display:grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;font-size:14px}
+.b-mortar{background:var(--mortar)}.b-target{background:var(--target);border-radius:3px;transform:rotate(45deg)}.b-target span{transform:rotate(-45deg)}
+.b-point{background:var(--point)}
+li .info{flex:1;min-width:0;cursor:pointer}
+li .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+li .sub{font-size:13px;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.field{display:flex;flex-direction:column;gap:3px;flex:1;min-width:110px}
+.field label{font-size:13px;color:var(--muted)}
+.field input,.field select,textarea{background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-height:40px;width:100%}
+h2{font-size:15px;margin:18px 0 8px;font-weight:600}
+h2:first-child{margin-top:2px}
+p.hint{font-size:14px;color:var(--muted);margin:4px 0 10px;max-width:60ch}
+
+.solution{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
+.solution div{background:var(--raised);padding:10px 12px}
+.solution .k{font-size:13px;color:var(--muted)}
+.solution .v{font-size:30px;font-weight:700;line-height:1.1}
+.solution .u{font-size:15px;font-weight:500;color:var(--muted);margin-left:3px}
+.solution .wide{grid-column:1/-1}
+
+.charges{width:100%;border-collapse:collapse;margin-top:12px;font-size:15px}
+.charges th{font-size:12px;color:var(--muted);font-weight:500;text-align:right;padding:4px 8px;border-bottom:1px solid var(--line)}
+.charges th:first-child,.charges td:first-child{text-align:left}
+.charges td{text-align:right;padding:8px;border-bottom:1px solid var(--line)}
+.charges tr.best td{background:color-mix(in srgb,var(--target) 12%,transparent);font-weight:700}
+.charges td.el{font-size:22px;font-weight:700}
+.tblwrap{overflow-x:auto;margin-top:8px}
+details.tbl{margin-top:16px;border-top:1px solid var(--line);padding-top:8px}
+details.tbl summary{cursor:pointer;font-weight:600;padding:6px 0}
+.rt{width:100%;border-collapse:collapse;font-size:14px}
+.rt th,.rt td{padding:4px 8px;text-align:right;border-bottom:1px solid var(--line)}
+.rt th{font-size:12px;color:var(--muted);font-weight:500}
+.rt tr.hit td{background:color-mix(in srgb,var(--mortar) 14%,transparent);font-weight:600}
+.warn{color:var(--target);font-size:14px;margin:8px 0}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:16px;width:min(420px,calc(100vw - 24px))}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 10px;font-size:18px}
+.dlg-actions{display:flex;gap:8px;justify-content:space-between;margin-top:14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--raised);padding:8px;min-height:40px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);font-weight:600}
+.calibbox{border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0;background:var(--raised)}
+.calibbox .t{font-weight:600;margin-bottom:6px}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:6px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+
+@media (min-width:880px){
+  .body{flex-direction:row}
+  .map{flex:1;min-height:0}
+  .panel{flex:0 0 390px;border-left:1px solid var(--line)}
+}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="hl">
+      <h1>Планшет мінометника</h1>
+      <select id="terrainSel" aria-label="Терен"></select>
+    </div>
+    <div id="status">Збереження на цьому пристрої</div>
+  </header>
+  <div class="body">
+    <div class="map" id="mapWrap">
+      <canvas id="cv" aria-label="Карта. Перетягуйте, щоб рухати; щипок або колесо для масштабу; торкніться, щоб навести приціл."></canvas>
+      <div class="cross" aria-hidden="true"></div>
+      <div class="mapbtns">
+        <button class="btn" id="zin" aria-label="Наблизити">+</button>
+        <button class="btn" id="zout" aria-label="Віддалити">−</button>
+        <button class="btn" id="fit" aria-label="Уся карта" style="font-size:15px">⤢</button>
+      </div>
+      <div class="readout">
+        <div class="coords" id="coords"><div class="grid">—</div><div class="m">—</div></div>
+        <button class="btn primary" id="placeBtn">Поставити мітку</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="marks">Мітки</button>
+        <button role="tab" aria-selected="false" data-tab="fire">Розрахунок</button>
+        <button role="tab" aria-selected="false" data-tab="setup">Карта</button>
+      </div>
+
+      <section class="pane" id="pane-marks">
+        <ul class="list" id="list"></ul>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="addManual">Додати за координатами</button>
+        </div>
+      </section>
+
+      <section class="pane" id="pane-fire" hidden>
+        <div class="row">
+          <div class="field"><label for="selM">Міномет</label><select id="selM"></select></div>
+          <div class="field"><label for="selT">Ціль</label><select id="selT"></select></div>
+          <div class="field" style="flex-basis:100%"><label for="selShell">Снаряд</label><select id="selShell"></select></div>
+        </div>
+        <div id="sol"></div>
+        <details class="tbl" id="tblBox">
+          <summary>Таблиця стрільби</summary>
+          <div class="row" style="margin:6px 0"><div class="field"><label for="selCharge">Заряд</label><select id="selCharge"></select></div></div>
+          <div class="tblwrap" id="rtable"></div>
+        </details>
+        <p class="hint" style="margin-top:14px">Кут підвищення враховує перевищення цілі, якщо в обох мітках указано висоту (її видно на карті в грі). Таблиці: <a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">GeNeFRAG/ArmaReforger</a>, MIT.</p>
+      </section>
+
+      <section class="pane" id="pane-setup" hidden>
+        <h2>Зображення карти</h2>
+        <p class="hint">Завантажте скріншот або експорт карти терену. Без зображення працює порожня сітка — мітки можна ставити за координатами.</p>
+        <div class="row">
+          <input type="file" id="file" accept="image/*" hidden>
+          <button class="btn" id="pickFile">Завантажити карту</button>
+          <button class="btn danger" id="clearMap">Прибрати карту</button>
+          <button class="btn" id="builtinMap">Вбудована карта</button>
+        </div>
+        <p class="hint" id="importProg" hidden style="color:var(--ink);font-weight:600"></p>
+        <p class="hint" id="mapInfo" hidden></p>
+        <div class="calibbox" id="satBox" style="margin-top:10px">
+          <div class="t">Повна супутникова карта: <span id="satName"></span></div>
+          <p class="hint" style="margin:2px 0 8px">Один раз: відкрийте посилання з комп'ютера, збережіть файл і завантажте його сюди кнопкою вище. Інструмент розріже карту на рівні деталізації й збереже в цьому проєкті — після цього вона відкриватиметься на будь-якому вашому пристрої, а чіткість підлаштовуватиметься під масштаб. Масштаб координат підставиться сам.</p>
+          <div class="row">
+            <a class="btn small" id="satLink" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Відкрити</a>
+            <button class="btn small" id="satCopy">Копіювати посилання</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px" id="customRow">
+          <button class="btn small danger" id="delTerrain">Видалити цей терен зі списку</button>
+        </div>
+
+        <label class="row" style="margin-top:10px;gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> Показувати назви пунктів</label>
+        <p class="hint" style="font-size:12px">Назви пунктів Everon та Arland: <a href="https://github.com/nickludlam/EnfusionMapMaker" target="_blank" rel="noopener">EnfusionMapMaker</a> (APL-SA). Розміри теренів і супутникові карти: <a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">GeNeFRAG/ArmaReforger</a> (MIT).</p>
+
+        <h2>Прив'язка координат</h2>
+        <div class="seg" role="group" aria-label="Спосіб прив'язки">
+          <button id="modeSize" aria-pressed="true">Уся карта</button>
+          <button id="modePts" aria-pressed="false">Дві точки</button>
+        </div>
+        <div id="sizeBox" class="calibbox">
+          <p class="hint" style="margin-top:0" id="sizeHint">Зображення охоплює весь терен від лівого нижнього кута (0, 0). Вкажіть розмір терену в метрах.</p>
+          <div class="row">
+            <div class="field"><label for="size">Ширина X, м</label><input id="size" type="number" inputmode="numeric" min="100" step="1"></div>
+            <div class="field"><label for="sizeZ">Висота Z, м</label><input id="sizeZ" type="number" inputmode="numeric" min="100" step="1"></div>
+            <button class="btn small" id="presetSize" style="align-self:flex-end">Стандарт</button>
+          </div>
+        </div>
+        <div id="ptsBox" hidden>
+          <p class="hint">Наведіть приціл на точку, координати якої знаєте (перетин ліній сітки, кут квадрата), зафіксуйте її і впишіть координати. Дві точки мають бути далеко одна від одної по обох осях.</p>
+          <div class="calibbox" id="boxA"></div>
+          <div class="calibbox" id="boxB"></div>
+        </div>
+
+        <h2>Резервна копія</h2>
+        <p class="hint">Мітки зберігаються автоматично. Тут можна скопіювати їх як текст або вставити раніше скопійовані.</p>
+        <textarea id="json" rows="4" placeholder="Вставте JSON, щоб імпортувати"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="copyJson">Копіювати мітки</button>
+          <button class="btn" id="importJson">Імпортувати</button>
+          <button class="btn danger" id="wipe">Видалити всі мітки</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlgForm">
+    <h3 id="dlgTitle">Мітка</h3>
+    <div class="field" style="margin-bottom:8px"><label for="fName">Назва</label><input id="fName" maxlength="40"></div>
+    <div class="seg" id="fType" role="group" aria-label="Тип мітки" style="margin-bottom:8px">
+      <button type="button" data-t="mortar">Міномет</button>
+      <button type="button" data-t="target">Ціль</button>
+      <button type="button" data-t="point">Точка</button>
+    </div>
+    <div class="seg" id="fWeapon" role="group" aria-label="Міномет" style="margin-bottom:8px">
+      <button type="button" data-w="M252">M252 (США, 81 мм)</button>
+      <button type="button" data-w="2B14">2Б14 «Піднос» (82 мм)</button>
+    </div>
+    <div class="field" style="margin-bottom:8px"><label for="fGrid">Сітка (напр. 0483 1172) — заповнить X і Z</label><input id="fGrid" autocomplete="off"></div>
+    <div class="row">
+      <div class="field"><label for="fX">X, м (схід)</label><input id="fX" type="number" inputmode="decimal" step="any"></div>
+      <div class="field"><label for="fZ">Z, м (північ)</label><input id="fZ" type="number" inputmode="decimal" step="any"></div>
+      <div class="field"><label for="fH">Висота, м</label><input id="fH" type="number" inputmode="decimal" step="any" placeholder="необов'язково"></div>
+    </div>
+    <div class="dlg-actions">
+      <button type="button" class="btn danger" id="fDel">Видалити</button>
+      <span class="row">
+        <button type="button" class="btn" id="fCancel">Скасувати</button>
+        <button type="submit" class="btn primary" id="fSave">Зберегти</button>
+      </span>
+    </div>
+  </form>
+</dialog>
+<dialog id="ask">
+  <form method="dialog" id="askForm">
+    <h3 id="askTitle"></h3>
+    <p class="hint" id="askText"></p>
+    <div id="askFields"></div>
+    <div class="dlg-actions" style="justify-content:flex-end">
+      <button type="button" class="btn" id="askNo">Скасувати</button>
+      <button type="submit" class="btn primary" id="askYes">Так</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+const LS_KEY="mortar-board-v2";
+const $=id=>document.getElementById(id);
+const TYPES={mortar:"Міномет",target:"Ціль",point:"Точка"};
+const LETTER={mortar:"М",target:"Ц",point:"Т"};
+
+const TABLES={"2B14":{"name":"Soviet 2B14 82mm Mortar","mils":6000,"shells":{"HE":{"name":"O-832 HE","charges":[{"l":0,"min":50,"max":500,"t":[[50,1455,15.0,44,0.0],[100,1411,15.0,46,0.1],[150,1365,14.9,47,0.1],[200,1318,14.8,50,0.2],[250,1268,14.6,51,0.2],[300,1217,14.4,58,0.3],[350,1159,14.1,64,0.4],[400,1095,13.7,72,0.5],[450,1023,13.2,101,0.8],[500,922,12.4,0,0.0]]},{"l":1,"min":100,"max":800,"t":[[100,1446,19.5,27,0.1],[200,1392,19.4,28,0.1],[300,1335,19.2,29,0.1],[400,1275,18.9,31,0.1],[500,1212,18.6,35,0.2],[600,1141,18.1,40,0.3],[700,1058,17.4,48,0.4],[800,952,16.4,81,0.9]]},{"l":2,"min":200,"max":1400,"t":[[200,1432,24.8,17,0.0],[300,1397,24.7,18,0.0],[400,1362,24.6,18,0.1],[500,1325,24.4,18,0.1],[600,1288,24.2,20,0.1],[700,1248,24.0,20,0.1],[800,1207,23.7,22,0.2],[900,1162,23.3,23,0.2],[1000,1114,22.9,26,0.3],[1100,1060,22.3,29,0.3],[1200,997,21.5,37,0.4],[1300,914,20.4,55,0.8],[1400,755,17.8,0,0.0]]},{"l":3,"min":300,"max":1800,"t":[[300,1423,28.9,13,0.0],[400,1397,28.8,14,0.1],[500,1370,28.6,13,0.1],[600,1343,28.5,14,0.0],[700,1315,28.5,14,0.1],[800,1286,28.3,14,0.1],[900,1257,28.1,16,0.1],[1000,1226,27.9,16,0.2],[1100,1193,27.6,16,0.2],[1200,1159,27.2,18,0.2],[1300,1123,26.8,19,0.2],[1400,1084,26.4,22,0.3],[1500,1040,25.8,24,0.3],[1600,991,25.1,28,0.4],[1700,932,24.2,36,0.6],[1800,851,22.8,68,1.3]]},{"l":4,"min":400,"max":2300,"t":[[400,1418,32.9,10,0.0],[500,1398,32.9,11,0.1],[600,1376,32.8,10,0.1],[700,1355,32.7,11,0.1],[800,1333,32.6,11,0.1],[900,1311,32.4,12,0.1],[1000,1288,32.2,12,0.0],[1100,1264,32.1,12,0.1],[1200,1240,31.8,13,0.1],[1300,1215,31.6,13,0.1],[1400,1189,31.3,14,0.1],[1500,1161,31.0,14,0.1],[1600,1133,30.7,15,0.2],[1700,1102,30.3,16,0.2],[1800,1069,29.8,17,0.2],[1900,1034,29.3,19,0.3],[2000,995,28.7,22,0.4],[2100,950,27.9,26,0.5],[2200,896,26.9,34,0.7],[2300,820,25.3,65,1.4]]}]},"Illumination":{"name":"ILL-82 Illum","charges":[{"l":1,"min":100,"max":600,"t":[[100,1421,16.4,40,0.1],[150,1381,16.3,42,0.1],[200,1339,16.2,43,0.1],[250,1296,16.1,45,0.2],[300,1251,15.9,48,0.2],[350,1203,15.7,52,0.3],[400,1151,15.4,58,0.4],[450,1093,15.0,65,0.5],[500,1028,14.5,83,0.7],[550,945,13.8,146,1.5],[600,799,12.3,0,0.0]]},{"l":2,"min":200,"max":1100,"t":[[200,1417,23.6,21,0.0],[300,1374,23.5,22,0.1],[400,1330,23.3,23,0.1],[500,1284,23.1,24,0.1],[600,1234,22.8,25,0.2],[700,1182,22.4,29,0.2],[800,1124,21.9,32,0.3],[900,1057,21.3,36,0.4],[1000,979,20.4,48,0.6],[1100,870,18.9,89,1.3]]},{"l":3,"min":300,"max":1600,"t":[[300,1411,29.0,16,0.1],[400,1380,28.9,16,0.1],[500,1348,28.7,16,0.1],[600,1315,28.6,16,0.1],[700,1281,28.4,17,0.2],[800,1246,28.1,18,0.1],[900,1209,27.8,19,0.2],[1000,1170,27.4,21,0.2],[1100,1128,27.0,23,0.3],[1200,1082,26.5,25,0.3],[1300,1031,25.8,28,0.4],[1400,973,25.0,33,0.5],[1500,903,23.9,43,0.7],[1600,807,22.3,0,0.0]]},{"l":4,"min":400,"max":2200,"t":[[400,1411,35.3,12,0.0],[500,1388,35.2,12,0.0],[600,1364,35.1,11,0.0],[700,1341,35.0,13,0.1],[800,1316,34.8,13,0.1],[900,1291,34.7,13,0.1],[1000,1265,34.4,13,0.1],[1100,1238,34.2,14,0.1],[1200,1210,33.9,14,0.1],[1300,1181,33.6,15,0.2],[1400,1150,33.2,15,0.2],[1500,1119,32.8,17,0.2],[1600,1085,32.4,18,0.3],[1700,1048,31.8,19,0.3],[1800,1009,31.2,21,0.4],[1900,965,30.4,23,0.4],[2000,917,29.6,27,0.5],[2100,860,28.4,34,0.7],[2200,787,26.9,0,0.0]]}]},"Smoke":{"name":"D-832 Smoke","charges":[{"l":1,"min":50,"max":450,"t":[[50,1450,14.1,51,0.1],[100,1399,14.0,52,0.1],[150,1347,13.9,55,0.1],[200,1292,13.8,57,0.2],[250,1235,13.6,63,0.3],[300,1172,13.3,70,0.4],[350,1102,12.9,82,0.5],[400,1020,12.4,122,1.0],[450,898,11.4,0,0.0]]},{"l":2,"min":200,"max":800,"t":[[200,1381,18.4,31,0.1],[300,1319,18.2,33,0.1],[400,1252,17.9,34,0.1],[500,1179,17.5,38,0.2],[600,1097,16.9,57,0.4],[700,993,16.0,67,0.7],[800,805,13.8,0,0.0]]},{"l":3,"min":300,"max":1200,"t":[[300,1387,23.5,19,0.1],[400,1348,23.3,20,0.0],[500,1308,23.2,21,0.1],[600,1266,22.9,22,0.1],[700,1222,22.7,24,0.2],[800,1175,22.3,26,0.2],[900,1123,21.8,28,0.2],[1000,1065,21.3,32,0.4],[1100,994,20.4,40,0.5],[1200,902,19.2,64,0.9]]},{"l":4,"min":400,"max":1700,"t":[[400,1387,27.3,15,0.0],[500,1357,27.2,15,0.0],[600,1327,27.1,15,0.1],[700,1286,26.9,16,0.1],[800,1264,26.7,16,0.1],[900,1231,26.5,17,0.2],[1000,1196,26.2,18,0.2],[1100,1159,25.8,20,0.2],[1200,1119,25.4,22,0.2],[1300,1075,24.9,24,0.3],[1400,1026,24.3,27,0.4],[1500,969,23.5,33,0.5],[1600,896,22.3,50,0.8],[1700,753,19.8,0,0.0]]}]}}},"M252":{"name":"US M252 81mm Mortar","mils":6400,"shells":{"HE":{"name":"M821 HE","charges":[{"l":0,"min":50,"max":400,"t":[[50,1540,13.2,61,0.0],[100,1479,13.2,63,0.2],[150,1416,13.0,66,0.2],[200,1350,12.8,71,0.2],[250,1279,12.6,78,0.3],[300,1201,12.3,95,0.6],[350,1106,11.7,151,1.0],[400,955,10.7,0,0.0]]},{"l":1,"min":100,"max":900,"t":[[100,1547,20.0,28,0.1],[200,1492,19.9,27,0.1],[300,1437,19.7,29,0.1],[400,1378,19.5,31,0.1],[500,1317,19.2,33,0.2],[600,1249,18.8,35,0.2],[700,1174,18.3,42,0.4],[800,1085,17.5,57,0.6],[900,954,16.1,148,1.8]]},{"l":2,"min":200,"max":1600,"t":[[200,1538,26.6,15,0.0],[300,1507,26.5,16,0.0],[400,1475,26.4,16,0.0],[500,1443,26.3,16,0.1],[600,1410,26.2,16,0.1],[700,1376,26.0,17,0.1],[800,1341,25.8,18,0.1],[900,1305,25.5,20,0.1],[1000,1266,25.2,20,0.1],[1100,1225,24.9,22,0.2],[1200,1180,24.4,23,0.2],[1300,1132,23.9,27,0.3],[1400,1076,23.2,31,0.4],[1500,1009,22.3,43,0.6],[1600,912,20.9,109,1.9]]},{"l":3,"min":300,"max":2300,"t":[[300,1534,31.7,12,0.0],[400,1511,31.6,11,0.0],[500,1489,31.6,12,0.1],[600,1466,31.5,12,0.1],[700,1442,31.4,12,0.1],[800,1419,31.3,12,0.1],[900,1395,31.1,13,0.1],[1000,1370,31.0,13,0.1],[1100,1344,30.8,13,0.1],[1200,1318,30.6,13,0.1],[1300,1291,30.3,14,0.1],[1400,1263,30.1,15,0.2],[1500,1233,29.0,7,15.0],[1600,1202,29.4,16,0.2],[1700,1169,29.0,17,0.2],[1800,1133,28.5,19,0.2],[1900,1094,28.0,21,0.3],[2000,1051,27.3,26,0.4],[2100,999,26.5,31,0.5],[2200,931,25.3,46,0.9],[2300,801,22.7,0,0.0]]},{"l":4,"min":400,"max":2900,"t":[[400,1531,36.3,9,0.0],[500,1514,36.2,9,0.0],[600,1496,36.2,9,0.1],[700,1478,36.1,9,0.0],[800,1460,36.0,9,0.0],[900,1442,35.9,9,0.0],[1000,1424,35.8,10,0.0],[1100,1405,35.7,10,0.1],[1200,1385,35.6,9,0.1],[1300,1366,35.4,10,0.1],[1400,1346,35.3,10,0.1],[1500,1326,35.1,11,0.1],[1600,1305,34.9,11,0.1],[1700,1283,34.6,11,0.1],[1800,1261,34.4,11,0.1],[1900,1238,34.1,12,0.1],[2000,1214,33.8,12,0.1],[2100,1188,33.5,13,0.2],[2200,1162,33.1,14,0.2],[2300,1134,32.7,15,0.2],[2400,1104,32.2,17,0.2],[2500,1070,31.7,17,0.3],[2600,1034,31.0,20,0.3],[2700,993,30.3,25,0.5],[2800,942,29.2,31,0.6],[2900,870,27.7,64,1.5]]}]},"Illumination":{"name":"M721 Illum","charges":[{"l":1,"min":200,"max":750,"t":[[200,1463,18.1,35,0.1],[250,1428,18.0,37,0.1],[300,1391,17.9,39,0.2],[350,1352,17.7,40,0.1],[400,1312,17.5,43,0.3],[450,1269,17.3,45,0.2],[500,1224,17.0,49,0.3],[550,1175,16.7,55,0.4],[600,1120,16.3,65,0.6],[650,1055,15.7,81,0.7],[700,974,15.0,151,1.7],[750,823,13.3,0,0.0]]},{"l":2,"min":200,"max":1400,"t":[[200,1529,26.2,17,0.1],[300,1493,26.1,18,0.1],[400,1457,26.0,19,0.1],[500,1419,25.8,19,0.1],[600,1379,25.6,20,0.1],[700,1338,25.4,21,0.2],[800,1295,25.1,23,0.2],[900,1249,24.7,25,0.2],[1000,1199,24.3,27,0.3],[1100,1144,23.7,30,0.3],[1200,1081,23.0,35,0.4],[1300,1005,22.0,47,0.6],[1400,900,20.5,98,1.6]]},{"l":3,"min":300,"max":1900,"t":[[300,1521,31.1,14,0.0],[400,1494,31.1,14,0.1],[500,1466,31.0,14,0.1],[600,1438,30.8,14,0.0],[700,1409,30.7,14,0.1],[800,1380,30.5,16,0.1],[900,1349,30.3,16,0.1],[1000,1317,30.1,16,0.2],[1100,1284,29.8,18,0.2],[1200,1249,29.4,19,0.2],[1300,1212,29.1,20,0.3],[1400,1172,28.6,21,0.2],[1500,1128,28.1,22,0.3],[1600,1081,27.4,26,0.3],[1700,1027,26.6,30,0.4],[1800,962,25.6,39,0.7],[1900,875,24.1,67,1.3]]},{"l":4,"min":400,"max":2400,"t":[[400,1515,35.7,11,0.0],[500,1493,35.7,11,0.1],[600,1471,35.6,11,0.1],[700,1448,45.5,11,0.1],[800,1426,35.4,12,0.1],[900,1402,35.2,12,0.1],[1000,1378,35.0,12,0.1],[1100,1353,34.8,13,0.1],[1200,1328,34.6,13,0.1],[1300,1301,34.4,14,0.2],[1400,1274,34.1,14,0.1],[1500,1245,33.8,15,0.2],[1600,1215,33.4,15,0.1],[1700,1184,33.0,17,0.2],[1800,1151,32.6,18,0.3],[1900,1115,32.1,19,0.3],[2000,1076,31.5,21,0.4],[2100,1033,30.8,23,0.4],[2200,985,29.9,27,0.5],[2300,928,28.8,33,0.6],[2400,855,27.4,52,1.1]]}]},"Smoke":{"name":"M375 Smoke","charges":[{"l":1,"min":200,"max":750,"t":[[200,1463,17.7,36,0.1],[250,1427,17.6,36,0.1],[300,1391,17.5,39,0.2],[350,1352,17.3,38,0.1],[400,1314,17.2,43,0.3],[450,1271,16.9,44,0.2],[500,1227,16.7,49,0.3],[550,1178,16.4,54,0.4],[600,1124,16.0,64,0.6],[650,1060,15.4,78,0.7],[700,982,14.7,160,1.7],[750,822,13.0,0,0.0]]},{"l":2,"min":200,"max":1400,"t":[[200,1528,24.8,19,0.1],[300,1491,24.7,19,0.1],[400,1453,24.6,19,0.1],[500,1414,24.4,19,0.1],[600,1374,24.2,20,0.1],[700,1333,24.0,22,0.1],[800,1289,23.7,23,0.2],[900,1242,23.3,25,0.2],[1000,1191,22.9,28,0.3],[1100,1133,22.3,31,0.3],[1200,1067,21.6,39,0.5],[1300,980,20.5,58,0.9],[1400,818,18.0,0,0.0]]},{"l":3,"min":300,"max":1900,"t":[[300,1522,29.6,14,0.0],[400,1495,29.6,14,0.1],[500,1468,29.5,14,0.1],[600,1440,29.3,14,0.0],[700,1412,29.2,14,0.1],[800,1383,29.0,14,0.1],[900,1354,28.9,16,0.2],[1000,1323,28.6,16,0.1],[1100,1291,28.4,17,0.2],[1200,1257,28.1,18,0.2],[1300,1221,27.1,18,0.2],[1400,1183,27.3,20,0.2],[1500,1142,26.8,23,0.3],[1600,1096,26.2,25,0.3],[1700,1044,25.5,30,0.5],[1800,980,24.5,38,0.6],[1900,892,23.0,84,1.5]]},{"l":4,"min":400,"max":2400,"t":[[400,1517,33.6,11,0.0],[500,1495,33.5,10,0.0],[600,1474,33.5,11,0.1],[700,1452,33.4,11,0.1],[800,1429,33.2,11,0.0],[900,1407,33.1,12,0.0],[1000,1383,33.0,11,0.1],[1100,1360,32.8,12,0.1],[1200,1335,32.6,12,0.1],[1300,1310,32.4,13,0.1],[1400,1284,32.1,14,0.1],[1500,1257,32.9,14,0.2],[1600,1228,31.5,15,0.1],[1700,1199,31.2,17,0.2],[1800,1166,30.8,16,0.2],[1900,1132,30.3,18,0.2],[2000,1096,29.8,21,0.3],[2100,1055,29.1,23,0.3],[2200,1008,28.4,28,0.5],[2300,952,27.4,36,0.7],[2400,871,25.8,67,1.5]]}]}}}};
+const WNAME={"M252":"M252","2B14":"2Б14"};
+const SHELLNAME={HE:"Осколково-фугасний",Smoke:"Димовий",Illumination:"Освітлювальний"};
+const EVERON_IMG="data:image/jpeg;base64,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oahavCbYAShP4ice3qMTx5TvtcbmktssR7v/AM3JIJ/T/MylrHtYJ5FU48w/FxPGrZNBo03AkI3BHBM0q9Va2q8OtdtfilizegkfFvaunm6kag2jwsMh4YgkHmaVBs01gJCAqN3PAPp/edALBqbLfKPCxjd7n3zMFnTPGDEAFfgSpnr01tqfc69Vpr9O1iJSuHSxiBsfHY/GOJy99NmntNVqlXH7j3HuJ1FOlGlc+G3hjHIYcNM2o02n6pp0q1BdbydtLLjyn2PuJ34+TXSbHGxPd1b03PVYMPWxUj2ImOelyqY7SIgTEiIE5iREBERAREQEREBERAREQEREBERAREQERECZERAREQEREBERAREQEREBERAREQEREBERASe8iIGbT6i3TOXosZGPfae/195c6L7QFbm++1KQVxvrTzD6+8oZH95Nxl9buuxu6p03Wad1bVqu0Bl3qQcj2HrNC41eCGrdrFuG5ndRzggcfvOfHcZ55nTdN1Om1dNY1SeFZsKhzwrj3HsZxy45jOlfW1p08GrTe4fuM5/OZqLLKxyVCk9jNTRaTV6VBWo8Ss8B1PoT7HtN20IhXxbaUGceY9zPJljbXTbxq1LuTtG7PfM0n0l23YGUOCHVxxyJu3sKnTcjMrc5BHH5ZzMVt1dVyg2orFScWMAMek3GZwc79pq92oq1mADdWPE2jA3juf6SmMuOvaujULVXVYr2KSX2fh/KU89+G/ntyyRERLSREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBJ9Memc4+ZEQPVb2VDFVjoPZWIkHkktyT3J9ZETNQ2javPlHPfiSAB2ERNCIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiB//9k=";
+const PRESETS=[
+  {id:"everon",name:"Everon",size:12800,tiles:{base:"https://reforger.recoil.org/everon/LODS/",maxLod:5},sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/everon_sat_z7_full.png",defaultMap:EVERON_IMG,places:[["Airport",4893,11801],["St Phillipe",4501,10776],["Power Plant",5827,9787],["St Pierre",9689,1558],["Meaux",4518,9468],["Tyrone",4949,9076],["Andres Beacon",6844,8191],["Gravette",4128,7792],["Villeneuve",2847,6340],["Morton",5137,4010],["Lamentin",1281,5947],["Chotain",7088,6012],["Montignac",4776,7087],["Provins",5488,6083],["Figari",5256,5341],["Camurac",6594,3117],["Quarry",8787,3913],["Regina",7188,2312],["Durras",8826,2746],["Farm",5010,9964],["Gorey",4845,8089],["Sawmill",3114,5222],["Chotain Industrial",6456,6487],["Hillside",6918,4450],["Coastal Base Chotain",7444,6698],["Military Base Levie",7477,4302],["Military Hospital",3905,8450],["Coastal Base Lamentin",1063,6048],["Coastal Base Morton",4957,3876]]},
+  {id:"arland",name:"Arland",size:4095,tiles:{base:"https://reforger.recoil.org/arland/LODS/",maxLod:4},sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/arland_sat_z6_full.png",places:[["Beauregard",3169,2796],["Farm",2209,2909],["Airport Base",947,2896],["Military Training Base",1413,1858],["Arleville",2777,1624],["Moss Hill",2293,1224],["Signal Hill",2507,2267]]},
+  {id:"kolguyev",name:"Kolguyev",size:12800,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/kolguev_sat_z7_full.png"},
+  {id:"anizay",name:"Anizay",size:10240,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/anizay_sat_z7_full.png",mod:true},
+  {id:"badorb",name:"Bad Orb",size:5120,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/badorb_sat_z6_full.png",mod:true},
+  {id:"belleau",name:"Belleau Wood",size:12032,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/belleau_sat_z7_full.png",mod:true},
+  {id:"fallujah",name:"Fallujah",size:4095,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/fallujah_sat_z6_full.png",mod:true},
+  {id:"gogland",name:"Gogland",size:12286,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/gogland_sat_z7_full.png",mod:true},
+  {id:"khanh_trung",name:"Khanh Trung",size:4095,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/khanh_trung_sat_z6_full.png",mod:true},
+  {id:"kunar",name:"Kunar",size:4000,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/kunar_sat_z5_full.png",mod:true},
+  {id:"myccano",name:"Myccano",size:6655,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/myccano_sat_z7_full.png",mod:true},
+  {id:"nizla",name:"Nizla Island",size:17150,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/nizla_sat_z7_full.png",mod:true},
+  {id:"novka",name:"Novka",size:2900,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/novka_sat_z5_full.png",mod:true},
+  {id:"rooikat",name:"Rooikat 89",size:5120,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/rooikat_sat_z6_full.png",mod:true},
+  {id:"rostov",name:"Rostov",size:7935,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/rostov_sat_z7_full.png",mod:true},
+  {id:"ruha",name:"Ruha",size:8150,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/ruha_sat_z7_full.png",mod:true},
+  {id:"saigon",name:"Saigon",size:17150,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/saigon_sat_z7_full.png",mod:true},
+  {id:"serhiivka",name:"Serhiivka",size:10240,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/serhiivka_sat_z7_full.png",mod:true},
+  {id:"takistan",name:"Takistan",size:12900,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/takistan_sat_z7_full.png",mod:true},
+  {id:"zarichne",name:"Zarichne",size:4095,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/zarichne_sat_z6_full.png",mod:true},
+  {id:"seitenbuch",name:"Seitenbuch",size:2000,sz:4000,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/seitenbuch_sat_z6_full.png",mod:true},
+  {id:"udachne",name:"Udachne",size:5120,sz:10240,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/udachne_sat_z7_full.png",mod:true},
+  {id:"zimnitrita",name:"Zimnitrita",size:16384,sat:"https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/zimnitrita_sat_z7_full.png",mod:true}
+];
+function blankTerrain(size,sz){return{markers:[],calib:{mode:"size",size:size||12800,sizeZ:sz||size||12800,a:null,b:null},map:null,sel:{m:null,t:"__center",shell:"HE",charge:null}}}
+function blankRoot(){const r={v:2,showPlaces:true,cur:"everon",list:PRESETS.map(p=>({id:p.id,name:p.name,size:p.size,mod:!!p.mod})),data:{}};for(const p of PRESETS)r.data[p.id]=blankTerrain(p.size,p.sz);return r}
+let ROOT=blankRoot();
+let S=ROOT.data.everon;
+let db=null,assets=null;
+let img=null,imgW=12800,imgH=12800,imgUrl=null;
+const view={k:1,ox:0,oy:0};
+let selectedId=null,calibPick=null;
+
+/* ---------- storage ---------- */
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function loadLocal(){
+  try{const r=localStorage.getItem(LS_KEY);if(r)ROOT=normalizeRoot(JSON.parse(r));
+    else{const old=localStorage.getItem("mortar-board-v1");if(old){ROOT.data.everon=normalize(JSON.parse(old),12800);ROOT.data.everon.map=null}}}catch(e){}
+  S=ROOT.data[ROOT.cur];
+}
+function normalizeRoot(d){
+  const r=blankRoot();if(!d||typeof d!=="object")return r;
+  if(Array.isArray(d.list))for(const t of d.list){if(!t||!t.id||!/^[a-z0-9_-]{1,40}$/.test(t.id))continue;if(!r.list.some(x=>x.id===t.id))r.list.push({id:t.id,name:String(t.name||t.id).slice(0,40),size:+t.size||12800,custom:true})}
+  for(const t of r.list){const pre=PRESETS.find(p=>p.id===t.id);if(pre)t.size=pre.size;r.data[t.id]=normalize(d.data&&d.data[t.id],t.size,pre&&pre.sz)}
+  const ar=r.data.arland;if(ar&&(ar.calib.size===5940||ar.calib.size===4000)&&!ar.map){ar.calib.size=4095;ar.calib.sizeZ=4095}
+  for(const id in r.data){const c=r.data[id].calib;if(!(+c.sizeZ>0)){const pre=PRESETS.find(p=>p.id===id);c.sizeZ=(pre&&pre.sz)||c.size}}
+  r.showPlaces=d.showPlaces!==false;
+  r.cur=r.list.some(t=>t.id===d.cur)?d.cur:"everon";return r;
+}
+function normalize(d,size,sz){
+  const n=blankTerrain(size,sz);
+  if(d&&typeof d==="object"){
+    if(Array.isArray(d.markers))n.markers=d.markers.filter(m=>m&&isFinite(m.x)&&isFinite(m.z)).map(m=>({id:String(m.id||uid()),name:String(m.name||"").slice(0,40),type:TYPES[m.type]?m.type:"point",x:+m.x,z:+m.z,h:(m.h===null||m.h===undefined||m.h==="")?null:+m.h,w:m.w==="2B14"?"2B14":"M252"}));
+    if(d.calib)n.calib=Object.assign(n.calib,d.calib);
+    if("map" in d)n.map=d.map;
+    if(d.sel)n.sel=Object.assign(n.sel,d.sel);
+  }
+  return n;
+}
+let dbTimer=null,dbBusy=false,dbDirty=false;
+function save(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(ROOT))}catch(e){}
+  if(db){dbDirty=true;clearTimeout(dbTimer);dbTimer=setTimeout(flushDb,500)}
+}
+async function flushDb(){
+  if(!db||dbBusy||!dbDirty)return;
+  dbBusy=true;dbDirty=false;
+  try{await db.doc("board/state").set(clone(ROOT));setStatus("Збережено")}
+  catch(e){if(e&&e.code==="unavailable"){dbDirty=true;setTimeout(flushDb,1500+Math.random()*1000)}else{setStatus("Збережено лише на цьому пристрої")}}
+  dbBusy=false;if(dbDirty)flushDb();
+}
+function setStatus(t){$("status").textContent=t}
+
+/* IndexedDB for map image when assets are unavailable */
+function idb(){return new Promise((res,rej)=>{try{const r=indexedDB.open("mortar-board",1);r.onupgradeneeded=()=>r.result.createObjectStore("f");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})}
+const mapKey=()=>"map:"+ROOT.cur;
+async function idbPut(blob){try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction("f","readwrite");t.objectStore("f").put(blob,mapKey());t.oncomplete=res;t.onerror=()=>rej(t.error)});return true}catch(e){return false}}
+async function idbGet(){try{const d=await idb();return await new Promise((res)=>{const t=d.transaction("f");const r=t.objectStore("f").get(mapKey());r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)})}catch(e){return null}}
+async function idbDel(){try{const d=await idb();d.transaction("f","readwrite").objectStore("f").delete(mapKey())}catch(e){}}
+
+/* ---------- geometry ---------- */
+function curMeta(){return ROOT.list.find(t=>t.id===ROOT.cur)||ROOT.list[0]}
+function mapSize(){const s=+S.calib.size;return s>0?s:(curMeta().size||12800)}
+function mapSizeZ(){const s=+S.calib.sizeZ;if(s>0)return s;const pre=PRESETS.find(p=>p.id===ROOT.cur);return (pre&&pre.sz)||mapSize()}
+function region(){
+  if(!img)return{w:imgW,h:imgH};
+  const ia=imgW/imgH,ma=mapSize()/mapSizeZ();
+  if(Math.abs(ia/ma-1)<0.03)return{w:imgW,h:imgH};
+  if(Math.abs(ia-1)<0.03)return ma>1?{w:imgW,h:imgW/ma}:{w:imgH*ma,h:imgH};
+  return{w:imgW,h:imgH};
+}
+function setBlank(){imgW=mapSize();imgH=mapSizeZ()}
+function ptsOK(){const c=S.calib;return img&&c.mode==="points"&&c.a&&c.b&&isFinite(c.a.x)&&isFinite(c.a.z)&&isFinite(c.b.x)&&isFinite(c.b.z)&&Math.abs(c.b.px-c.a.px)>5&&Math.abs(c.b.py-c.a.py)>5&&c.b.x!==c.a.x&&c.b.z!==c.a.z}
+function worldFromPx(px,py){
+  if(ptsOK()){const c=S.calib,sx=(c.b.x-c.a.x)/(c.b.px-c.a.px),sz=(c.b.z-c.a.z)/(c.b.py-c.a.py);return{x:c.a.x+(px-c.a.px)*sx,z:c.a.z+(py-c.a.py)*sz}}
+  const R=region();return{x:px/R.w*mapSize(),z:(1-py/R.h)*mapSizeZ()};
+}
+function pxFromWorld(x,z){
+  if(ptsOK()){const c=S.calib,sx=(c.b.x-c.a.x)/(c.b.px-c.a.px),sz=(c.b.z-c.a.z)/(c.b.py-c.a.py);return{px:c.a.px+(x-c.a.x)/sx,py:c.a.py+(z-c.a.z)/sz}}
+  const R=region();return{px:x/mapSize()*R.w,py:(1-z/mapSizeZ())*R.h};
+}
+function metersPerPx(){const a=worldFromPx(0,0),b=worldFromPx(100,0);return Math.abs(b.x-a.x)/100||1}
+function scrFromPx(px,py){return{sx:px*view.k+view.ox,sy:py*view.k+view.oy}}
+function pxFromScr(sx,sy){return{px:(sx-view.ox)/view.k,py:(sy-view.oy)/view.k}}
+function worldFromScr(sx,sy){const p=pxFromScr(sx,sy);return worldFromPx(p.px,p.py)}
+function scrFromWorld(x,z){const p=pxFromWorld(x,z);return scrFromPx(p.px,p.py)}
+function pad(n,w){const neg=n<0;let s=String(Math.abs(n));while(s.length<w)s="0"+s;return(neg?"-":"")+s}
+function gridRef(x,z){return pad(Math.floor(x/10+1e-6),4)+" "+pad(Math.floor(z/10+1e-6),4)}
+function fmtM(v){return Math.round(v).toLocaleString("uk-UA").replace(/\u00a0/g," ")}
+function parseGrid(t){
+  const m=String(t).trim().match(/^(\d{2,5})[\s,;/-]+(\d{2,5})$/);if(!m||m[1].length!==m[2].length)return null;
+  const n=m[1].length,res=Math.pow(10,5-n);return{x:+m[1]*res+res/2,z:+m[2]*res+res/2,res};
+}
+function uid(){return Math.random().toString(36).slice(2,10)}
+
+/* ---------- canvas ---------- */
+const cv=$("cv"),ctx=cv.getContext("2d");
+let dpr=1,W=0,H=0,needsDraw=false;
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function resize(){
+  const r=cv.getBoundingClientRect();dpr=window.devicePixelRatio||1;
+  const first=W===0;W=r.width;H=r.height;cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+  if(first)fit();request();
+}
+function kLimits(){const fitK=Math.min(W/imgW,H/imgH);return{min:fitK*0.5,max:Math.max(fitK*2,60*metersPerPx())}}
+function fit(){if(!W)return;view.k=Math.min(W/imgW,H/imgH)*0.96;view.ox=(W-imgW*view.k)/2;view.oy=(H-imgH*view.k)/2;request()}
+function zoomAt(f,sx,sy){const l=kLimits();const nk=Math.min(l.max,Math.max(l.min,view.k*f));const p=pxFromScr(sx,sy);view.k=nk;view.ox=sx-p.px*nk;view.oy=sy-p.py*nk;request()}
+function centerOnWorld(x,z){const p=pxFromWorld(x,z);view.ox=W/2-p.px*view.k;view.oy=H/2-p.py*view.k;request()}
+function request(){if(!needsDraw){needsDraw=true;requestAnimationFrame(draw)}}
+function centerWorld(){return worldFromScr(W/2,H/2)}
+
+function draw(){
+  needsDraw=false;if(!W)return;
+  const c={grid:css("--grid"),fine:css("--gridfine"),blank:css("--mapblank"),ink:css("--ink"),surface:css("--raised"),
+    mortar:css("--mortar"),target:css("--target"),point:css("--point")};
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=c.blank;ctx.fillRect(0,0,W,H);
+  const tl=scrFromPx(0,0);
+  if(pyr){drawPyramid()}
+  else if(remoteOn()){if(img)drawImgFull();drawRemote(PRESETS.find(p=>p.id===ROOT.cur).tiles)}
+  else if(img){ctx.imageSmoothingEnabled=view.k<2;ctx.drawImage(img,tl.sx,tl.sy,imgW*view.k,imgH*view.k)}
+  else{ctx.fillStyle=c.surface;ctx.fillRect(tl.sx,tl.sy,imgW*view.k,imgH*view.k)}
+  // grid
+  const mpp=metersPerPx()/view.k; // meters per screen px
+  const w0=worldFromScr(0,0),w1=worldFromScr(W,H);
+  const e0=worldFromPx(0,imgH),e1=worldFromPx(imgW,0);
+  const x0=Math.max(Math.min(w0.x,w1.x),Math.min(e0.x,e1.x)),x1=Math.min(Math.max(w0.x,w1.x),Math.max(e0.x,e1.x)),
+        z0=Math.max(Math.min(w0.z,w1.z),Math.min(e0.z,e1.z)),z1=Math.min(Math.max(w0.z,w1.z),Math.max(e0.z,e1.z));
+  ctx.save();ctx.beginPath();ctx.rect(tl.sx,tl.sy,imgW*view.k,imgH*view.k);ctx.clip();
+  const steps=[10,100,1000];let labelStep=1000;
+  for(const st of steps){
+    const spx=st/mpp;if(spx<14)continue;
+    if(spx>=56&&st<labelStep)labelStep=st;
+    ctx.strokeStyle=st===1000?c.grid:c.fine;ctx.lineWidth=st===1000?1.2:1;ctx.beginPath();
+    const n=((x1-x0)/st)+((z1-z0)/st);if(n>400)continue;
+    for(let x=Math.ceil(x0/st)*st;x<=x1;x+=st){if(st<1000&&x%(st*10)===0)continue;const s=scrFromWorld(x,z0).sx;ctx.moveTo(Math.round(s)+.5,0);ctx.lineTo(Math.round(s)+.5,H)}
+    for(let z=Math.ceil(z0/st)*st;z<=z1;z+=st){if(st<1000&&z%(st*10)===0)continue;const s=scrFromWorld(x0,z).sy;ctx.moveTo(0,Math.round(s)+.5);ctx.lineTo(W,Math.round(s)+.5)}
+    ctx.stroke();
+  }
+  ctx.restore();
+  // grid labels
+  ctx.font='600 11px "IBM Plex Sans Condensed",sans-serif';ctx.fillStyle=c.ink;ctx.textBaseline="top";
+  const lw=labelStep===1000?2:labelStep===100?3:4,div=labelStep===1000?1000:labelStep===100?100:10;
+  if(((x1-x0)/labelStep)<60){
+    for(let x=Math.ceil(x0/labelStep)*labelStep;x<=x1;x+=labelStep){const s=scrFromWorld(x,z0).sx;labelBox(pad(Math.round(x/div),lw),s+3,3,c)}
+    for(let z=Math.ceil(z0/labelStep)*labelStep;z<=z1;z+=labelStep){const s=scrFromWorld(x0,z).sy;labelBox(pad(Math.round(z/div),lw),3,s-15,c)}
+  }
+  // firing line
+  const pair=firePair();
+  if(pair){
+    const a=scrFromWorld(pair.m.x,pair.m.z),b=scrFromWorld(pair.t.x,pair.t.z);
+    ctx.setLineDash([7,5]);ctx.strokeStyle=c.target;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a.sx,a.sy);ctx.lineTo(b.sx,b.sy);ctx.stroke();ctx.setLineDash([]);
+  }
+  // calibration points
+  for(const key of ["a","b"]){const p=S.calib[key];if(S.calib.mode==="points"&&p&&img){const s=scrFromPx(p.px,p.py);ctx.strokeStyle=c.point;ctx.lineWidth=2;ctx.beginPath();ctx.arc(s.sx,s.sy,9,0,Math.PI*2);ctx.stroke();ctx.fillStyle=c.point;ctx.font='700 12px "IBM Plex Sans Condensed",sans-serif';ctx.fillText(key.toUpperCase(),s.sx+11,s.sy-6)}}
+  // reference places
+  const pre=PRESETS.find(p=>p.id===ROOT.cur);
+  if(ROOT.showPlaces&&pre&&pre.places){
+    ctx.font='500 11px "IBM Plex Sans Condensed",sans-serif';ctx.textBaseline="middle";
+    for(const [n,x,z] of pre.places){
+      const s=scrFromWorld(x,z);if(s.sx<-80||s.sy<-20||s.sx>W+20||s.sy>H+20)continue;
+      ctx.fillStyle=c.ink;ctx.beginPath();ctx.arc(s.sx,s.sy,2.5,0,Math.PI*2);ctx.fill();
+      const tw=ctx.measureText(n).width;ctx.fillStyle=c.surface;ctx.globalAlpha=.7;ctx.fillRect(s.sx+4,s.sy-7,tw+6,14);ctx.globalAlpha=1;
+      ctx.fillStyle=c.ink;ctx.fillText(n,s.sx+7,s.sy);
+    }
+  }
+  // markers
+  for(const m of S.markers){
+    const s=scrFromWorld(m.x,m.z);if(s.sx<-40||s.sy<-40||s.sx>W+40||s.sy>H+40)continue;
+    const col=c[m.type]||c.point;const r=m.id===selectedId?9:7;
+    ctx.fillStyle=col;ctx.strokeStyle=c.surface;ctx.lineWidth=2;ctx.beginPath();
+    if(m.type==="target"){ctx.moveTo(s.sx,s.sy-r-2);ctx.lineTo(s.sx+r+2,s.sy);ctx.lineTo(s.sx,s.sy+r+2);ctx.lineTo(s.sx-r-2,s.sy);ctx.closePath()}
+    else if(m.type==="mortar"){ctx.arc(s.sx,s.sy,r,0,Math.PI*2)}
+    else{ctx.rect(s.sx-r+1,s.sy-r+1,(r-1)*2,(r-1)*2)}
+    ctx.fill();ctx.stroke();
+    if(m.id===selectedId){ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(s.sx,s.sy,r+6,0,Math.PI*2);ctx.stroke()}
+    ctx.font='600 13px "IBM Plex Sans Condensed",sans-serif';ctx.textBaseline="middle";
+    const t=m.name||TYPES[m.type];const tw=ctx.measureText(t).width;
+    ctx.fillStyle=c.surface;ctx.globalAlpha=.85;ctx.fillRect(s.sx+r+5,s.sy-9,tw+8,18);ctx.globalAlpha=1;
+    ctx.fillStyle=c.ink;ctx.fillText(t,s.sx+r+9,s.sy);
+  }
+  updateReadout();
+}
+function labelBox(t,x,y,c){const w=ctx.measureText(t).width;ctx.fillStyle=c.surface;ctx.globalAlpha=.8;ctx.fillRect(x-2,y-1,w+4,14);ctx.globalAlpha=1;ctx.fillStyle=c.ink;ctx.fillText(t,x,y)}
+
+function updateReadout(){
+  const w=centerWorld();
+  $("coords").querySelector(".grid").textContent=gridRef(w.x,w.z);
+  $("coords").querySelector(".m").textContent="X "+fmtM(w.x)+" м   Z "+fmtM(w.z)+" м";
+  if(S.sel.t==="__center"&&!$("pane-fire").hidden)renderFire();
+}
+
+/* ---------- gestures ---------- */
+const ptrs=new Map();let gesture=null;
+function pos(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+cv.addEventListener("pointerdown",e=>{
+  cv.setPointerCapture(e.pointerId);const p=pos(e);ptrs.set(e.pointerId,p);
+  if(ptrs.size===1)gesture={type:"pan",start:p,last:p,t:Date.now(),moved:false};
+  else if(ptrs.size===2){const [a,b]=[...ptrs.values()];gesture={type:"pinch",d:Math.hypot(a.x-b.x,a.y-b.y),mid:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},moved:true}}
+});
+cv.addEventListener("pointermove",e=>{
+  if(!ptrs.has(e.pointerId)||!gesture)return;const p=pos(e);ptrs.set(e.pointerId,p);
+  if(gesture.type==="pan"&&ptrs.size===1){
+    view.ox+=p.x-gesture.last.x;view.oy+=p.y-gesture.last.y;gesture.last=p;
+    if(Math.hypot(p.x-gesture.start.x,p.y-gesture.start.y)>6)gesture.moved=true;request();
+  }else if(gesture.type==="pinch"&&ptrs.size===2){
+    const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y),mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+    view.ox+=mid.x-gesture.mid.x;view.oy+=mid.y-gesture.mid.y;zoomAt(d/gesture.d,mid.x,mid.y);gesture.d=d;gesture.mid=mid;
+  }
+});
+function endPtr(e){
+  if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);
+  if(gesture&&gesture.type==="pan"&&!gesture.moved&&Date.now()-gesture.t<500&&e.type==="pointerup")tap(gesture.start.x,gesture.start.y);
+  if(ptrs.size===1){const p=[...ptrs.values()][0];gesture={type:"pan",start:p,last:p,t:0,moved:true}}
+  else if(ptrs.size===0)gesture=null;
+}
+cv.addEventListener("pointerup",endPtr);cv.addEventListener("pointercancel",endPtr);
+cv.addEventListener("wheel",e=>{e.preventDefault();const p=pos(e);zoomAt(Math.exp(-e.deltaY*0.0015),p.x,p.y)},{passive:false});
+function tap(x,y){
+  let best=null,bd=22;
+  for(const m of S.markers){const s=scrFromWorld(m.x,m.z);const d=Math.hypot(s.sx-x,s.sy-y);if(d<bd){bd=d;best=m}}
+  if(best){selectMarker(best.id,true);return}
+  const w=worldFromScr(x,y);centerOnWorld(w.x,w.z);
+}
+$("zin").onclick=()=>zoomAt(1.6,W/2,H/2);
+$("zout").onclick=()=>zoomAt(1/1.6,W/2,H/2);
+$("fit").onclick=fit;
+new ResizeObserver(resize).observe($("mapWrap"));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",request);
+
+/* ---------- markers ---------- */
+function selectMarker(id,center){
+  selectedId=id;const m=S.markers.find(x=>x.id===id);
+  if(m&&center)centerOnWorld(m.x,m.z);
+  renderList();request();
+  const li=document.querySelector('#list li[data-id="'+id+'"]');if(li)li.scrollIntoView({block:"nearest"});
+}
+function nextName(type){const n=S.markers.filter(m=>m.type===type).length+1;return TYPES[type]+" "+n}
+function renderList(){
+  const ul=$("list");ul.textContent="";
+  if(!S.markers.length){const li=document.createElement("li");li.className="empty";li.textContent="Міток ще немає. Наведіть приціл на місце на карті й натисніть «Поставити мітку».";ul.appendChild(li);return}
+  for(const m of S.markers){
+    const li=document.createElement("li");li.dataset.id=m.id;if(m.id===selectedId)li.className="sel";
+    const b=document.createElement("div");b.className="badge b-"+m.type;const bs=document.createElement("span");bs.textContent=LETTER[m.type];b.appendChild(bs);
+    const info=document.createElement("div");info.className="info";info.tabIndex=0;
+    const nm=document.createElement("div");nm.className="name";nm.textContent=m.name||TYPES[m.type];
+    const sub=document.createElement("div");sub.className="sub";
+    sub.textContent=(m.type==="mortar"?WNAME[m.w||"M252"]+"   ":"")+gridRef(m.x,m.z)+"   X "+fmtM(m.x)+"  Z "+fmtM(m.z)+(m.h!==null&&isFinite(m.h)?"   h "+fmtM(m.h):"");
+    info.append(nm,sub);info.onclick=()=>selectMarker(m.id,true);info.onkeydown=e=>{if(e.key==="Enter")selectMarker(m.id,true)};
+    const cp=document.createElement("button");cp.className="btn small";cp.textContent="Копіювати";cp.onclick=()=>copyText(gridRef(m.x,m.z)+" (X "+Math.round(m.x)+", Z "+Math.round(m.z)+")");
+    const ed=document.createElement("button");ed.className="btn small";ed.textContent="Змінити";ed.onclick=()=>openDlg(m);
+    li.append(b,info,cp,ed);ul.appendChild(li);
+  }
+}
+
+/* dialog */
+const dlg=$("dlg");let editing=null,dlgType="target";
+let dlgWeapon="M252";
+function setDlgType(t){dlgType=t;for(const b of $("fType").querySelectorAll("button"))b.setAttribute("aria-pressed",b.dataset.t===t?"true":"false");$("fWeapon").hidden=t!=="mortar"}
+function setDlgWeapon(w){dlgWeapon=w;for(const b of $("fWeapon").querySelectorAll("button"))b.setAttribute("aria-pressed",b.dataset.w===w?"true":"false")}
+$("fWeapon").onclick=e=>{const b=e.target.closest("button");if(b)setDlgWeapon(b.dataset.w)};
+$("fType").onclick=e=>{const b=e.target.closest("button");if(b){setDlgType(b.dataset.t);if(!editing&&/^(Міномет|Ціль|Точка) \d+$/.test($("fName").value))$("fName").value=nextName(b.dataset.t)}};
+function openDlg(m,preset){
+  editing=m||null;
+  const d=m||preset;setDlgType(d.type);
+  const lastM=[...S.markers].reverse().find(x=>x.type==="mortar");setDlgWeapon(m&&m.w?m.w:(lastM?lastM.w:"M252"));
+  $("dlgTitle").textContent=m?"Змінити мітку":"Нова мітка";
+  $("fName").value=m?m.name:nextName(d.type);
+  $("fX").value=Math.round(d.x);$("fZ").value=Math.round(d.z);$("fH").value=(d.h!==null&&d.h!==undefined&&isFinite(d.h))?d.h:"";
+  $("fGrid").value=isFinite(d.x)&&isFinite(d.z)&&(m||preset.fromMap)?gridRef(d.x,d.z):"";
+  $("fDel").hidden=!m;
+  dlg.showModal();
+}
+$("fGrid").addEventListener("input",()=>{const g=parseGrid($("fGrid").value);if(g){$("fX").value=Math.round(g.x);$("fZ").value=Math.round(g.z)}});
+$("fCancel").onclick=()=>dlg.close();
+$("fDel").onclick=()=>{if(editing){S.markers=S.markers.filter(x=>x.id!==editing.id);if(selectedId===editing.id)selectedId=null;save();renderAll();toast("Мітку видалено")}dlg.close()};
+$("dlgForm").addEventListener("submit",e=>{
+  const x=parseFloat($("fX").value),z=parseFloat($("fZ").value);
+  if(!isFinite(x)||!isFinite(z)){e.preventDefault();toast("Вкажіть X і Z або сітку");return}
+  const hv=$("fH").value.trim();const h=hv===""?null:parseFloat(hv);
+  const data={name:$("fName").value.trim().slice(0,40)||nextName(dlgType),type:dlgType,x,z,h:isFinite(h)?h:null,w:dlgWeapon};
+  if(editing)Object.assign(editing,data);else{const m=Object.assign({id:uid()},data);S.markers.push(m);selectedId=m.id;
+    if(m.type==="mortar")S.sel.m=m.id;if(m.type==="target")S.sel.t=m.id;}
+  save();renderAll();toast(editing?"Мітку збережено":"Мітку додано");
+});
+$("placeBtn").onclick=()=>{
+  if(calibPick){fixCalib(calibPick);return}
+  const w=centerWorld();const hasM=S.markers.some(m=>m.type==="mortar");
+  openDlg(null,{type:hasM?"target":"mortar",x:w.x,z:w.z,h:null,fromMap:true});
+};
+$("addManual").onclick=()=>{const hasM=S.markers.some(m=>m.type==="mortar");openDlg(null,{type:hasM?"target":"mortar",x:NaN,z:NaN,h:null});$("fX").value="";$("fZ").value="";setTimeout(()=>$("fGrid").focus(),50)};
+
+/* ---------- firing solution ---------- */
+function firePair(){
+  const m=S.markers.find(x=>x.id===S.sel.m&&x.type==="mortar")||S.markers.find(x=>x.type==="mortar");
+  if(!m)return null;
+  let t=null;
+  if(S.sel.t==="__center"){const w=centerWorld();t={x:w.x,z:w.z,h:null,name:"Центр прицілу",center:true}}
+  else t=S.markers.find(x=>x.id===S.sel.t);
+  if(!t)return null;return{m,t};
+}
+function fillSelects(){
+  const sm=$("selM"),st=$("selT");sm.textContent="";st.textContent="";
+  const ms=S.markers.filter(x=>x.type==="mortar");
+  if(!ms.length){const o=new Option("Немає мінометів","");sm.add(o);sm.disabled=true}else{sm.disabled=false;for(const m of ms)sm.add(new Option(m.name,m.id))}
+  if(ms.length&&!ms.some(m=>m.id===S.sel.m))S.sel.m=ms[0].id;sm.value=S.sel.m||"";
+  st.add(new Option("Центр прицілу на карті","__center"));
+  for(const m of S.markers.filter(x=>x.type!=="mortar"))st.add(new Option(m.name,m.id));
+  if(![...st.options].some(o=>o.value===S.sel.t))S.sel.t="__center";st.value=S.sel.t;
+}
+$("selM").onchange=e=>{S.sel.m=e.target.value;save();fillShells();renderFire();request()};
+$("selT").onchange=e=>{S.sel.t=e.target.value;save();const t=S.markers.find(x=>x.id===S.sel.t);if(t)centerOnWorld(t.x,t.z);renderFire();request()};
+function interp(t,d){
+  let lo=null,hi=null;
+  for(const r of t){if(r[0]===d)return{el:r[1],tof:r[2],de:r[3],tp:r[4]};if(r[0]<d)lo=r;else{hi=r;break}}
+  if(!lo||!hi)return null;
+  const f=(d-lo[0])/(hi[0]-lo[0]),L=(a,b)=>a+(b-a)*f;
+  return{el:L(lo[1],hi[1]),tof:(lo[2]==null||hi[2]==null)?null:L(lo[2],hi[2]),de:L(lo[3],hi[3]),tp:L(lo[4]||0,hi[4]||0)};
+}
+function solve(weapon,shell,dist,dh){
+  const W=TABLES[weapon];const sh=W&&W.shells[shell];if(!sh)return[];
+  const out=[];
+  for(const c of sh.charges){
+    if(dist<c.min||dist>c.max)continue;
+    const r=interp(c.t,dist);if(!r)continue;
+    let corr=0,tof=r.tof;
+    if(dh!==null&&dh!==0){corr=(dh/100)*r.de;if(dh<-100)corr*=0.6;if(tof!=null)tof+=(dh/100)*r.tp}
+    out.push({charge:c.l,el:Math.round(r.el-corr),base:Math.round(r.el),tof});
+  }
+  return out;
+}
+function shellRange(weapon,shell){const sh=TABLES[weapon].shells[shell];return{min:Math.min(...sh.charges.map(c=>c.min)),max:Math.max(...sh.charges.map(c=>c.max))}}
+function fillShells(){
+  const p=firePair();const w=p?p.m.w||"M252":"M252";const sel=$("selShell");sel.textContent="";
+  for(const k of Object.keys(TABLES[w].shells))sel.add(new Option(SHELLNAME[k]||k,k));
+  if(!TABLES[w].shells[S.sel.shell])S.sel.shell="HE";sel.value=S.sel.shell;
+}
+$("selShell").onchange=e=>{S.sel.shell=e.target.value;save();renderFire()};
+$("selCharge").onchange=e=>{S.sel.charge=+e.target.value;save();renderTable(lastDist)};
+let lastDist=null;
+function renderFire(){
+  const box=$("sol");const p=firePair();
+  if(!p){box.innerHTML='<p class="empty">Додайте мітку типу «Міномет» — тоді тут з’являться азимут, заряд і кут підвищення.</p>';$("tblBox").hidden=true;return}
+  $("tblBox").hidden=false;
+  const w=p.m.w||"M252",W=TABLES[w],mils=W.mils;
+  if(!W.shells[S.sel.shell])S.sel.shell="HE";
+  if($("selShell").options.length===0||!W.shells[$("selShell").value]||$("selShell").dataset.w!==w){fillShells();$("selShell").dataset.w=w}
+  const dx=p.t.x-p.m.x,dz=p.t.z-p.m.z,dist=Math.hypot(dx,dz);lastDist=dist;
+  let az=Math.atan2(dx,dz)*180/Math.PI;if(az<0)az+=360;
+  const azm=Math.round(az/360*mils)%mils;
+  const dh=(p.m.h!==null&&isFinite(p.m.h)&&p.t.h!==null&&p.t.h!==undefined&&isFinite(p.t.h))?p.t.h-p.m.h:null;
+  const sols=solve(w,S.sel.shell,Math.round(dist),dh);
+  box.innerHTML="";
+  const g=document.createElement("div");g.className="solution";
+  const cell=(k,v,u,wide)=>{const d=document.createElement("div");if(wide)d.className="wide";const kk=document.createElement("div");kk.className="k";kk.textContent=k;const vv=document.createElement("div");vv.className="v";vv.textContent=v;if(u){const uu=document.createElement("span");uu.className="u";uu.textContent=u;vv.appendChild(uu)}d.append(kk,vv);g.appendChild(d)};
+  cell("Азимут, мілі ("+mils+")",String(azm));
+  cell("Дальність",fmtM(dist),"м");
+  cell("Азимут",az.toFixed(1),"°");
+  cell("Перевищення",dh===null?"—":(dh>0?"+":"")+fmtM(dh),dh===null?"":"м");
+  box.appendChild(g);
+  if(!sols.length){
+    const r=shellRange(w,S.sel.shell);const wn=document.createElement("p");wn.className="warn";
+    wn.textContent="Поза досяжністю "+WNAME[w]+" для цього снаряда: від "+r.min+" до "+r.max+" м.";box.appendChild(wn);
+  }else{
+    const tb=document.createElement("table");tb.className="charges";
+    tb.innerHTML="<thead><tr><th>Заряд</th><th>Підвищення, мілі</th><th>Політ, с</th></tr></thead>";
+    const body=document.createElement("tbody");
+    sols.forEach((o,i)=>{const tr=document.createElement("tr");if(i===0)tr.className="best";
+      const a=document.createElement("td");a.textContent=o.charge+(i===0?"  ★":"");
+      const b=document.createElement("td");b.className="el";b.textContent=o.el;
+      const c=document.createElement("td");c.textContent=o.tof==null?"—":o.tof.toFixed(1);
+      tr.append(a,b,c);body.appendChild(tr)});
+    tb.appendChild(body);box.appendChild(tb);
+    const nb=document.createElement("p");nb.className="hint";nb.style.margin="6px 0 0";nb.textContent="★ — найменший заряд, що дістає: найточніший варіант.";box.appendChild(nb);
+    if(S.sel.charge===null||!sols.some(o=>o.charge===S.sel.charge))S.sel.charge=sols[0].charge;
+  }
+  const n=document.createElement("p");n.className="hint";n.style.marginTop="8px";
+  n.textContent=WNAME[w]+" «"+p.m.name+"» "+gridRef(p.m.x,p.m.z)+"  до  «"+p.t.name+"» "+gridRef(p.t.x,p.t.z)+(dh===null?". Без висот поправку на перевищення не враховано.":"");
+  box.appendChild(n);
+  renderTable(dist);
+}
+function renderTable(dist){
+  const p=firePair();if(!p)return;const w=p.m.w||"M252";const sh=TABLES[w].shells[S.sel.shell];if(!sh)return;
+  const cs=$("selCharge");const key=w+S.sel.shell;
+  if(cs.dataset.k!==key){cs.textContent="";for(const c of sh.charges)cs.add(new Option(c.l+"  ("+c.min+"–"+c.max+" м)",c.l));cs.dataset.k=key}
+  if(!sh.charges.some(c=>c.l===S.sel.charge))S.sel.charge=sh.charges[0].l;cs.value=S.sel.charge;
+  const ch=sh.charges.find(c=>c.l===S.sel.charge);
+  let near=null;if(dist!=null){let bd=1e9;for(const r of ch.t){const d=Math.abs(r[0]-dist);if(d<bd){bd=d;near=r[0]}}}
+  const t=document.createElement("table");t.className="rt";
+  t.innerHTML="<thead><tr><th>Дальність, м</th><th>Підвищення, мілі</th><th>Δ на 100 м висоти</th><th>Політ, с</th></tr></thead>";
+  const tb=document.createElement("tbody");
+  for(const r of ch.t){const tr=document.createElement("tr");if(r[0]===near)tr.className="hit";
+    for(const v of [r[0],r[1],r[3],r[2]==null?"—":r[2]]){const td=document.createElement("td");td.textContent=v;tr.appendChild(td)}tb.appendChild(tr)}
+  t.appendChild(tb);const box=$("rtable");box.textContent="";box.appendChild(t);
+  const cap=document.createElement("p");cap.className="hint";cap.textContent=WNAME[w]+", "+(SHELLNAME[S.sel.shell]||S.sel.shell)+" ("+sh.name+"), заряд "+ch.l+". Виділено рядок, найближчий до поточної дальності.";box.appendChild(cap);
+}
+
+/* ---------- map image & calibration ---------- */
+function setImage(src){
+  const im=new Image();
+  im.onload=()=>{pyr=null;img=im;imgW=im.naturalWidth;imgH=im.naturalHeight;fit();renderSetup();setMapInfo()};
+  im.onerror=()=>{toast("Не вдалося відкрити зображення карти")};
+  im.src=src;
+}
+function clearImage(){img=null;pyr=null;setBlank();fit()}
+
+/* ---------- online tiles (desktop file only; blocked inside hosted artifacts) ---------- */
+const LOCAL=location.protocol==="file:";
+function remoteOn(){const pre=PRESETS.find(p=>p.id===ROOT.cur);return LOCAL&&pre&&pre.tiles&&!S.map}
+function drawImgFull(){const tl=scrFromPx(0,0);ctx.imageSmoothingEnabled=true;ctx.drawImage(img,tl.sx,tl.sy,imgW*view.k,imgH*view.k)}
+const remoteCache=new Map();let remoteFails=0,remoteOk=0;
+function remoteTile(url,fetchIt){
+  let e=remoteCache.get(url);
+  if(e){if(e.ok){remoteCache.delete(url);remoteCache.set(url,e);return e.img}return null}
+  if(!fetchIt)return null;
+  e={ok:false};remoteCache.set(url,e);
+  const im=new Image();im.decoding="async";
+  im.onload=()=>{e.img=im;e.ok=true;remoteOk++;request()};
+  im.onerror=()=>{e.err=true;remoteFails++;if(remoteFails===12&&remoteOk===0)setStatus("Онлайн-карта не вантажиться — перевірте інтернет")};
+  im.src=url;
+  if(remoteCache.size>320){for(const k of remoteCache.keys()){if(remoteCache.size<=260)break;remoteCache.delete(k)}}
+  return null;
+}
+const SPAN0=12.501*256/32; // metres covered by one LOD0 tile (EnfusionMapMaker CRS)
+function drawRemoteLod(t,l,fetchIt){
+  const S=SPAN0*Math.pow(2,l);
+  const w0=worldFromScr(0,0),w1=worldFromScr(W,H);
+  const xmin=Math.min(w0.x,w1.x),xmax=Math.max(w0.x,w1.x),zmin=Math.min(w0.z,w1.z),zmax=Math.max(w0.z,w1.z);
+  const lim=(v,sz)=>Math.max(0,Math.min(Math.ceil((sz+50)/S)-1,v));
+  const tx0=lim(Math.floor((xmin+50)/S),mapSize()),tx1=lim(Math.floor((xmax+50)/S),mapSize());
+  const ty0=lim(Math.floor((zmin+50)/S),mapSizeZ()),ty1=lim(Math.floor((zmax+50)/S),mapSizeZ());
+  if((tx1-tx0+1)*(ty1-ty0+1)>160)return;
+  for(let tx=tx0;tx<=tx1;tx++)for(let ty=ty0;ty<=ty1;ty++){
+    const im=remoteTile(t.base+l+"/"+tx+"/"+ty+"/tile.jpg",fetchIt);if(!im)continue;
+    const a=scrFromWorld(tx*S-50,(ty+1)*S-50),b=scrFromWorld((tx+1)*S-50,ty*S-50);
+    ctx.drawImage(im,a.sx,a.sy,b.sx-a.sx+0.6,b.sy-a.sy+0.6);
+  }
+}
+function drawRemote(t){
+  ctx.imageSmoothingEnabled=true;
+  const pxPerM=Math.abs(scrFromWorld(100,0).sx-scrFromWorld(0,0).sx)/100;
+  let l=Math.floor(Math.log2(256/(SPAN0*pxPerM*Math.min(dpr,2)))+0.35);
+  l=Math.max(0,Math.min(t.maxLod,l));
+  drawRemoteLod(t,t.maxLod,true);
+  if(l+1<t.maxLod)drawRemoteLod(t,l+1,false);
+  if(l<t.maxLod)drawRemoteLod(t,l,true);
+}
+
+/* ---------- tiled map (level-of-detail pyramid) ---------- */
+let pyr=null;const tileCache=new Map();
+function setPyramid(m){pyr=m;img={pyramid:true};imgW=m.srcW;imgH=m.srcH;fit();renderSetup();setMapInfo()}
+function tileRef2url(ref,cb){
+  if(ref.startsWith("idb:")){idbGetKey(ref.slice(4)).then(b=>cb(b?URL.createObjectURL(b):null));return}
+  cb("/_blob/"+ref);
+}
+function getTile(ref,fetchIt){
+  let e=tileCache.get(ref);
+  if(e){tileCache.delete(ref);tileCache.set(ref,e);return e.ok?e.img:null}
+  if(!fetchIt)return null;
+  e={ok:false};tileCache.set(ref,e);
+  tileRef2url(ref,u=>{if(!u){e.err=true;return}const im=new Image();im.decoding="async";im.onload=()=>{e.img=im;e.ok=true;request()};im.onerror=()=>{e.err=true};im.src=u});
+  if(tileCache.size>48){for(const [k,v] of tileCache){if(tileCache.size<=40)break;if(!pyr||k!==pyr.levels[0].t[0]){tileCache.delete(k)}}}
+  return null;
+}
+function drawLevel(lv,fetchIt){
+  const l=pyr.levels[lv];const fx=imgW/l.w,fy=imgH/l.h;let all=true;
+  for(let r=0;r<l.rows;r++)for(let c=0;c<l.cols;c++){
+    const x0=c*l.ts,y0=r*l.ts,w=Math.min(l.ts,l.w-x0),h=Math.min(l.ts,l.h-y0);
+    const a=scrFromPx(x0*fx,y0*fy),sw=w*fx*view.k,sh=h*fy*view.k;
+    if(a.sx>W||a.sy>H||a.sx+sw<0||a.sy+sh<0)continue;
+    const im=getTile(l.t[r*l.cols+c],fetchIt);
+    if(im)ctx.drawImage(im,a.sx,a.sy,sw+0.6,sh+0.6);else all=false;
+  }
+  return all;
+}
+function pickLevel(){
+  const need=imgW*view.k*dpr*0.85;
+  for(let i=0;i<pyr.levels.length;i++)if(pyr.levels[i].w>=need)return i;
+  return pyr.levels.length-1;
+}
+function drawPyramid(){
+  ctx.imageSmoothingEnabled=true;
+  const L=pickLevel();
+  drawLevel(0,true);
+  if(L>=2)drawLevel(L-1,false);
+  if(L>0)drawLevel(L,true);
+}
+function setMapInfo(){const el=$("mapInfo");if(!el)return;
+  if(pyr){const top=pyr.levels[pyr.levels.length-1];el.textContent="Карта: "+pyr.srcW+"×"+pyr.srcH+" px, рівнів деталізації: "+pyr.levels.length+", найчіткіший — "+(mapSize()/top.w).toFixed(1)+" м на піксель."+(pyr.levels[0].t[0].startsWith("idb:")?" Збережено лише на цьому пристрої.":" Доступна на всіх ваших пристроях.");el.hidden=false}
+  else if(img&&img.naturalWidth){el.textContent="Карта: "+img.naturalWidth+"×"+img.naturalHeight+" px, "+(mapSize()/img.naturalWidth).toFixed(0)+" м на піксель.";el.hidden=false}
+  else el.hidden=true;
+}
+async function idbPutKey(k,blob){try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction("f","readwrite");t.objectStore("f").put(blob,k);t.oncomplete=res;t.onerror=()=>rej(t.error)});return true}catch(e){return false}}
+async function idbGetKey(k){try{const d=await idb();return await new Promise(res=>{const r=d.transaction("f").objectStore("f").get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)})}catch(e){return null}}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function uploadTile(blob){
+  for(let a=0;a<6;a++){
+    try{const r=await assets.upload(blob,{type:"image/jpeg"});return r.id}
+    catch(e){const c=e&&e.code;if(c==="rate_limited"||c==="store_unavailable"||c==="upstream_error"){await sleep(1500*(a+1));continue}throw e}
+  }
+  throw new Error("upload failed");
+}
+async function buildPyramid(file,progress){
+  // source dimensions
+  const url=URL.createObjectURL(file);const probe=new Image();
+  await new Promise((res,rej)=>{probe.onload=res;probe.onerror=()=>rej(new Error("decode"));probe.src=url});
+  const srcW=probe.naturalWidth,srcH=probe.naturalHeight;URL.revokeObjectURL(url);
+  const maxSide=Math.max(srcW,srcH);
+  const tops=[1024,2048,4096,8192].filter(v=>v<maxSide);tops.push(Math.min(maxSide,8192));
+  const sides=[...new Set(tops)].filter(v=>v<=8192);
+  let source=file;
+  try{source=await createImageBitmap(file)}catch(e){source=file}
+  const levels=[];let total=0;
+  for(const side of sides){const k=side/maxSide,w=Math.round(srcW*k),h=Math.round(srcH*k),ts=side<=1024?1024:2048;levels.push({w,h,ts,cols:Math.ceil(w/ts),rows:Math.ceil(h/ts),t:[]});total+=Math.ceil(w/ts)*Math.ceil(h/ts)}
+  const useAssets=!!assets;const tid=ROOT.cur+"-"+uid();let done=0;
+  const cv2=document.createElement("canvas");const c2=cv2.getContext("2d");
+  for(let li=0;li<levels.length;li++){
+    const l=levels[li];const fx=srcW/l.w,fy=srcH/l.h;
+    for(let r=0;r<l.rows;r++)for(let c=0;c<l.cols;c++){
+      const x0=c*l.ts,y0=r*l.ts,w=Math.min(l.ts,l.w-x0),h=Math.min(l.ts,l.h-y0);
+      const bmp=await createImageBitmap(source,Math.round(x0*fx),Math.round(y0*fy),Math.round(w*fx),Math.round(h*fy),{resizeWidth:w,resizeHeight:h,resizeQuality:"high"});
+      cv2.width=w;cv2.height=h;c2.drawImage(bmp,0,0);bmp.close&&bmp.close();
+      const blob=await new Promise(res=>cv2.toBlob(res,"image/jpeg",0.86));
+      if(!blob)throw new Error("encode");
+      let ref=null;
+      if(useAssets){try{ref=await uploadTile(blob)}catch(e){ref=null}}
+      if(!ref){const k="tile:"+tid+":"+li+":"+(r*l.cols+c);if(!await idbPutKey(k,blob))throw new Error("store");ref="idb:"+k}
+      l.t.push(ref);done++;progress(done,total);
+    }
+  }
+  if(source.close)source.close();
+  return{kind:"pyr",srcW,srcH,levels};
+}
+async function dropPyramid(m){
+  if(!m||m.kind!=="pyr")return;
+  for(const l of m.levels)for(const ref of l.t){
+    if(ref.startsWith("idb:")){try{const d=await idb();d.transaction("f","readwrite").objectStore("f").delete(ref.slice(4))}catch(e){}}
+    else if(assets){try{await assets.delete(ref)}catch(e){}}
+  }
+}
+$("pickFile").onclick=()=>$("file").click();
+async function shrinkImage(file){
+  const MAX=(navigator.maxTouchPoints>0)?4096:8192;
+  try{
+    const bmp=await createImageBitmap(file);const m=Math.max(bmp.width,bmp.height);
+    if(m<=MAX&&file.size<=15e6){bmp.close&&bmp.close();return file}
+    const k=Math.min(1,MAX/m),w=Math.round(bmp.width*k),h=Math.round(bmp.height*k);
+    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(bmp,0,0,w,h);bmp.close&&bmp.close();
+    const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9));
+    if(blob){toast("Карту зменшено до "+w+"×"+h+" для стабільної роботи");return blob}
+  }catch(e){}
+  return file;
+}
+$("file").onchange=async e=>{
+  let f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  if(!/^image\//.test(f.type)){toast("Потрібне зображення (PNG, JPG, WebP)");return}
+  S.calib.a=null;S.calib.b=null;
+  {const pre=PRESETS.find(p=>p.id===ROOT.cur);if(pre&&S.calib.mode==="size"){S.calib.size=pre.size;S.calib.sizeZ=pre.sz||pre.size}}
+  let side=0;try{const u=URL.createObjectURL(f);const pr=new Image();await new Promise((a,b)=>{pr.onload=a;pr.onerror=b;pr.src=u});side=Math.max(pr.naturalWidth,pr.naturalHeight);URL.revokeObjectURL(u)}catch(err){toast("Не вдалося відкрити зображення");return}
+  if(side>2048){
+    const old=S.map;$("pickFile").disabled=true;
+    try{
+      setStatus("Обробка карти…");
+      const m=await buildPyramid(f,(d,t)=>{setStatus("Обробка карти: "+d+" / "+t);$("importProg").textContent="Обробка карти: "+d+" з "+t+" фрагментів. Не закривайте сторінку.";$("importProg").hidden=false});
+      if(imgUrl){URL.revokeObjectURL(imgUrl);imgUrl=null}
+      S.map=m;save();setPyramid(m);tileCache.clear();
+      setStatus(m.levels[0].t[0].startsWith("idb:")?"Карту збережено на цьому пристрої":"Карту збережено");
+      toast("Карту імпортовано");dropPyramid(old);
+    }catch(err){
+      toast("Не вдалося обробити таку велику карту на цьому пристрої. Спробуйте з комп'ютера (Chrome або Edge).");setStatus("Імпорт перервано");
+    }finally{$("pickFile").disabled=false;$("importProg").hidden=true}
+    return;
+  }
+  if(imgUrl)URL.revokeObjectURL(imgUrl);imgUrl=URL.createObjectURL(f);setImage(imgUrl);
+  dropPyramid(S.map);
+  if(assets){
+    try{setStatus("Завантажую карту…");const r=await assets.upload(f);S.map={kind:"asset",id:r.id,url:r.url};save();setStatus("Карту збережено");return}
+    catch(err){toast("Не вдалося зберегти карту в артефакті, зберігаю на пристрої")}
+  }
+  const ok=await idbPut(f);S.map=ok?{kind:"local"}:null;save();
+  if(!ok)toast("Карту показано, але не збережено — браузер не дав місця");
+};
+$("clearMap").onclick=async()=>{dropPyramid(S.map);const pre=PRESETS.find(p=>p.id===ROOT.cur);S.map=pre&&pre.defaultMap?{kind:"none"}:null;await idbDel();if(imgUrl){URL.revokeObjectURL(imgUrl);imgUrl=null}clearImage();save();renderSetup();toast("Карту прибрано")};
+async function restoreImage(){
+  const pre=PRESETS.find(p=>p.id===ROOT.cur);
+  if(!S.map){if(pre&&pre.defaultMap)setImage(pre.defaultMap);else clearImage();return}
+  if(S.map.kind==="none"){clearImage();return}
+  if(S.map.kind==="pyr"&&S.map.levels){tileCache.clear();setPyramid(S.map);return}
+  if(S.map.kind==="asset"&&S.map.id){setImage(S.map.url||("/_blob/"+S.map.id));return}
+  if(S.map.kind==="local"){const b=await idbGet();if(b){if(imgUrl)URL.revokeObjectURL(imgUrl);imgUrl=URL.createObjectURL(b);setImage(imgUrl)}else{clearImage();setStatus("Карта зберігалась на іншому пристрої — завантажте її ще раз")}}
+}
+function setMode(m){
+  S.calib.mode=m;calibPick=null;save();renderSetup();fitKeep();
+}
+function fitKeep(){const w=centerWorld();if(!img)setBlank();centerOnWorld(w.x,w.z);request()}
+$("modeSize").onclick=()=>setMode("size");
+$("modePts").onclick=()=>{if(!img){toast("Спершу завантажте карту");return}setMode("points")};
+function sizeChanged(){save();if(!img){setBlank();fit()}else request()}
+$("size").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(v>=100){const sq=Math.abs(S.calib.sizeZ-S.calib.size)<1;S.calib.size=v;if(sq){S.calib.sizeZ=v;$("sizeZ").value=v}sizeChanged()}});
+$("sizeZ").addEventListener("change",e=>{const v=parseFloat(e.target.value);if(v>=100){S.calib.sizeZ=v;sizeChanged()}});
+$("presetSize").onclick=()=>{const pre=PRESETS.find(p=>p.id===ROOT.cur);const v=curMeta().size||12800;S.calib.size=v;S.calib.sizeZ=(pre&&pre.sz)||v;$("size").value=v;$("sizeZ").value=S.calib.sizeZ;sizeChanged()};
+function fixCalib(key){
+  const p=pxFromScr(W/2,H/2);const old=S.calib[key]||{};
+  S.calib[key]={px:p.px,py:p.py,x:isFinite(old.x)?old.x:NaN,z:isFinite(old.z)?old.z:NaN};
+  calibPick=null;$("placeBtn").textContent="Поставити мітку";save();renderSetup();request();
+  toast("Точку "+key.toUpperCase()+" зафіксовано — впишіть її координати");
+  showTab("setup");
+}
+function renderCalibBox(key){
+  const box=$("box"+key.toUpperCase());box.textContent="";
+  const p=S.calib[key];
+  const t=document.createElement("div");t.className="t";t.textContent="Точка "+key.toUpperCase()+(p?"":" — не зафіксована");box.appendChild(t);
+  const r=document.createElement("div");r.className="row";
+  const mk=(lab,val,f)=>{const d=document.createElement("div");d.className="field";const l=document.createElement("label");l.textContent=lab;const i=document.createElement("input");i.type="number";i.inputMode="decimal";i.step="any";i.value=isFinite(val)?val:"";i.disabled=!p;i.onchange=()=>{const v=parseFloat(i.value);if(S.calib[key]){S.calib[key][f]=isFinite(v)?v:NaN;save();request();renderCalibState()}};l.htmlFor=i.id="c"+key+f;d.append(l,i);return d};
+  r.append(mk("X, м",p?p.x:NaN,"x"),mk("Z, м",p?p.z:NaN,"z"));
+  const b=document.createElement("button");b.className="btn small";b.style.alignSelf="flex-end";b.textContent=p?"Перезафіксувати":"Навести приціл";
+  b.onclick=()=>{calibPick=key;$("placeBtn").textContent="Зафіксувати точку "+key.toUpperCase();toast("Наведіть приціл на точку "+key.toUpperCase()+" і натисніть кнопку під картою")};
+  r.appendChild(b);box.appendChild(r);
+}
+function renderCalibState(){
+  if(S.calib.mode!=="points")return;
+  const ok=ptsOK();setStatusCalib(ok?"Прив'язку за двома точками застосовано":"Поки діє прив'язка «уся карта»: потрібні обидві точки з координатами");
+}
+function setStatusCalib(t){let el=$("calibState");if(!el){el=document.createElement("p");el.id="calibState";el.className="hint";$("ptsBox").appendChild(el)}el.textContent=t}
+function renderSetup(){
+  $("modeSize").setAttribute("aria-pressed",S.calib.mode==="size");$("modePts").setAttribute("aria-pressed",S.calib.mode==="points");
+  $("sizeBox").hidden=S.calib.mode!=="size";$("ptsBox").hidden=S.calib.mode!=="points";
+  $("size").value=mapSize();$("sizeZ").value=mapSizeZ();$("clearMap").hidden=!img;
+  const meta=curMeta(),pre=PRESETS.find(p=>p.id===meta.id);
+  $("presetSize").textContent=meta.name+" "+(meta.size||12800)+(pre&&pre.sz?"×"+pre.sz:"");
+  const sat=pre&&pre.sat;$("satBox").hidden=!sat;
+  if(sat){$("satLink").href=sat;$("satName").textContent=meta.name;}
+  $("sizeHint").textContent="Зображення охоплює весь терен від лівого нижнього кута (0, 0). Вкажіть розмір терену в метрах."+(pre&&pre.note?" "+pre.note:"");
+  $("customRow").hidden=!meta.custom;
+  $("placesToggle").checked=ROOT.showPlaces!==false;
+  $("builtinMap").hidden=!(pre&&pre.defaultMap)||!S.map;
+  if(S.calib.mode==="points"){renderCalibBox("a");renderCalibBox("b");renderCalibState()}
+}
+
+$("builtinMap").onclick=async()=>{dropPyramid(S.map);S.map=null;await idbDel();if(imgUrl){URL.revokeObjectURL(imgUrl);imgUrl=null}S.calib.mode="size";S.calib.size=curMeta().size;S.calib.sizeZ=curMeta().size;save();restoreImage();toast("Повернуто вбудовану карту")};
+
+$("satCopy").onclick=()=>copyText($("satLink").href);
+$("placesToggle").onchange=e=>{ROOT.showPlaces=e.target.checked;save();request()};
+
+/* ---------- backup ---------- */
+async function copyText(t){try{await navigator.clipboard.writeText(t);toast("Скопійовано")}catch(e){$("json").value=t;showTab("setup");$("json").select();toast("Скопіюйте текст із поля")}}
+$("copyJson").onclick=()=>copyText(JSON.stringify({markers:S.markers},null,1));
+$("importJson").onclick=()=>{
+  try{const d=JSON.parse($("json").value);const n=normalize({markers:d.markers||d},mapSize());if(!n.markers.length)throw 0;
+    const ids=new Set(S.markers.map(m=>m.id));for(const m of n.markers){if(ids.has(m.id))m.id=uid();S.markers.push(m)}
+    save();renderAll();$("json").value="";toast("Імпортовано міток: "+n.markers.length)}
+  catch(e){toast("Не схоже на скопійовані мітки — перевірте текст")}
+};
+$("wipe").onclick=async()=>{if(!S.markers.length)return;if(await ask("Видалити всі мітки?","Буде видалено міток: "+S.markers.length+" на терені "+curMeta().name+".","Видалити")){S.markers=[];selectedId=null;save();renderAll()}};
+
+/* ---------- tabs, toast ---------- */
+function showTab(name){
+  for(const b of document.querySelectorAll(".tabs button"))b.setAttribute("aria-selected",b.dataset.tab===name?"true":"false");
+  for(const p of ["marks","fire","setup"])$("pane-"+p).hidden=p!==name;
+  if(name==="fire"){fillSelects();fillShells();$("selShell").dataset.w="";renderFire()}
+  if(name==="setup")renderSetup();
+}
+document.querySelector(".tabs").onclick=e=>{const b=e.target.closest("button");if(b)showTab(b.dataset.tab)};
+let toastT;function toast(t){const el=$("toast");el.textContent=t;el.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("on"),2200)}
+
+function renderAll(){renderList();if(!$("pane-fire").hidden){fillSelects();renderFire()}if(!$("pane-setup").hidden)renderSetup();request()}
+
+/* ---------- modal helper (no native prompt/confirm) ---------- */
+function ask(title,text,yes,fields){
+  return new Promise(res=>{
+    const d=$("ask");$("askTitle").textContent=title;$("askText").textContent=text||"";$("askText").hidden=!text;$("askYes").textContent=yes||"Так";
+    const box=$("askFields");box.textContent="";const inputs=[];
+    for(const f of (fields||[])){const w=document.createElement("div");w.className="field";w.style.marginBottom="8px";const l=document.createElement("label");l.textContent=f.label;const i=document.createElement("input");i.id="ask_"+f.key;l.htmlFor=i.id;if(f.type)i.type=f.type;i.value=f.value||"";w.append(l,i);box.appendChild(w);inputs.push([f.key,i])}
+    let done=false;const finish=v=>{if(done)return;done=true;d.close();res(v)};
+    $("askNo").onclick=()=>finish(null);d.oncancel=()=>finish(null);
+    $("askForm").onsubmit=e=>{e.preventDefault();const out={};for(const [k,i] of inputs)out[k]=i.value;finish(out)};
+    d.showModal();if(inputs[0])inputs[0][1].focus();
+  });
+}
+
+/* ---------- terrains ---------- */
+function fillTerrains(){
+  const sel=$("terrainSel");sel.textContent="";
+  const g1=document.createElement("optgroup");g1.label="Офіційні";
+  const g2=document.createElement("optgroup");g2.label="Мод-карти";
+  const g3=document.createElement("optgroup");g3.label="Мої";
+  for(const t of ROOT.list){const pre=PRESETS.find(p=>p.id===t.id);(t.custom?g3:(pre&&pre.mod)?g2:g1).appendChild(new Option(t.name,t.id))}
+  sel.append(g1,g2);if(g3.children.length)sel.appendChild(g3);
+  sel.add(new Option("+ Інший терен…","__add"));
+  sel.value=ROOT.cur;
+}
+function switchTerrain(id){
+  if(!ROOT.data[id])return;
+  ROOT.cur=id;S=ROOT.data[id];selectedId=null;calibPick=null;$("placeBtn").textContent="Поставити мітку";
+  if(imgUrl){URL.revokeObjectURL(imgUrl);imgUrl=null}
+  img=null;setBlank();fit();save();fillTerrains();renderAll();restoreImage();
+}
+$("terrainSel").onchange=async e=>{
+  const v=e.target.value;
+  if(v==="__add"){
+    e.target.value=ROOT.cur;
+    const r=await ask("Інший терен","Для терену з моду. Розмір можна змінити пізніше у вкладці «Карта».","Додати",[{key:"name",label:"Назва"},{key:"size",label:"Розмір, м",type:"number",value:"10240"}]);
+    const name=r?String(r.name||"").trim().slice(0,40):"";
+    if(!name)return;
+    const sz=parseFloat(r.size);
+    const size=sz>=100?sz:12800;const id="c-"+uid();ROOT.list.push({id,name,size,custom:true});ROOT.data[id]=blankTerrain(size,size);
+    switchTerrain(id);showTab("setup");toast("Додано «"+name+"» — завантажте для нього карту");return;
+  }
+  switchTerrain(v);if(!S.map)toast(curMeta().name+": завантажте карту у вкладці «Карта»");
+};
+$("delTerrain").onclick=async()=>{
+  const m=curMeta();if(!m.custom)return;
+  if(!await ask("Видалити терен?","«"+m.name+"» зникне зі списку разом з мітками і картою.","Видалити"))return;
+  await idbDel();ROOT.list=ROOT.list.filter(t=>t.id!==m.id);delete ROOT.data[m.id];switchTerrain("everon");
+};
+
+/* ---------- boot ---------- */
+loadLocal();
+setBlank();
+fillTerrains();renderAll();restoreImage();
+const cl=window.claude&&typeof window.claude.use==="function"?window.claude:null;
+if(LOCAL)setStatus("Файлова версія: мітки зберігаються в цьому браузері");
+if(cl){
+  cl.use("assets").then(a=>{assets=a}).catch(()=>{});
+  cl.use("db").then(async d=>{
+    if(!d)return;db=d;
+    try{
+      const snap=await db.doc("board/state").get();
+      if(snap.exists){
+        const d0=snap.data();const hadMap=JSON.stringify(S.map),hadCur=ROOT.cur;
+        ROOT=normalizeRoot(d0&&d0.v===2?d0:{data:{everon:d0}});S=ROOT.data[ROOT.cur];
+        try{localStorage.setItem(LS_KEY,JSON.stringify(ROOT))}catch(e){}
+        fillTerrains();if(hadCur!==ROOT.cur){img=null;setBlank();fit()}
+        renderAll();if(JSON.stringify(S.map)!==hadMap||!img)restoreImage();
+        if(!(d0&&d0.v===2)){dbDirty=true;flushDb()}
+      }else{dbDirty=true;flushDb()}
+      setStatus("Мітки синхронізуються");
+    }catch(e){db=null;setStatus("Збереження на цьому пристрої")}
+  }).catch(()=>{});
+}
+})();
+</script>
+</body>
+</html>

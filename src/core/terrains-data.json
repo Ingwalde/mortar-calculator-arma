@@ -1,0 +1,271 @@
+[
+  {
+    "id": "everon",
+    "name": "Everon",
+    "sizeX": 12800,
+    "sizeZ": 12800,
+    "official": true,
+    "tiles": {
+      "base": "https://reforger.recoil.org/map-tiles/everon/",
+      "maxLod": 5
+    },
+    "places": [
+      [
+        "Airport",
+        4893,
+        11801
+      ],
+      [
+        "St Phillipe",
+        4501,
+        10776
+      ],
+      [
+        "Power Plant",
+        5827,
+        9787
+      ],
+      [
+        "St Pierre",
+        9689,
+        1558
+      ],
+      [
+        "Meaux",
+        4518,
+        9468
+      ],
+      [
+        "Tyrone",
+        4949,
+        9076
+      ],
+      [
+        "Andres Beacon",
+        6844,
+        8191
+      ],
+      [
+        "Gravette",
+        4128,
+        7792
+      ],
+      [
+        "Villeneuve",
+        2847,
+        6340
+      ],
+      [
+        "Morton",
+        5137,
+        4010
+      ],
+      [
+        "Lamentin",
+        1281,
+        5947
+      ],
+      [
+        "Chotain",
+        7088,
+        6012
+      ],
+      [
+        "Montignac",
+        4776,
+        7087
+      ],
+      [
+        "Provins",
+        5488,
+        6083
+      ],
+      [
+        "Figari",
+        5256,
+        5341
+      ],
+      [
+        "Camurac",
+        6594,
+        3117
+      ],
+      [
+        "Quarry",
+        8787,
+        3913
+      ],
+      [
+        "Regina",
+        7188,
+        2312
+      ],
+      [
+        "Durras",
+        8826,
+        2746
+      ],
+      [
+        "Farm",
+        5010,
+        9964
+      ],
+      [
+        "Gorey",
+        4845,
+        8089
+      ],
+      [
+        "Sawmill",
+        3114,
+        5222
+      ],
+      [
+        "Chotain Industrial",
+        6456,
+        6487
+      ],
+      [
+        "Hillside",
+        6918,
+        4450
+      ],
+      [
+        "Coastal Base Chotain",
+        7444,
+        6698
+      ],
+      [
+        "Military Base Levie",
+        7477,
+        4302
+      ],
+      [
+        "Military Hospital",
+        3905,
+        8450
+      ],
+      [
+        "Coastal Base Lamentin",
+        1063,
+        6048
+      ],
+      [
+        "Coastal Base Morton",
+        4957,
+        3876
+      ]
+    ],
+    "mapImage": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/everon_sat_z7_full.png",
+    "heightData": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/height_data/everon_height.json"
+  },
+  {
+    "id": "arland",
+    "name": "Arland",
+    "sizeX": 4095,
+    "sizeZ": 4095,
+    "official": true,
+    "tiles": {
+      "base": "https://reforger.recoil.org/map-tiles/arland/",
+      "maxLod": 5
+    },
+    "places": [
+      [
+        "Beauregard",
+        3169,
+        2796
+      ],
+      [
+        "Farm",
+        2209,
+        2909
+      ],
+      [
+        "Airport Base",
+        947,
+        2896
+      ],
+      [
+        "Military Training Base",
+        1413,
+        1858
+      ],
+      [
+        "Arleville",
+        2777,
+        1624
+      ],
+      [
+        "Moss Hill",
+        2293,
+        1224
+      ],
+      [
+        "Signal Hill",
+        2507,
+        2267
+      ]
+    ],
+    "mapImage": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/arland_sat_z6_full.png",
+    "heightData": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/height_data/arland_height.json"
+  },
+  {
+    "id": "kolguyev",
+    "name": "Kolguyev",
+    "sizeX": 12800,
+    "sizeZ": 12800,
+    "official": true,
+    "tiles": {
+      "base": "https://reforger.recoil.org/map-tiles/cain/",
+      "maxLod": 5
+    },
+    "mapImage": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/kolguev_sat_z7_full.png",
+    "heightData": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/height_data/kolguev_height.json"
+  },
+  {
+    "id": "badorb",
+    "name": "Bad Orb",
+    "sizeX": 5120,
+    "sizeZ": 5120,
+    "official": false,
+    "mapImage": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/badorb_sat_z6_full.png",
+    "heightData": null
+  },
+  {
+    "id": "gogland",
+    "name": "Gogland",
+    "sizeX": 12286,
+    "sizeZ": 12286,
+    "official": false,
+    "mapImage": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/gogland_sat_z7_full.png",
+    "heightData": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/height_data/gogland_height.json"
+  },
+  {
+    "id": "bystrany",
+    "name": "Bystrany",
+    "sizeX": 5000,
+    "sizeZ": 5000,
+    "official": false
+  },
+  {
+    "id": "operationrepulse",
+    "name": "Operation Repulse",
+    "sizeX": 10240,
+    "sizeZ": 10240,
+    "official": false
+  },
+  {
+    "id": "ironholdcastle",
+    "name": "Iron Hold Castle",
+    "sizeX": 10240,
+    "sizeZ": 10240,
+    "official": false
+  },
+  {
+    "id": "kirovograd",
+    "name": "Kirovograd",
+    "sizeX": 10240,
+    "sizeZ": 10240,
+    "official": false
+  }
+]

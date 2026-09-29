@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title data-i18n="appTitle">Планшет мінометника</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="app">
+  <div class="map" id="mapWrap">
+    <canvas id="cv" data-i18n-aria-label="canvasAriaLabel" aria-label="Карта. Перетягуйте, щоб рухати; колесо — масштаб; клік — навести приціл."></canvas>
+    <div class="cross" aria-hidden="true"><span class="dot"></span></div>
+    <div class="mapbtns">
+      <button class="btn icon" id="zin" data-i18n-aria-label="zoomInAria" aria-label="Наблизити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="btn icon" id="zout" data-i18n-aria-label="zoomOutAria" aria-label="Віддалити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+      <button class="btn icon" id="fit" data-i18n-aria-label="fitAria" aria-label="Уся карта"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v6h6M20 10V4h-6M4 20l7-7M20 4l-7 7"/></svg></button>
+    </div>
+    <div class="readout">
+      <div class="coords" id="coords"><div class="grid">—</div><div class="m">—</div></div>
+      <button class="btn primary" id="placeBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span id="placeBtnLabel" data-i18n="placeBtn">Поставити мітку</span></button>
+    </div>
+  </div>
+  <header>
+    <div class="hl">
+      <h1 data-i18n="appTitle">Планшет мінометника</h1>
+      <select id="terrainSel" data-i18n-aria-label="terrainAriaLabel" aria-label="Терен"></select>
+      <button class="btn small" id="langBtn" type="button" data-i18n="langToggle">EN</button>
+    </div>
+    <div id="status" data-i18n="statusSaved">Завантаження…</div>
+  </header>
+  <div class="panel">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="marks" data-i18n="tabMarks">Мітки</button>
+        <button role="tab" aria-selected="false" data-tab="fire" data-i18n="tabFire">Розрахунок</button>
+        <button role="tab" aria-selected="false" data-tab="setup" data-i18n="tabSetup">Карта</button>
+        <button role="tab" aria-selected="false" data-tab="about" data-i18n="tabAbout">Про</button>
+      </div>
+
+      <section class="pane" id="pane-marks">
+        <div class="field" style="margin-bottom:10px"><label for="folderSel" data-i18n="folderLabel">Папка / місія</label><select id="folderSel"></select></div>
+        <ul class="list" id="list"></ul>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="addManual" data-i18n="addManualBtn">Додати за координатами</button>
+        </div>
+      </section>
+
+      <section class="pane" id="pane-fire" hidden>
+        <div class="row">
+          <div class="field"><label for="selM" data-i18n="fireLabelMortar">Міномет</label><select id="selM"></select></div>
+          <div class="field"><label for="selT" data-i18n="fireLabelTarget">Ціль</label><select id="selT"></select></div>
+          <div class="field" style="flex-basis:100%"><label for="selShell" data-i18n="fireLabelShell">Снаряд</label><select id="selShell"></select></div>
+        </div>
+        <div id="sol"></div>
+        <details class="tbl" id="tblBox">
+          <summary data-i18n="fireTableSummary">Таблиця стрільби</summary>
+          <div class="row" style="margin:6px 0"><div class="field"><label for="selCharge" data-i18n="fireLabelCharge">Заряд</label><select id="selCharge"></select></div></div>
+          <div class="tblwrap" id="rtable"></div>
+        </details>
+        <p class="hint" style="margin-top:14px" id="fireHint"></p>
+      </section>
+
+      <section class="pane" id="pane-setup" hidden>
+        <h2 data-i18n="mapImageHeading">Зображення карти</h2>
+        <p class="hint" data-i18n="mapImageHint">Завантажте скріншот або супутникову карту терену. Без зображення працює порожня сітка — мітки можна ставити за координатами.</p>
+        <div class="row">
+          <input type="file" id="file" accept="image/*" hidden>
+          <button class="btn" id="pickFile" data-i18n="pickFileBtn">Завантажити карту…</button>
+          <button class="btn" id="downloadImport" data-i18n="downloadImportBtn">Завантажити й імпортувати</button>
+          <button class="btn danger" id="clearMap" data-i18n="clearMapBtn">Прибрати карту</button>
+        </div>
+        <p class="hint" id="importProg" hidden style="color:var(--ink);font-weight:600"></p>
+        <p class="hint" id="mapInfo" hidden></p>
+
+        <label class="row" style="margin-top:10px;gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
+        <p class="hint" style="font-size:12px" id="placesHint"></p>
+        <div class="row" style="margin-top:8px" id="customRow" hidden>
+          <button class="btn small danger" id="delTerrain" data-i18n="delTerrainBtn">Видалити цей терен зі списку</button>
+        </div>
+
+        <h2 data-i18n="coordBindingHeading">Прив'язка координат</h2>
+        <div class="seg" role="group" data-i18n-aria-label="coordBindingAria" aria-label="Спосіб прив'язки">
+          <button id="modeSize" aria-pressed="true" data-i18n="modeSizeBtn">Уся карта</button>
+          <button id="modePts" aria-pressed="false" data-i18n="modePtsBtn">Дві точки</button>
+        </div>
+        <div id="sizeBox" class="calibbox">
+          <p class="hint" style="margin-top:0" id="sizeHint" data-i18n="sizeHint">Зображення охоплює весь терен від лівого нижнього кута (0, 0). Вкажіть розмір терену в метрах.</p>
+          <div class="row">
+            <div class="field"><label for="size" data-i18n="fieldSizeX">Ширина X, м</label><input id="size" type="number" inputmode="numeric" min="100" step="1"></div>
+            <div class="field"><label for="sizeZ" data-i18n="fieldSizeZ">Висота Z, м</label><input id="sizeZ" type="number" inputmode="numeric" min="100" step="1"></div>
+            <button class="btn small" id="presetSize" style="align-self:flex-end" data-i18n="presetSizeBtn">Стандарт</button>
+          </div>
+        </div>
+        <div id="ptsBox" hidden>
+          <p class="hint" data-i18n="ptsHint">Наведіть приціл на точку, координати якої знаєте (перетин ліній сітки, кут квадрата), зафіксуйте її і впишіть координати. Дві точки мають бути далеко одна від одної по обох осях.</p>
+          <div class="calibbox" id="boxA"></div>
+          <div class="calibbox" id="boxB"></div>
+        </div>
+
+        <h2 data-i18n="backupHeading">Резервна копія</h2>
+        <p class="hint" data-i18n="backupHint">Мітки зберігаються автоматично. Тут можна скопіювати їх як текст або вставити раніше скопійовані.</p>
+        <textarea id="json" rows="4" data-i18n-placeholder="jsonPlaceholder" placeholder="Вставте JSON, щоб імпортувати"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="copyJson" data-i18n="copyMarksBtn">Копіювати мітки</button>
+          <button class="btn" id="importJson" data-i18n="importBtn">Імпортувати</button>
+          <button class="btn danger" id="wipe" data-i18n="wipeBtn">Видалити всі мітки</button>
+        </div>
+      </section>
+
+      <section class="pane" id="pane-about" hidden>
+        <div class="about"></div>
+      </section>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlgForm">
+    <h3 id="dlgTitle">Мітка</h3>
+    <div class="field" style="margin-bottom:8px"><label for="fName" data-i18n="fieldName">Назва</label><input id="fName" maxlength="40"></div>
+    <div class="seg" id="fType" role="group" data-i18n-aria-label="markTypeAria" aria-label="Тип мітки" style="margin-bottom:8px">
+      <button type="button" data-t="mortar" data-i18n="typeMortar">Міномет</button>
+      <button type="button" data-t="target" data-i18n="typeTarget">Ціль</button>
+      <button type="button" data-t="point" data-i18n="typePoint">Точка</button>
+    </div>
+    <div class="seg" id="fWeapon" role="group" data-i18n-aria-label="fireLabelMortar" aria-label="Міномет" style="margin-bottom:8px">
+      <button type="button" data-w="M252" data-i18n="weaponM252">M252 (США, 81 мм)</button>
+      <button type="button" data-w="2B14" data-i18n="weapon2B14">2Б14 «Піднос» (82 мм)</button>
+    </div>
+    <div class="field" style="margin-bottom:8px"><label for="fGrid" data-i18n="fieldGrid">Сітка (напр. 0483 1172) — заповнить X і Z</label><input id="fGrid" autocomplete="off"></div>
+    <div class="row">
+      <div class="field"><label for="fX" data-i18n="fieldX">X, м (схід)</label><input id="fX" type="number" inputmode="decimal" step="any"></div>
+      <div class="field"><label for="fZ" data-i18n="fieldZ">Z, м (північ)</label><input id="fZ" type="number" inputmode="decimal" step="any"></div>
+      <div class="field"><label for="fH" data-i18n="fieldHeight">Висота, м</label><input id="fH" type="number" inputmode="decimal" step="any" data-i18n-placeholder="heightOptional" placeholder="необов'язково"></div>
+    </div>
+    <div class="field" style="margin:8px 0"><label for="fFolder" data-i18n="fieldFolder">Папка / місія</label><input id="fFolder" list="folderList" maxlength="40" data-i18n-placeholder="folderPlaceholder" placeholder="без місії"><datalist id="folderList"></datalist></div>
+    <div class="dlg-actions">
+      <button type="button" class="btn danger" id="fDel" data-i18n="deleteBtn">Видалити</button>
+      <span class="row">
+        <button type="button" class="btn" id="fCancel" data-i18n="cancelBtn">Скасувати</button>
+        <button type="submit" class="btn primary" id="fSave" data-i18n="saveBtn">Зберегти</button>
+      </span>
+    </div>
+  </form>
+</dialog>
+<dialog id="ask">
+  <form method="dialog" id="askForm">
+    <h3 id="askTitle"></h3>
+    <p class="hint" id="askText"></p>
+    <div id="askFields"></div>
+    <div class="dlg-actions" style="justify-content:flex-end">
+      <button type="button" class="btn" id="askNo" data-i18n="cancelBtn">Скасувати</button>
+      <button type="submit" class="btn primary" id="askYes">Так</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module" src="./main.ts"></script>
+</body>
+</html>
