@@ -47,7 +47,11 @@ npm run dist:linux  # AppImage + deb
 Мітки, налаштування, кеш тайлів і дані висот зберігаються в
 `%APPDATA%/mortar-tablet` (Windows) — не в localStorage.
 
-## Ліцензії джерел даних
+## Ліцензія
+
+Код застосунку — [MIT](LICENSE).
+
+### Ліцензії джерел даних
 
 - [EnfusionMapMaker](https://github.com/nickludlam/EnfusionMapMaker) (nickludlam) — APL-SA:
   назви пунктів Everon/Arland, схема онлайн-тайлів.
