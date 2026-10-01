@@ -22,6 +22,7 @@ const DICT: Dict = {
 
   tabMarks: { uk: "Мітки", en: "Marks" },
   tabFire: { uk: "Розрахунок", en: "Solution" },
+  tabLog: { uk: "Журнал", en: "Log" },
   tabSetup: { uk: "Карта", en: "Map" },
   tabAbout: { uk: "Про", en: "About" },
 
@@ -209,7 +210,16 @@ const DICT: Dict = {
   importErrorPrefix: { uk: "Помилка імпорту: {msg}", en: "Import error: {msg}" },
   mapRemoved: { uk: "Карту прибрано", en: "Map removed" },
 
-  yes: { uk: "Так", en: "Yes" }
+  yes: { uk: "Так", en: "Yes" },
+
+  saveToLogBtn: { uk: "Записати в журнал", en: "Save to log" },
+  savedToLog: { uk: "Записано в журнал", en: "Saved to log" },
+  logEmpty: { uk: "Журнал порожній. Натисніть «Записати в журнал» на вкладці «Розрахунок».", en: "The log is empty. Press “Save to log” on the Solution tab." },
+  logEntryMils: { uk: "Азимут {bearing} мілів, підвищення {elevation} мілів", en: "Bearing {bearing} mils, elevation {elevation} mils" },
+  logEntryMeta: { uk: "{weapon}, {shell}, заряд {charge} • {range} м", en: "{weapon}, {shell}, charge {charge} • {range} m" },
+  clearLogBtn: { uk: "Очистити журнал", en: "Clear log" },
+  clearLogTitle: { uk: "Очистити журнал?", en: "Clear the log?" },
+  clearLogText: { uk: "Буде видалено записів: {n} на терені {terrain}.", en: "{n} log entries on {terrain} will be deleted." }
 };
 
 let current: Lang = "uk";

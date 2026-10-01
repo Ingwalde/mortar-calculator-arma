@@ -33,6 +33,7 @@
       <div class="tabs" role="tablist">
         <button role="tab" aria-selected="true" data-tab="marks" data-i18n="tabMarks">Мітки</button>
         <button role="tab" aria-selected="false" data-tab="fire" data-i18n="tabFire">Розрахунок</button>
+        <button role="tab" aria-selected="false" data-tab="log" data-i18n="tabLog">Журнал</button>
         <button role="tab" aria-selected="false" data-tab="setup" data-i18n="tabSetup">Карта</button>
         <button role="tab" aria-selected="false" data-tab="about" data-i18n="tabAbout">Про</button>
       </div>
@@ -58,6 +59,13 @@
           <div class="tblwrap" id="rtable"></div>
         </details>
         <p class="hint" style="margin-top:14px" id="fireHint"></p>
+      </section>
+
+      <section class="pane" id="pane-log" hidden>
+        <ul class="list" id="logList"></ul>
+        <div class="row" style="margin-top:12px">
+          <button class="btn danger" id="clearLog" data-i18n="clearLogBtn">Очистити журнал</button>
+        </div>
       </section>
 
       <section class="pane" id="pane-setup" hidden>

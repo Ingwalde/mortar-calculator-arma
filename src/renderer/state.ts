@@ -19,6 +19,28 @@ export interface Marker {
 
 export type MapState = { kind: "none" } | { kind: "pyramid"; width: number; height: number };
 
+/** Збережений результат розрахунку вогню — журнал для перегляду пізніше. */
+export interface FireLogEntry {
+  id: string;
+  at: number;
+  mortarName: string;
+  mortarGrid: string;
+  targetName: string;
+  targetGrid: string;
+  weapon: WeaponId;
+  shell: string;
+  charge: number;
+  elevation: number;
+  bearingMils: number;
+  milsPerCircle: number;
+  range: number;
+  heightDiff: number | null;
+  tof: number | null;
+}
+
+/** Найбільша кількість записів журналу на терен — старіші відкидаються. */
+export const FIRE_LOG_LIMIT = 200;
+
 /** Спеціальне значення folder-фільтра: показувати мітки з усіх папок. */
 export const ALL_FOLDERS = "__all";
 
@@ -38,6 +60,8 @@ export interface TerrainState {
   map: MapState | null;
   sel: Selection;
   heights: { rows: number; cols: number } | null;
+  /** Журнал збережених розрахунків вогню, найновіші останні. */
+  fireLog: FireLogEntry[];
 }
 
 export interface CustomTerrainMeta {
@@ -66,7 +90,8 @@ export function blankTerrain(sizeX: number, sizeZ: number): TerrainState {
     calib: { mode: "size", size: sizeX, sizeZ, a: null, b: null },
     map: null,
     sel: { m: null, t: "__center", shell: "HE", charge: null, folder: ALL_FOLDERS },
-    heights: null
+    heights: null,
+    fireLog: []
   };
 }
 
@@ -101,6 +126,31 @@ function normalizeMarker(m: unknown): Marker | null {
   };
 }
 
+function normalizeFireLogEntry(e: unknown): FireLogEntry | null {
+  if (!e || typeof e !== "object") return null;
+  const r = e as Record<string, unknown>;
+  if (!isFinite(Number(r.at)) || !isFinite(Number(r.elevation)) || !isFinite(Number(r.bearingMils))) return null;
+  const heightDiff = r.heightDiff === null || r.heightDiff === undefined ? null : Number(r.heightDiff);
+  const tof = r.tof === null || r.tof === undefined ? null : Number(r.tof);
+  return {
+    id: typeof r.id === "string" ? r.id : uid(),
+    at: Number(r.at),
+    mortarName: typeof r.mortarName === "string" ? r.mortarName.slice(0, 40) : "",
+    mortarGrid: typeof r.mortarGrid === "string" ? r.mortarGrid : "",
+    targetName: typeof r.targetName === "string" ? r.targetName.slice(0, 40) : "",
+    targetGrid: typeof r.targetGrid === "string" ? r.targetGrid : "",
+    weapon: r.weapon === "2B14" ? "2B14" : "M252",
+    shell: typeof r.shell === "string" ? r.shell : "HE",
+    charge: Number(r.charge) || 0,
+    elevation: Number(r.elevation),
+    bearingMils: Number(r.bearingMils),
+    milsPerCircle: isFinite(Number(r.milsPerCircle)) ? Number(r.milsPerCircle) : 6400,
+    range: isFinite(Number(r.range)) ? Number(r.range) : 0,
+    heightDiff: heightDiff !== null && isFinite(heightDiff) ? heightDiff : null,
+    tof: tof !== null && isFinite(tof) ? tof : null
+  };
+}
+
 function normalizeTerrain(d: unknown, sizeX: number, sizeZ: number): TerrainState {
   const n = blankTerrain(sizeX, sizeZ);
   if (d && typeof d === "object") {
@@ -112,6 +162,9 @@ function normalizeTerrain(d: unknown, sizeX: number, sizeZ: number): TerrainStat
     if ("map" in r) n.map = r.map as MapState | null;
     if (r.sel && typeof r.sel === "object") Object.assign(n.sel, r.sel);
     if (r.heights && typeof r.heights === "object") n.heights = r.heights as TerrainState["heights"];
+    if (Array.isArray(r.fireLog)) {
+      n.fireLog = r.fireLog.map(normalizeFireLogEntry).filter((e): e is FireLogEntry => e !== null).slice(-FIRE_LOG_LIMIT);
+    }
   }
   return n;
 }
@@ -211,6 +264,13 @@ export function addCustomTerrain(name: string, sizeX: number, sizeZ: number): st
   ROOT.data[id] = blankTerrain(sizeX, sizeZ);
   scheduleSave();
   return id;
+}
+
+export function addFireLogEntry(entry: Omit<FireLogEntry, "id" | "at">): void {
+  const S = getCurrent();
+  S.fireLog.push({ ...entry, id: uid(), at: Date.now() });
+  if (S.fireLog.length > FIRE_LOG_LIMIT) S.fireLog.splice(0, S.fireLog.length - FIRE_LOG_LIMIT);
+  scheduleSave();
 }
 
 export function removeCustomTerrain(id: string): void {
