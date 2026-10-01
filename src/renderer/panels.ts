@@ -3,6 +3,7 @@ import { PRESETS, findPreset } from "@core/terrains";
 import { TABLES, bearing, shellRange, solve, type WeaponId } from "@core/ballistics";
 import {
   addCustomTerrain,
+  addFireLogEntry,
   ALL_FOLDERS,
   currentMeta,
   getCurrent,
@@ -487,6 +488,32 @@ export function renderFire(): void {
     note.textContent = t("bestChargeNote");
     box.appendChild(note);
     if (S.sel.charge === null || !sols.some((o) => o.charge === S.sel.charge)) S.sel.charge = sols[0].charge;
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "btn small";
+    saveBtn.style.marginTop = "8px";
+    saveBtn.textContent = t("saveToLogBtn");
+    saveBtn.onclick = () => {
+      const best = sols[0];
+      addFireLogEntry({
+        mortarName: p.m.name,
+        mortarGrid: gridRef(p.m.x, p.m.z),
+        targetName: p.t.name,
+        targetGrid: gridRef(p.t.x, p.t.z),
+        weapon: w,
+        shell: S.sel.shell,
+        charge: best.charge,
+        elevation: best.elevation,
+        bearingMils: b.mils,
+        milsPerCircle: weapon.milsPerCircle,
+        range: dist,
+        heightDiff: dh,
+        tof: best.timeOfFlight ?? null
+      });
+      toast(t("savedToLog"));
+      if (!$("pane-log").hidden) renderLog();
+    };
+    box.appendChild(saveBtn);
   }
 
   const note2 = document.createElement("p");
@@ -550,6 +577,63 @@ function renderTable(dist: number | null): void {
   cap.textContent = t("tableCaption", { weapon: weaponName(p.m.w), shell: shellName(S.sel.shell), shellName: shell.name, level: charge.level });
   box.appendChild(cap);
 }
+
+// ---------- fire log ----------
+function renderLog(): void {
+  const ul = $("logList");
+  ul.textContent = "";
+  const S = getCurrent();
+  const entries = [...S.fireLog].reverse();
+  if (!entries.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = t("logEmpty");
+    ul.appendChild(li);
+    return;
+  }
+  for (const e of entries) {
+    const li = document.createElement("li");
+    const badge = document.createElement("div");
+    badge.className = "badge b-mortar";
+    const bs = document.createElement("span");
+    bs.textContent = t("badgeMortar");
+    badge.appendChild(bs);
+    const info = document.createElement("div");
+    info.className = "info";
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = `${e.mortarName} ${e.mortarGrid}  →  ${e.targetName} ${e.targetGrid}`;
+    const main = document.createElement("div");
+    main.className = "sub";
+    main.textContent = t("logEntryMils", { bearing: e.bearingMils, elevation: e.elevation });
+    const meta = document.createElement("div");
+    meta.className = "sub";
+    meta.textContent =
+      t("logEntryMeta", { weapon: weaponName(e.weapon), shell: shellName(e.shell), charge: e.charge, range: Math.round(e.range) }) +
+      "  •  " + new Date(e.at).toLocaleString();
+    info.append(name, main, meta);
+    const delBtn = document.createElement("button");
+    delBtn.className = "btn small";
+    delBtn.textContent = t("deleteBtn");
+    delBtn.onclick = () => {
+      S.fireLog = S.fireLog.filter((x) => x.id !== e.id);
+      scheduleSave();
+      renderLog();
+    };
+    li.append(badge, info, delBtn);
+    ul.appendChild(li);
+  }
+}
+$<HTMLButtonElement>("clearLog").onclick = async () => {
+  const S = getCurrent();
+  if (!S.fireLog.length) return;
+  const ok = await ask(t("clearLogTitle"), t("clearLogText", { n: S.fireLog.length, terrain: currentMeta().name }), t("deleteBtn"));
+  if (ok) {
+    S.fireLog = [];
+    scheduleSave();
+    renderLog();
+  }
+};
 
 // ---------- setup pane ----------
 function renderSetup(): void {
@@ -741,23 +825,25 @@ function renderStaticHints(): void {
 }
 
 // ---------- tabs ----------
-function showTab(name: "marks" | "fire" | "setup" | "about"): void {
+type TabName = "marks" | "fire" | "log" | "setup" | "about";
+function showTab(name: TabName): void {
   for (const b of document.querySelectorAll<HTMLButtonElement>(".tabs button")) {
     b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
   }
-  for (const p of ["marks", "fire", "setup", "about"]) $("pane-" + p).hidden = p !== name;
+  for (const p of ["marks", "fire", "log", "setup", "about"]) $("pane-" + p).hidden = p !== name;
   if (name === "fire") {
     fillFireSelects();
     fillShellOptions();
     $("selShell").removeAttribute("data-w");
     renderFire();
   }
+  if (name === "log") renderLog();
   if (name === "setup") renderSetup();
   if (name === "about") renderAbout();
 }
 document.querySelector(".tabs")!.addEventListener("click", (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
-  if (b) showTab(b.dataset.tab as "marks" | "fire" | "setup" | "about");
+  if (b) showTab(b.dataset.tab as TabName);
 });
 
 // ---------- terrain select ----------
@@ -830,6 +916,7 @@ export function renderAll(): void {
     fillFireSelects();
     renderFire();
   }
+  if (!$("pane-log").hidden) renderLog();
   if (!$("pane-setup").hidden) renderSetup();
   requestDraw();
 }
