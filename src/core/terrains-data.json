@@ -260,5 +260,12 @@
     "sizeX": 10240,
     "sizeZ": 10240,
     "official": false
+  },
+  {
+    "id": "mogadishu",
+    "name": "Mogadishu",
+    "sizeX": 10240,
+    "sizeZ": 10240,
+    "official": false
   }
 ]
