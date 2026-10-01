@@ -271,8 +271,8 @@
   {
     "id": "mogadishu",
     "name": "Mogadishu",
-    "sizeX": 10240,
-    "sizeZ": 10240,
+    "sizeX": 2290,
+    "sizeZ": 1645,
     "official": false
   }
 ]
