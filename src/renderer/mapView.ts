@@ -53,9 +53,12 @@ export function syncImageSize(): void {
   }
 }
 
+/** Онлайн-тайли — типове джерело для теренів, що їх мають, доки користувач не імпортував
+ * власне зображення (map.kind==="pyramid"). map===null (ще не вирішено) чи {kind:"none"}
+ * (явно прибрав карту) рівнозначні тут — обидва означають "нема свого імпорту". */
 function usesOnlineTiles(): boolean {
   const S = getCurrent();
-  return !S.map && !!currentMeta().preset?.tiles;
+  return S.map?.kind !== "pyramid" && !!currentMeta().preset?.tiles;
 }
 
 function scrFromPx(px: number, py: number) {
@@ -135,14 +138,22 @@ export function requestDraw(): void {
 // ---------- tile image cache ----------
 interface CacheEntry {
   img?: HTMLImageElement;
-  failed?: boolean;
+  failedAt?: number;
 }
+/** Невдалий тайл (мережевий збій, перерваний запит під час HMR тощо) не блокується назавжди —
+ * через цей інтервал наступний draw() пробує завантажити його ще раз. */
+const TILE_RETRY_MS = 4000;
 const tileCache = new Map<string, CacheEntry>();
 function loadTile(url: string, fetchIt = true): HTMLImageElement | null {
   let e = tileCache.get(url);
   if (e) {
-    if (e.failed) return null;
-    return e.img ?? null;
+    if (e.failedAt !== undefined) {
+      if (Date.now() - e.failedAt < TILE_RETRY_MS) return null;
+      tileCache.delete(url);
+      e = undefined;
+    } else {
+      return e.img ?? null;
+    }
   }
   if (!fetchIt) return null;
   e = {};
@@ -154,7 +165,8 @@ function loadTile(url: string, fetchIt = true): HTMLImageElement | null {
     requestDraw();
   };
   im.onerror = () => {
-    e!.failed = true;
+    e!.failedAt = Date.now();
+    setTimeout(requestDraw, TILE_RETRY_MS + 50);
   };
   im.src = url;
   if (tileCache.size > 800) {
