@@ -235,7 +235,10 @@ function drawPyramidLevel(z: number, fetchIt: boolean): boolean {
       const w = PYRAMID_TILE_SIZE * fx * view.k;
       const h = PYRAMID_TILE_SIZE * fy * view.k;
       if (a.sx > W || a.sy > H || a.sx + w < 0 || a.sy + h < 0) continue;
-      const url = `localtile://${meta.id}/${z}/${col}/${row}`;
+      // sharp().tile({layout:"google"}) записує файли як {z}/{рядок}/{колонка}.jpg — не
+      // {z}/{колонка}/{рядок}, як інтуїтивно очікувалось. Для квадратних зображень (rows===cols)
+      // різниці не видно, тому бага не проявлялась на Everon/Kolguyev — лише на непрямокутних.
+      const url = `localtile://${meta.id}/${z}/${row}/${col}`;
       const im = loadTile(url, fetchIt);
       if (im) ctx.drawImage(im, a.sx, a.sy, w + 0.6, h + 0.6);
       else all = false;
