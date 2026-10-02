@@ -232,15 +232,21 @@ function drawPyramidLevel(z: number, fetchIt: boolean): boolean {
       const x0 = col * PYRAMID_TILE_SIZE * fx;
       const y0 = row * PYRAMID_TILE_SIZE * fy;
       const a = scrFromPx(x0, y0);
-      const w = PYRAMID_TILE_SIZE * fx * view.k;
-      const h = PYRAMID_TILE_SIZE * fy * view.k;
+      // Крайній (неповний) тайл sharp доповнює білим до повних 256x256 — малюємо лише
+      // реальний вміст (tileSrcW/H), інакше цей "хвіст" з'являється як біла смуга за межею
+      // зображення. Для теренів, де width/height кратні 256 (напр. 32768 = 128×256), крайніх
+      // неповних тайлів нема взагалі, тому цей випадок не проявлявся раніше.
+      const tileSrcW = Math.min(PYRAMID_TILE_SIZE, level.width - col * PYRAMID_TILE_SIZE);
+      const tileSrcH = Math.min(PYRAMID_TILE_SIZE, level.height - row * PYRAMID_TILE_SIZE);
+      const w = tileSrcW * fx * view.k;
+      const h = tileSrcH * fy * view.k;
       if (a.sx > W || a.sy > H || a.sx + w < 0 || a.sy + h < 0) continue;
       // sharp().tile({layout:"google"}) записує файли як {z}/{рядок}/{колонка}.jpg — не
       // {z}/{колонка}/{рядок}, як інтуїтивно очікувалось. Для квадратних зображень (rows===cols)
       // різниці не видно, тому бага не проявлялась на Everon/Kolguyev — лише на непрямокутних.
       const url = `localtile://${meta.id}/${z}/${row}/${col}`;
       const im = loadTile(url, fetchIt);
-      if (im) ctx.drawImage(im, a.sx, a.sy, w + 0.6, h + 0.6);
+      if (im) ctx.drawImage(im, 0, 0, tileSrcW, tileSrcH, a.sx, a.sy, w + 0.6, h + 0.6);
       else all = false;
     }
   }
