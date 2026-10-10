@@ -35,14 +35,6 @@ a{color:inherit}
 
 /* fixed, а не height:100% — на iOS у режимі «на екрані Додому» ланцюжок html→body→100% дає хибну висоту. */
 .app{position:fixed;inset:0;overflow:hidden}
-.ios-standalone .app{bottom:auto;height:var(--app-h)}
-/* Запасний шлях без JS: на iOS у режимі іконки "великий" viewport сягає справжнього низу екрана. */
-@supports (-webkit-touch-callout:none){
-  @media (display-mode:standalone){
-    .app{bottom:auto;height:max(100lvh,var(--app-h,0px))}
-  }
-}
-.ios-standalone .toast{bottom:auto;top:calc(var(--app-h) - 60px - env(safe-area-inset-bottom,0px))}
 .map{position:absolute;inset:0;background:var(--mapblank);overflow:hidden;touch-action:none}
 canvas{display:block;width:100%;height:100%;cursor:grab}
 canvas:active{cursor:grabbing}
@@ -185,6 +177,9 @@ dialog h3{margin:0 0 10px;font-size:18px}
   .coords .grid{font-size:18px}
   .solution-meta{grid-template-columns:1fr 1fr 1fr}
 }
+/* iOS «на екран Додому» з непрозорим статус-баром: верхній відступ уже в системі. */
+html.ios-standalone{--safe-t:0px}
+
 /* Карта на весь екран: лишаються карта, приціл, координати й кнопки масштабу. */
 .app.immersive header,.app.immersive .panel,.app.immersive #placeBtn{display:none}
 .app.immersive .map{inset:0}
@@ -193,5 +188,6 @@ dialog h3{margin:0 0 10px;font-size:18px}
 .app.immersive .coords{flex:0 1 auto}
 .app.immersive .ic-expand{display:none}
 .app.immersive .ic-shrink{display:block}
+html.ios-standalone .app.immersive .mapbtns{top:16px}
 
 @media (prefers-reduced-motion:reduce){.toast,.btn,.tabs button,.seg button{transition:none}}
