@@ -6,7 +6,8 @@
   --glass:color-mix(in srgb,var(--surface) 62%,transparent);
   --glass-strong:color-mix(in srgb,var(--surface) 86%,transparent);
   --glass-border:color-mix(in srgb,var(--ink) 12%,transparent);
-  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  /* Відступи safe-area застосовують самі шапка, панель і тости — не додаємо їх ще й тут, інакше вони подвоюються. */
+  box-sizing:border-box;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -22,7 +23,7 @@
   --mapblank:#1b221d;--focus:#7db0d8;
   --accent:#6ee7a8;--on-accent:#0d1a10;
 }
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{height:100%;overscroll-behavior:none}
 body{margin:0;height:100%;background:var(--bg);color:var(--ink);
   font-family:"IBM Plex Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
   font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
@@ -32,7 +33,8 @@ a{color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 [hidden]{display:none!important}
 
-.app{position:relative;height:100%;overflow:hidden}
+/* fixed, а не height:100% — на iOS у режимі «на екрані Додому» ланцюжок html→body→100% дає хибну висоту. */
+.app{position:fixed;inset:0;overflow:hidden}
 .map{position:absolute;inset:0;background:var(--mapblank);overflow:hidden;touch-action:none}
 canvas{display:block;width:100%;height:100%;cursor:grab}
 canvas:active{cursor:grabbing}
@@ -173,8 +175,8 @@ dialog h3{margin:0 0 10px;font-size:18px}
 /* Карта на весь екран: лишаються карта, приціл, координати й кнопки масштабу. */
 .app.immersive header,.app.immersive .panel,.app.immersive #placeBtn{display:none}
 .app.immersive .map{inset:0}
-.app.immersive .mapbtns{top:16px;right:16px}
-.app.immersive .readout{right:16px}
+.app.immersive .mapbtns{top:calc(16px + env(safe-area-inset-top,0px));right:16px}
+.app.immersive .readout{right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
 .app.immersive .coords{flex:0 1 auto}
 .app.immersive .ic-expand{display:none}
 .app.immersive .ic-shrink{display:block}
