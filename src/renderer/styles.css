@@ -157,8 +157,9 @@ dialog h3{margin:0 0 10px;font-size:18px}
   header h1,#status{display:none}
   #terrainSel{max-width:none;flex:1}
   .hl{flex:1;flex-wrap:nowrap}
-  .map{bottom:calc(var(--sheet-h) + 16px + var(--safe-b))}
-  .panel{left:8px;right:8px;top:auto;bottom:calc(8px + var(--safe-b));width:auto;max-width:none;height:var(--sheet-h);border-radius:20px}
+  .map{bottom:calc(var(--sheet-h) + var(--safe-b))}
+  /* Панель притиснута до низу екрана без зазору; під домашньою смугою iPhone лишається її власний фон. */
+  .panel{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;height:calc(var(--sheet-h) + var(--safe-b));padding-bottom:var(--safe-b);border-radius:20px 20px 0 0;border-bottom:0}
   .app.sheet-collapsed .tabs,.app.sheet-collapsed .pane{display:none}
   .app:not(.dragging) .map,.app:not(.dragging) .panel{transition:bottom .18s ease,height .18s ease}
   .sheet-handle{display:block;flex:0 0 auto;width:100%;height:28px;border:0;background:none;cursor:grab;position:relative;padding:0;touch-action:none}
