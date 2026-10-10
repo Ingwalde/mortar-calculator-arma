@@ -76,7 +76,31 @@ if (typeof (window as { api?: unknown }).api === "undefined") window.api = creat
 
 export const isRemote: boolean = window.api.remote;
 
-if (isRemote) document.documentElement.classList.add("remote");
+if (isRemote) {
+  document.documentElement.classList.add("remote");
+  fixIosStandaloneViewport();
+}
+
+/**
+ * iOS, режим «На екран Додому» (viewport-fit=cover + прозорий статус-бар): вікно сторінки сягає низу
+ * екрана, а layout-viewport (за ним рахуються fixed/100%) коротший на висоту статус-бару — панель
+ * зависає над низом із порожньою смугою. Висоту застосунку беремо з розміру екрана.
+ * Лише iOS: там navigator.standalone є булевим; на Android screen.height включає системні панелі.
+ */
+function fixIosStandaloneViewport(): void {
+  const nav = navigator as Navigator & { standalone?: boolean };
+  if (typeof nav.standalone !== "boolean" || !nav.standalone) return;
+  const root = document.documentElement;
+  root.classList.add("ios-standalone");
+  const apply = (): void => {
+    const portrait = window.innerHeight >= window.innerWidth;
+    const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    root.style.setProperty("--app-h", Math.max(window.innerHeight, full) + "px");
+  };
+  apply();
+  window.addEventListener("resize", apply);
+  window.addEventListener("orientationchange", () => setTimeout(apply, 250));
+}
 
 /** URL тайла онлайн-карти: у Electron — кастомний протокол, у браузері телефона — LAN-сервер. */
 export function onlineTileSrc(terrainId: string, lod: number, x: number, y: number): string {
