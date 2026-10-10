@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from "electron";
 import { join } from "node:path";
 import { registerPrivilegedSchemes, registerProtocolHandlers } from "./protocols";
 import { registerIpcHandlers } from "./ipc";
+import { initLan, shutdownLan } from "./lan";
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
@@ -51,11 +52,16 @@ function createWindow(): void {
 void app.whenReady().then(() => {
   registerProtocolHandlers();
   registerIpcHandlers(() => mainWindow);
+  void initLan();
   createWindow();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on("before-quit", () => {
+  void shutdownLan();
 });
 
 app.on("window-all-closed", () => {

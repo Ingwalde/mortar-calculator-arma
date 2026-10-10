@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#161c18">
 <title data-i18n="appTitle">Планшет мінометника</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
@@ -30,6 +34,7 @@
     <div id="status" data-i18n="statusSaved">Завантаження…</div>
   </header>
   <div class="panel">
+      <button class="sheet-handle" id="sheetHandle" type="button" data-i18n-aria-label="sheetToggleAria" aria-label="Згорнути/розгорнути панель"></button>
       <div class="tabs" role="tablist">
         <button role="tab" aria-selected="true" data-tab="marks" data-i18n="tabMarks">Мітки</button>
         <button role="tab" aria-selected="false" data-tab="fire" data-i18n="tabFire">Розрахунок</button>
@@ -103,6 +108,22 @@
           <p class="hint" data-i18n="ptsHint">Наведіть приціл на точку, координати якої знаєте (перетин ліній сітки, кут квадрата), зафіксуйте її і впишіть координати. Дві точки мають бути далеко одна від одної по обох осях.</p>
           <div class="calibbox" id="boxA"></div>
           <div class="calibbox" id="boxB"></div>
+        </div>
+
+        <div id="lanBox">
+          <h2 data-i18n="lanHeading">Перегляд з телефона</h2>
+          <p class="hint" data-i18n="lanHint"></p>
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="lanToggle"> <span data-i18n="lanToggleLabel">Доступ з локальної мережі</span></label>
+          <div id="lanDetails" hidden>
+            <div class="lan-qr" id="lanQr" role="img" data-i18n-aria-label="lanQrAria" aria-label="QR"></div>
+            <div class="field" style="margin-top:10px"><select id="lanUrlSel" data-i18n-aria-label="lanUrlAria" aria-label="URL"></select></div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="lanCopy" data-i18n="lanCopyBtn">Копіювати посилання</button>
+              <button class="btn" id="lanRegen" data-i18n="lanRegenBtn">Новий ключ</button>
+            </div>
+          </div>
+          <p class="warn" id="lanWarn" hidden></p>
+          <p class="hint" style="font-size:12px" data-i18n="lanSecurity"></p>
         </div>
 
         <h2 data-i18n="backupHeading">Резервна копія</h2>

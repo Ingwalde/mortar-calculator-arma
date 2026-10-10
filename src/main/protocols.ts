@@ -21,48 +21,54 @@ export function pyramidDir(terrainId: string): string {
   return join(app.getPath("userData"), "maps", terrainId);
 }
 
+/** Онлайн-тайл reforger.recoil.org з дисковим кешем; null — нема такого тайла чи мережа недоступна. */
+export async function getOnlineTile(terrainId: string, lod: number, x: number, y: number): Promise<Buffer | null> {
+  const preset = findPreset(terrainId);
+  if (!preset?.tiles || !Number.isInteger(lod) || !Number.isInteger(x) || !Number.isInteger(y)) return null;
+
+  const cachePath = join(tileCacheDir(terrainId), String(lod), String(x), `${y}.jpg`);
+  if (existsSync(cachePath)) return readFile(cachePath);
+
+  try {
+    const remote = await net.fetch(tileUrl(preset.tiles.base, lod, x, y));
+    if (!remote.ok) return null;
+    const buf = Buffer.from(await remote.arrayBuffer());
+    await mkdir(join(tileCacheDir(terrainId), String(lod), String(x)), { recursive: true });
+    await writeFile(cachePath, buf);
+    return buf;
+  } catch {
+    return null;
+  }
+}
+
+/** Тайл імпортованої піраміди (sharp .tile google layout: {z}/{row}/{col}.jpg). */
+export async function getPyramidTile(terrainId: string, z: string, row: string, col: string): Promise<Buffer | null> {
+  // terrainId/z/row/col приходять з URL (в т.ч. з LAN) — лише прості сегменти, без виходу з каталогу піраміди.
+  for (const seg of [terrainId, z, row, col]) if (!/^[A-Za-z0-9_-]+$/.test(seg)) return null;
+  const filePath = join(pyramidDir(terrainId), z, row, `${col}.jpg`);
+  if (!existsSync(filePath)) return null;
+  return readFile(filePath);
+}
+
 const notFound = () => new Response("Not found", { status: 404 });
+const jpeg = (buf: Buffer) => new Response(buf, { headers: { "content-type": "image/jpeg" } });
 
 /** Викликати ПІСЛЯ app.whenReady() — реєструє самі обробники. */
 export function registerProtocolHandlers(): void {
-  // tile://{terrainId}/{lod}/{x}/{y} — онлайн-тайли reforger.recoil.org з дисковим кешем.
+  // tile://{terrainId}/{lod}/{x}/{y} — онлайн-тайли.
   protocol.handle("tile", async (request) => {
     const url = new URL(request.url);
-    const terrainId = url.hostname;
     const [, lodStr, xStr, yStr] = url.pathname.split("/");
-    const lod = Number(lodStr);
-    const x = Number(xStr);
-    const y = Number(yStr);
-    const preset = findPreset(terrainId);
-    if (!preset?.tiles || !Number.isFinite(lod) || !Number.isFinite(x) || !Number.isFinite(y)) return notFound();
-
-    const cachePath = join(tileCacheDir(terrainId), String(lod), String(x), `${y}.jpg`);
-    if (existsSync(cachePath)) {
-      const buf = await readFile(cachePath);
-      return new Response(buf, { headers: { "content-type": "image/jpeg" } });
-    }
-
-    try {
-      const remote = await net.fetch(tileUrl(preset.tiles.base, lod, x, y));
-      if (!remote.ok) return notFound();
-      const buf = Buffer.from(await remote.arrayBuffer());
-      await mkdir(join(tileCacheDir(terrainId), String(lod), String(x)), { recursive: true });
-      await writeFile(cachePath, buf);
-      return new Response(buf, { headers: { "content-type": "image/jpeg" } });
-    } catch {
-      return notFound();
-    }
+    const buf = await getOnlineTile(url.hostname, Number(lodStr), Number(xStr), Number(yStr));
+    return buf ? jpeg(buf) : notFound();
   });
 
-  // localtile://{terrainId}/{z}/{x}/{y} — імпортована піраміда (sharp .tile google layout).
+  // localtile://{terrainId}/{z}/{row}/{col} — імпортована піраміда.
   protocol.handle("localtile", async (request) => {
     const url = new URL(request.url);
-    const terrainId = url.hostname;
-    const [, z, x, y] = url.pathname.split("/");
-    if (!z || !x || !y) return notFound();
-    const filePath = join(pyramidDir(terrainId), z, x, `${y}.jpg`);
-    if (!existsSync(filePath)) return notFound();
-    const buf = await readFile(filePath);
-    return new Response(buf, { headers: { "content-type": "image/jpeg" } });
+    const [, z, row, col] = url.pathname.split("/");
+    if (!z || !row || !col) return notFound();
+    const buf = await getPyramidTile(url.hostname, z, row, col);
+    return buf ? jpeg(buf) : notFound();
   });
 }

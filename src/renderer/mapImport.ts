@@ -4,6 +4,7 @@ import { resetView } from "./mapView";
 import { $, toast } from "./dom";
 import type { MapImportProgress } from "../preload/index";
 import { t } from "./i18n";
+import { isRemote } from "./platform";
 
 const heightCache = new Map<string, HeightGrid | null>();
 let importing = false;
@@ -42,7 +43,7 @@ export async function ensureHeights(onDone: () => void): Promise<void> {
   const S = getCurrent();
   const meta = currentMeta();
   if (!meta.preset?.heightData) return;
-  if (!S.heights) {
+  if (!S.heights && !isRemote) {
     try {
       const info = await window.api.heights.importFromUrl(meta.id, meta.preset.heightData);
       S.heights = info;
@@ -104,7 +105,7 @@ async function runDownloadImport(meta: TerrainMeta, imageUrl: string, onDone: ()
 export async function ensureMapImage(onDone: () => void): Promise<void> {
   const S = getCurrent();
   const meta = currentMeta();
-  if (S.map !== null) return;
+  if (isRemote || S.map !== null) return;
   if (meta.preset?.tiles) return;
   if (!meta.preset?.mapImage) return;
   await runDownloadImport(meta, meta.preset.mapImage, onDone);

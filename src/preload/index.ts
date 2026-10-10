@@ -15,10 +15,31 @@ export interface MapImportResult {
   croppedHeight?: number;
 }
 
+export interface LanInfo {
+  enabled: boolean;
+  port: number;
+  urls: string[];
+  error: string | null;
+}
+
 const api = {
+  /** true лише в веб-версії для телефона (LAN) — там нема імпорту карт і файлових діалогів. */
+  remote: false,
   store: {
     load: (): Promise<unknown> => ipcRenderer.invoke("store:load"),
-    save: (data: unknown): Promise<void> => ipcRenderer.invoke("store:save", data)
+    save: (data: unknown): Promise<void> => ipcRenderer.invoke("store:save", data),
+    /** Стан змінив інший клієнт (телефон) — треба перечитати. */
+    onChanged: (cb: () => void): (() => void) => {
+      const listener = () => cb();
+      ipcRenderer.on("store:changed", listener);
+      return () => ipcRenderer.removeListener("store:changed", listener);
+    }
+  },
+  lan: {
+    info: (): Promise<LanInfo> => ipcRenderer.invoke("lan:info"),
+    setEnabled: (enabled: boolean): Promise<LanInfo> => ipcRenderer.invoke("lan:setEnabled", enabled),
+    regenerate: (): Promise<LanInfo> => ipcRenderer.invoke("lan:regenerate"),
+    qr: (url: string): Promise<string> => ipcRenderer.invoke("lan:qr", url)
   },
   dialogs: {
     pickImageFile: (): Promise<string | null> => ipcRenderer.invoke("dialog:pickImageFile")

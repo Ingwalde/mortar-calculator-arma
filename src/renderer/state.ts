@@ -248,8 +248,30 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 export function scheduleSave(): void {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
+    saveTimer = undefined;
     void window.api.store.save(ROOT);
   }, 400);
+}
+
+export type ExternalApply = "skipped" | "applied" | "terrain-changed";
+
+/**
+ * Підхоплює стан, збережений іншим клієнтом (телефон <-> ПК). Мова, поточний терен і вибір
+ * (міномет/ціль/снаряд/папка) лишаються локальними — кожен екран рахує своє, а мітки й журнал спільні.
+ * Якщо тут є ще не збережені зміни — нічого не чіпаємо (наш запис піде слідом і перекриє).
+ */
+export function applyExternalState(raw: unknown): ExternalApply {
+  if (saveTimer !== undefined) return "skipped";
+  const next = normalizeRoot(raw);
+  const prev = ROOT;
+  next.lang = prev.lang;
+  for (const id of Object.keys(next.data)) {
+    if (prev.data[id]) next.data[id].sel = prev.data[id].sel;
+  }
+  const terrainStillExists = !!next.data[prev.cur];
+  if (terrainStillExists) next.cur = prev.cur;
+  ROOT = next;
+  return terrainStillExists ? "applied" : "terrain-changed";
 }
 
 export function switchTerrain(id: string): void {

@@ -136,10 +136,33 @@ dialog h3{margin:0 0 10px;font-size:18px}
 .toast.on{opacity:1}
 .about{font-size:14px}
 
+.sheet-handle{display:none}
+.lan-qr{width:200px;max-width:100%;background:#fff;padding:6px;border-radius:12px;margin-top:10px;line-height:0}
+.lan-qr svg{display:block;width:100%;height:auto}
+.lan-qr:empty{display:none}
+/* Веб-версія для телефона: імпорт карт робиться лише в застосунку на ПК. */
+.remote #pickFile,.remote #downloadImport,.remote #clearMap,.remote #lanBox{display:none}
+
 @media (max-width:760px){
-  .panel{left:16px;width:auto;max-width:none;top:auto;height:45vh}
-  .mapbtns,.readout{right:16px}
-  header h1{font-size:15px}
-  #terrainSel{max-width:32vw}
+  :root{--sheet-h:48vh;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px)}
+  @supports (height:1dvh){:root{--sheet-h:min(48dvh,440px)}}
+  header{left:8px;right:8px;top:calc(8px + var(--safe-t));padding:6px 10px;border-radius:16px}
+  header h1,#status{display:none}
+  #terrainSel{max-width:none;flex:1}
+  .hl{flex:1;flex-wrap:nowrap}
+  .map{bottom:calc(var(--sheet-h) + 16px + var(--safe-b))}
+  .app.sheet-collapsed .map{bottom:calc(64px + var(--safe-b))}
+  .panel{left:8px;right:8px;top:auto;bottom:calc(8px + var(--safe-b));width:auto;max-width:none;height:var(--sheet-h);border-radius:20px}
+  .app.sheet-collapsed .panel{height:auto}
+  .app.sheet-collapsed .pane{display:none}
+  .sheet-handle{display:block;flex:0 0 auto;width:100%;height:22px;border:0;background:none;cursor:pointer;position:relative;padding:0}
+  .sheet-handle::after{content:"";position:absolute;left:50%;top:9px;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--muted);opacity:.6}
+  .tabs{margin:0 10px 4px}
+  .tabs button{padding:10px 2px;font-size:12px}
+  .pane{padding:10px 12px 18px}
+  .mapbtns{right:12px;top:calc(64px + var(--safe-t))}
+  .readout{left:8px;right:8px;bottom:12px}
+  .coords .grid{font-size:18px}
+  .solution-meta{grid-template-columns:1fr 1fr 1fr}
 }
 @media (prefers-reduced-motion:reduce){.toast,.btn,.tabs button,.seg button{transition:none}}

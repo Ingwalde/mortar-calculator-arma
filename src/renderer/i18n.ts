@@ -155,6 +155,28 @@ const DICT: Dict = {
   wipeTitle: { uk: "Видалити всі мітки?", en: "Delete all marks?" },
   wipeText: { uk: "Буде видалено міток: {n} на терені {terrain}.", en: "{n} marks on {terrain} will be deleted." },
 
+  sheetToggleAria: { uk: "Згорнути/розгорнути панель", en: "Collapse/expand panel" },
+  lanHeading: { uk: "Перегляд з телефона", en: "Phone view" },
+  lanHint: {
+    uk: "ПК віддає планшет у локальній мережі: відкрийте посилання або відскануйте QR на телефоні (та сама Wi-Fi). Мітки, журнал і карта спільні; розрахунок і вибір цілі на кожному пристрої свої.",
+    en: "This PC serves the tablet on your local network: open the link or scan the QR on your phone (same Wi-Fi). Marks, log and map are shared; the solution and target choice stay per-device."
+  },
+  lanToggleLabel: { uk: "Доступ з локальної мережі", en: "Local network access" },
+  lanQrAria: { uk: "QR-код посилання", en: "Link QR code" },
+  lanUrlAria: { uk: "Посилання для телефона", en: "Link for the phone" },
+  lanCopyBtn: { uk: "Копіювати посилання", en: "Copy link" },
+  lanCopied: { uk: "Посилання скопійовано", en: "Link copied" },
+  lanRegenBtn: { uk: "Новий ключ", en: "New key" },
+  lanRegenTitle: { uk: "Створити новий ключ доступу?", en: "Create a new access key?" },
+  lanRegenText: { uk: "Старі посилання й QR-коди перестануть працювати — телефон треба буде підключити знову.", en: "Old links and QR codes will stop working — the phone must be connected again." },
+  lanRegenDone: { uk: "Новий ключ створено", en: "New key created" },
+  lanNoNetwork: { uk: "Не знайдено мережевого підключення — підключіться до Wi-Fi чи Ethernet.", en: "No network connection found — connect to Wi-Fi or Ethernet." },
+  lanSecurity: {
+    uk: "Будь-хто в цій мережі з посиланням бачить і змінює мітки. Не вмикайте в чужих мережах. Брандмауер Windows при першому вмиканні спитає дозвіл — оберіть «Приватні мережі».",
+    en: "Anyone on this network with the link can see and edit marks. Do not enable on networks you do not trust. Windows Firewall will ask for permission the first time — choose Private networks."
+  },
+  lanError: { uk: "Не вдалося запустити сервер: {msg}", en: "Could not start the server: {msg}" },
+
   pointLabel: { uk: "Точка {k}", en: "Point {k}" },
   pointNotFixed: { uk: " — не зафіксована", en: " — not fixed" },
   refixBtn: { uk: "Перезафіксувати", en: "Re-fix" },

@@ -1,3 +1,4 @@
+import "./platform";
 import { getRoot, loadState, scheduleSave } from "./state";
 import { resetView } from "./mapView";
 import { initPanels } from "./panels";
