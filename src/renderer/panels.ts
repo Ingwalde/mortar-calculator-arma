@@ -11,7 +11,9 @@ import {
   getFolderNames,
   getRoot,
   getVisibleMarkers,
+  markDeleted,
   markersInFolder,
+  setMergedHook,
   removeCustomTerrain,
   scheduleSave,
   switchTerrain,
@@ -34,6 +36,7 @@ import { $, ask, toast } from "./dom";
 import { ensureHeights, ensureMapImage, getAutoHeight, startMapImportUi } from "./mapImport";
 import { onLangChange, t } from "./i18n";
 import { initImmersive, initSheet } from "./sheet";
+import { initWakeLock } from "./wakeLock";
 import { isRemote } from "./platform";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
@@ -256,6 +259,7 @@ $<HTMLButtonElement>("fDel").onclick = () => {
   if (editing) {
     const S = getCurrent();
     S.markers = S.markers.filter((x) => x.id !== editing!.id);
+    markDeleted(editing.id);
     if (selectedId === editing.id) selectedId = null;
     scheduleSave();
     renderAll();
@@ -283,9 +287,9 @@ $<HTMLFormElement>("dlgForm").addEventListener("submit", (e) => {
     folder: $<HTMLInputElement>("fFolder").value.trim().slice(0, 40)
   };
   const S = getCurrent();
-  if (editing) Object.assign(editing, data);
+  if (editing) Object.assign(editing, data, { u: Date.now() });
   else {
-    const m: Marker = { id: uid(), ...data };
+    const m: Marker = { id: uid(), ...data, u: Date.now() };
     S.markers.push(m);
     selectedId = m.id;
     if (m.type === "mortar") {
@@ -670,6 +674,7 @@ function renderLog(): void {
     delBtn.textContent = t("deleteBtn");
     delBtn.onclick = () => {
       S.fireLog = S.fireLog.filter((x) => x.id !== e.id);
+      markDeleted(e.id);
       scheduleSave();
       renderLog();
     };
@@ -682,6 +687,7 @@ $<HTMLButtonElement>("clearLog").onclick = async () => {
   if (!S.fireLog.length) return;
   const ok = await ask(t("clearLogTitle"), t("clearLogText", { n: S.fireLog.length, terrain: currentMeta().name }), t("deleteBtn"));
   if (ok) {
+    for (const entry of S.fireLog) markDeleted(entry.id);
     S.fireLog = [];
     scheduleSave();
     renderLog();
@@ -827,7 +833,8 @@ $<HTMLButtonElement>("importJson").onclick = () => {
         z: Number(m.z),
         h: m.h === null || m.h === undefined || m.h === "" ? null : Number(m.h),
         w: m.w === "2B14" ? "2B14" : "M252",
-        folder: typeof m.folder === "string" ? m.folder.slice(0, 40) : ""
+        folder: typeof m.folder === "string" ? m.folder.slice(0, 40) : "",
+        u: Date.now()
       };
       S.markers.push(marker);
       count++;
@@ -846,6 +853,7 @@ $<HTMLButtonElement>("wipe").onclick = async () => {
   if (!S.markers.length) return;
   const ok = await ask(t("wipeTitle"), t("wipeText", { n: S.markers.length, terrain: currentMeta().name }), t("deleteBtn"));
   if (ok) {
+    for (const m of S.markers) markDeleted(m.id);
     S.markers = [];
     selectedId = null;
     scheduleSave();
@@ -1042,9 +1050,11 @@ export function initPanels(): void {
   startMapImportUi(() => onTerrainSwitched());
   onLangChange(onLanguageChanged);
   initLanPanel();
+  setMergedHook(() => void reloadFromStore());
   initSheet();
   initImmersive();
   initAboutDialog();
+  initWakeLock();
   // Імпорт карт і калібрування — тільки в застосунку на ПК; на телефоні вкладки «Карта» нема.
   if (isRemote) document.querySelector<HTMLElement>('.tabs [data-tab="setup"]')!.hidden = true;
   window.api.store.onChanged(() => void reloadFromStore());

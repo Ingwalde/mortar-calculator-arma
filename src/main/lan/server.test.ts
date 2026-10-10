@@ -51,6 +51,7 @@ describe("LAN server", () => {
         stored = data;
         saves.push([data, source]);
         srv.notifyChanged(source);
+        return false;
       },
       readHeights: async (id) => (id === "everon" ? new Uint8Array([1, 2, 3]) : null),
       onlineTile: async (id, lod, x, y) => (id === "everon" && lod === 2 && x === 1 && y === 1 ? Buffer.from("jpg") : null),

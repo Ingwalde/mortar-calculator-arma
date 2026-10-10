@@ -17,7 +17,8 @@ export interface LanDeps {
   /** У dev-режимі — адреса Vite dev-сервера, на який проксіюються запити статики. */
   devProxyUrl: string | null;
   loadStore(): Promise<unknown>;
-  saveStore(data: unknown, sourceId: string): Promise<void>;
+  /** true — після злиття клієнту треба перечитати стан. */
+  saveStore(data: unknown, sourceId: string): Promise<boolean>;
   readHeights(terrainId: string): Promise<Uint8Array | null>;
   onlineTile(terrainId: string, lod: number, x: number, y: number): Promise<Buffer | null>;
   pyramidTile(terrainId: string, z: string, row: string, col: string): Promise<Buffer | null>;
@@ -115,7 +116,7 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
     if (deps.devProxyUrl) {
       // Vite віддає файли диска через /@fs/ (у dev так підтягується src/core і vite client) —
       // з LAN дозволяємо лише їх, решту диска не показуємо.
-      if (url.pathname.startsWith("/@fs/") && !/\/(src\/core|node_modules\/vite)\//.test(url.pathname)) {
+      if (url.pathname.startsWith("/@fs/") && !/\/(src\/core|node_modules\/vite|node_modules\/\.vite\/deps)\//.test(url.pathname)) {
         return send(res, 403, "Forbidden");
       }
       try {
@@ -197,8 +198,8 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
         } catch {
           return send(res, 400, "bad json");
         }
-        await deps.saveStore(data, clientId);
-        return send(res, 200, "ok", { "x-rev": String(rev) });
+        const merged = await deps.saveStore(data, clientId);
+        return send(res, 200, "ok", { "x-rev": String(rev), "x-merged": merged ? "1" : "0" });
       }
       return send(res, 405, "method not allowed");
     }
