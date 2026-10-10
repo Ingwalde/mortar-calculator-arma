@@ -860,6 +860,17 @@ function renderAbout(): void {
   const el = document.querySelector("#aboutDlg .about");
   if (!el) return;
   el.innerHTML = t("aboutHtml");
+  if (isRemote) {
+    // Діагностика розкладки на телефоні: якщо щось «пливе», ці числа підкажуть, у чому справа.
+    const nav = navigator as Navigator & { standalone?: boolean };
+    const d = document.createElement("p");
+    d.className = "hint";
+    d.style.fontSize = "12px";
+    d.textContent =
+      `viewport ${innerWidth}×${innerHeight}, screen ${screen.width}×${screen.height}, ` +
+      `standalone ${String(nav.standalone)}, app ${Math.round(document.querySelector(".app")!.getBoundingClientRect().height)}`;
+    el.appendChild(d);
+  }
 }
 
 // ---------- static hints with embedded links ----------
