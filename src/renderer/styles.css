@@ -72,6 +72,7 @@ header h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.01em}
   display:flex;align-items:center;gap:8px;padding:12px 22px;box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 35%,transparent)}
 .btn.primary svg{width:16px;height:16px;flex:0 0 auto}
 .btn.danger{color:var(--target)}
+.btn.primary.save-log{width:100%;justify-content:center}
 .btn.small{min-height:34px;padding:5px 10px;font-size:14px;border-radius:20px}
 
 .panel{position:absolute;top:88px;right:16px;bottom:16px;width:360px;max-width:calc(100vw - 32px);z-index:10;

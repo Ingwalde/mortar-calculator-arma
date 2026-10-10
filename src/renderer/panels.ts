@@ -539,8 +539,8 @@ export function renderFire(): void {
     if (S.sel.charge === null || !sols.some((o) => o.charge === S.sel.charge)) S.sel.charge = sols[0].charge;
 
     const saveBtn = document.createElement("button");
-    saveBtn.className = "btn small";
-    saveBtn.style.marginTop = "8px";
+    saveBtn.className = "btn primary save-log";
+    saveBtn.style.marginTop = "12px";
     saveBtn.textContent = t("saveToLogBtn");
     saveBtn.onclick = () => {
       const best = sols[0];
