@@ -78,28 +78,18 @@ export const isRemote: boolean = window.api.remote;
 
 if (isRemote) {
   document.documentElement.classList.add("remote");
-  fixIosStandaloneViewport();
+  markIosStandalone();
 }
 
 /**
- * iOS, режим «На екран Додому» (viewport-fit=cover + прозорий статус-бар): вікно сторінки сягає низу
- * екрана, а layout-viewport (за ним рахуються fixed/100%) коротший на висоту статус-бару — панель
- * зависає над низом із порожньою смугою. Висоту застосунку беремо з розміру екрана.
- * Лише iOS: там navigator.standalone є булевим; на Android screen.height включає системні панелі.
+ * iOS, режим «На екран Додому»: статус-бар непрозорий (apple-mobile-web-app-status-bar-style=black),
+ * тож вікно сторінки починається під ним і сягає низу екрана. Відступ зверху від статус-бару
+ * тоді вже врахований системою — CSS не має додавати його ще раз (клас ios-standalone).
+ * З прозорим статус-баром iOS віддавав вікно на висоту бару коротшим і лишав порожню смугу знизу.
  */
-function fixIosStandaloneViewport(): void {
+function markIosStandalone(): void {
   const nav = navigator as Navigator & { standalone?: boolean };
-  if (typeof nav.standalone !== "boolean" || !nav.standalone) return;
-  const root = document.documentElement;
-  root.classList.add("ios-standalone");
-  const apply = (): void => {
-    const portrait = window.innerHeight >= window.innerWidth;
-    const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-    root.style.setProperty("--app-h", Math.max(window.innerHeight, full) + "px");
-  };
-  apply();
-  window.addEventListener("resize", apply);
-  window.addEventListener("orientationchange", () => setTimeout(apply, 250));
+  if (nav.standalone === true) document.documentElement.classList.add("ios-standalone");
 }
 
 /** URL тайла онлайн-карти: у Electron — кастомний протокол, у браузері телефона — LAN-сервер. */
