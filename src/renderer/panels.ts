@@ -494,15 +494,16 @@ export function renderFire(): void {
     d.append(kk, vv);
     into.appendChild(d);
   };
-  cell(hero, t("cellAzimuthMils", { circle: weapon.milsPerCircle }), String(b.mils));
+  // Горизонтальна наводка — лише в градусах; підвищення лишається в мілах.
+  cell(hero, t("cellAzimuthDeg"), b.deg.toFixed(1), "°");
   cell(
     hero,
     sols.length ? t("cellElevationMilsCharge", { c: sols[0].charge }) : t("cellElevationMils"),
     sols.length ? String(sols[0].elevation) : "—"
   );
   cell(meta, t("cellRange"), fmtM(dist), t("unitM"));
-  cell(meta, t("cellAzimuth"), b.deg.toFixed(1), "°");
   cell(meta, t("cellHeightDiff"), dh === null ? "—" : (dh > 0 ? "+" : "") + fmtM(dh), dh === null ? undefined : t("unitM"));
+  meta.style.gridTemplateColumns = "1fr 1fr";
   box.append(hero, meta);
 
   if (!sols.length) {
@@ -654,7 +655,8 @@ function renderLog(): void {
     name.textContent = `${e.mortarName} ${e.mortarGrid}  →  ${e.targetName} ${e.targetGrid}`;
     const main = document.createElement("div");
     main.className = "sub";
-    main.textContent = t("logEntryMils", { bearing: e.bearingMils, elevation: e.elevation });
+    const bearingDeg = ((e.bearingMils * 360) / (e.milsPerCircle || 6400)).toFixed(1);
+    main.textContent = t("logEntryDeg", { bearing: bearingDeg, elevation: e.elevation });
     const meta = document.createElement("div");
     meta.className = "sub";
     meta.textContent =
