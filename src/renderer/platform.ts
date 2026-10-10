@@ -78,18 +78,26 @@ export const isRemote: boolean = window.api.remote;
 
 if (isRemote) {
   document.documentElement.classList.add("remote");
-  markIosStandalone();
+  markShortViewport();
 }
 
 /**
- * iOS, режим «На екран Додому»: статус-бар непрозорий (apple-mobile-web-app-status-bar-style=black),
- * тож вікно сторінки починається під ним і сягає низу екрана. Відступ зверху від статус-бару
- * тоді вже врахований системою — CSS не має додавати його ще раз (клас ios-standalone).
- * З прозорим статус-баром iOS віддавав вікно на висоту бару коротшим і лишав порожню смугу знизу.
+ * iOS, режим «На екран Додому» з прозорим статус-баром: вікно сторінки на висоту статус-бару коротше
+ * за екран (innerHeight 797 при screen 844), а нижня смуга лежить поза вікном — сторінка в неї не
+ * малює. Тоді відступ під домашню смугу вже "всередині" смуги, тож CSS не має додавати його ще раз
+ * (клас ios-short), а панель знизу зафарбована кольором фону, щоб зливатися зі смугою.
  */
-function markIosStandalone(): void {
+function markShortViewport(): void {
   const nav = navigator as Navigator & { standalone?: boolean };
-  if (nav.standalone === true) document.documentElement.classList.add("ios-standalone");
+  if (nav.standalone !== true) return;
+  const check = (): void => {
+    const portrait = window.innerHeight >= window.innerWidth;
+    const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    document.documentElement.classList.toggle("ios-short", full - window.innerHeight > 20);
+  };
+  check();
+  window.addEventListener("resize", check);
+  window.addEventListener("orientationchange", () => setTimeout(check, 250));
 }
 
 /** URL тайла онлайн-карти: у Electron — кастомний протокол, у браузері телефона — LAN-сервер. */
