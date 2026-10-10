@@ -96,6 +96,11 @@ li .sub{font-size:13px;color:var(--muted);margin-top:2px}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:110px}
 .field label{font-size:13px;color:var(--muted)}
+/* Розрахунок: ліворуч міномет (папка + вибір), праворуч ціль. */
+.fire-pick{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.fire-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.fire-col .field{min-width:0}
+.fire-col select{text-overflow:ellipsis}
 .field input,.field select,textarea{background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:10px;padding:8px 10px;min-height:40px;width:100%}
 h2{font-size:15px;margin:22px 0 10px;font-weight:600}
 h2:first-child{margin-top:16px}
