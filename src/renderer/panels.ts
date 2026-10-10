@@ -34,6 +34,7 @@ import { $, ask, toast } from "./dom";
 import { ensureHeights, ensureMapImage, getAutoHeight, startMapImportUi } from "./mapImport";
 import { onLangChange, t } from "./i18n";
 import { initImmersive, initSheet } from "./sheet";
+import { isRemote } from "./platform";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
@@ -145,6 +146,11 @@ async function copyText(text: string): Promise<void> {
     await navigator.clipboard.writeText(text);
     toast(t("copied"));
   } catch {
+    if (isRemote) {
+      // На телефоні вкладки «Карта» (з полем резервної копії) нема — показуємо текст у діалозі.
+      await ask(t("copyManualTitle"), "", t("closeBtn"), [{ key: "v", label: t("copyManualLabel"), value: text }]);
+      return;
+    }
     const box = $<HTMLTextAreaElement>("json");
     box.value = text;
     showTab("setup");
@@ -851,7 +857,7 @@ $<HTMLInputElement>("placesToggle").onchange = (e) => {
 
 // ---------- about ----------
 function renderAbout(): void {
-  const el = document.querySelector("#pane-about .about");
+  const el = document.querySelector("#aboutDlg .about");
   if (!el) return;
   el.innerHTML = t("aboutHtml");
 }
@@ -868,12 +874,12 @@ function renderStaticHints(): void {
 }
 
 // ---------- tabs ----------
-type TabName = "marks" | "fire" | "log" | "setup" | "about";
+type TabName = "marks" | "fire" | "log" | "setup";
 function showTab(name: TabName): void {
   for (const b of document.querySelectorAll<HTMLButtonElement>(".tabs button")) {
     b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
   }
-  for (const p of ["marks", "fire", "log", "setup", "about"]) $("pane-" + p).hidden = p !== name;
+  for (const p of ["marks", "fire", "log", "setup"]) $("pane-" + p).hidden = p !== name;
   if (name === "fire") {
     fillFireSelects();
     fillShellOptions();
@@ -885,7 +891,6 @@ function showTab(name: TabName): void {
     renderSetup();
     void refreshLanPanel();
   }
-  if (name === "about") renderAbout();
 }
 document.querySelector(".tabs")!.addEventListener("click", (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
@@ -906,7 +911,8 @@ function fillTerrainSelect(): void {
   for (const c of getRoot().customTerrains) g3.appendChild(new Option(c.name, c.id));
   sel.append(g1, g2);
   if (g3.children.length) sel.appendChild(g3);
-  sel.add(new Option(t("addOtherTerrain"), "__add"));
+  // Налаштування карти (розмір, калібрування, зображення) — лише на ПК, тож і додавати власний терен звідси нема сенсу.
+  if (!isRemote) sel.add(new Option(t("addOtherTerrain"), "__add"));
   sel.value = getRoot().cur;
 }
 $<HTMLSelectElement>("terrainSel").onchange = async (e) => {
@@ -930,7 +936,7 @@ $<HTMLSelectElement>("terrainSel").onchange = async (e) => {
     switchTerrain(id);
     fillTerrainSelect();
     onTerrainSwitched();
-    showTab("setup");
+    if (!isRemote) showTab("setup");
     toast(t("terrainAdded", { name }));
     return;
   }
@@ -995,9 +1001,22 @@ export function renderAll(): void {
 function onLanguageChanged(): void {
   fillTerrainSelect();
   renderStaticHints();
-  if (!$("pane-about").hidden) renderAbout();
+  if ($<HTMLDialogElement>("aboutDlg").open) renderAbout();
   relocalizeLanPanel();
   renderAll();
+}
+
+function initAboutDialog(): void {
+  const dlg = $<HTMLDialogElement>("aboutDlg");
+  $<HTMLButtonElement>("aboutBtn").onclick = () => {
+    renderAbout();
+    dlg.showModal();
+  };
+  $<HTMLButtonElement>("aboutClose").onclick = () => dlg.close();
+  // Клік по затемненню поза вікном теж закриває.
+  dlg.addEventListener("click", (e) => {
+    if (e.target === dlg) dlg.close();
+  });
 }
 
 export function initPanels(): void {
@@ -1010,6 +1029,9 @@ export function initPanels(): void {
   initLanPanel();
   initSheet();
   initImmersive();
+  initAboutDialog();
+  // Імпорт карт і калібрування — тільки в застосунку на ПК; на телефоні вкладки «Карта» нема.
+  if (isRemote) document.querySelector<HTMLElement>('.tabs [data-tab="setup"]')!.hidden = true;
   window.api.store.onChanged(() => void reloadFromStore());
   renderAll();
 }

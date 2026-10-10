@@ -24,7 +24,6 @@ const DICT: Dict = {
   tabFire: { uk: "Розрахунок", en: "Solution" },
   tabLog: { uk: "Журнал", en: "Log" },
   tabSetup: { uk: "Карта", en: "Map" },
-  tabAbout: { uk: "Про", en: "About" },
 
   folderLabel: { uk: "Папка / місія", en: "Folder / mission" },
   allFolders: { uk: "Усі папки", en: "All folders" },
@@ -83,6 +82,10 @@ const DICT: Dict = {
   centerOption: { uk: "Центр прицілу на карті", en: "Crosshair center on map" },
   fireFolderMortar: { uk: "Папка мінометів", en: "Mortar folder" },
   fireFolderTarget: { uk: "Папка цілей", en: "Target folder" },
+  aboutAria: { uk: "Про програму", en: "About" },
+  closeBtn: { uk: "Закрити", en: "Close" },
+  copyManualTitle: { uk: "Скопіюйте вручну", en: "Copy manually" },
+  copyManualLabel: { uk: "Виділіть і скопіюйте текст", en: "Select and copy the text" },
   immersiveAria: { uk: "Карта на весь екран", en: "Full-screen map" },
   immersiveExitAria: { uk: "Повернути інтерфейс", en: "Show interface" },
   noMortars: { uk: "Немає мінометів", en: "No mortars" },

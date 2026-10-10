@@ -35,6 +35,7 @@
       <h1 data-i18n="appTitle">Планшет мінометника</h1>
       <select id="terrainSel" data-i18n-aria-label="terrainAriaLabel" aria-label="Терен"></select>
       <button class="btn small" id="langBtn" type="button" data-i18n="langToggle">EN</button>
+      <button class="btn small icon-only" id="aboutBtn" type="button" data-i18n-aria-label="aboutAria" aria-label="Про програму"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button>
     </div>
     <div id="status" data-i18n="statusSaved">Завантаження…</div>
   </header>
@@ -45,7 +46,6 @@
         <button role="tab" aria-selected="false" data-tab="fire" data-i18n="tabFire">Розрахунок</button>
         <button role="tab" aria-selected="false" data-tab="log" data-i18n="tabLog">Журнал</button>
         <button role="tab" aria-selected="false" data-tab="setup" data-i18n="tabSetup">Карта</button>
-        <button role="tab" aria-selected="false" data-tab="about" data-i18n="tabAbout">Про</button>
       </div>
 
       <section class="pane" id="pane-marks">
@@ -143,9 +143,6 @@
         </div>
       </section>
 
-      <section class="pane" id="pane-about" hidden>
-        <div class="about"></div>
-      </section>
   </div>
 </div>
 
@@ -177,6 +174,12 @@
       </span>
     </div>
   </form>
+</dialog>
+<dialog id="aboutDlg">
+  <div class="about"></div>
+  <div class="dlg-actions" style="justify-content:flex-end">
+    <button type="button" class="btn primary" id="aboutClose" data-i18n="closeBtn">Закрити</button>
+  </div>
 </dialog>
 <dialog id="ask">
   <form method="dialog" id="askForm">
