@@ -81,6 +81,10 @@ const DICT: Dict = {
 
   centerName: { uk: "Центр прицілу", en: "Crosshair center" },
   centerOption: { uk: "Центр прицілу на карті", en: "Crosshair center on map" },
+  fireFolderMortar: { uk: "Папка мінометів", en: "Mortar folder" },
+  fireFolderTarget: { uk: "Папка цілей", en: "Target folder" },
+  immersiveAria: { uk: "Карта на весь екран", en: "Full-screen map" },
+  immersiveExitAria: { uk: "Повернути інтерфейс", en: "Show interface" },
   noMortars: { uk: "Немає мінометів", en: "No mortars" },
   fireEmpty: {
     uk: "Додайте мітку типу «Міномет» — тоді тут з'являться азимут, заряд і кут підвищення.",
