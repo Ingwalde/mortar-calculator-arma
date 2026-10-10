@@ -652,7 +652,8 @@ function renderLog(): void {
     info.className = "info";
     const name = document.createElement("div");
     name.className = "name";
-    name.textContent = `${e.mortarName} ${e.mortarGrid}  →  ${e.targetName} ${e.targetGrid}`;
+    // Назва запису: «вихід - ціль»; координати сітки йдуть у нижній рядок.
+    name.textContent = `${e.mortarName} - ${e.targetName}`;
     const main = document.createElement("div");
     main.className = "sub";
     const bearingDeg = ((e.bearingMils * 360) / (e.milsPerCircle || 6400)).toFixed(1);
@@ -660,6 +661,7 @@ function renderLog(): void {
     const meta = document.createElement("div");
     meta.className = "sub";
     meta.textContent =
+      `${e.mortarGrid} → ${e.targetGrid}  •  ` +
       t("logEntryMeta", { weapon: weaponName(e.weapon), shell: shellName(e.shell), charge: e.charge, range: Math.round(e.range) }) +
       "  •  " + new Date(e.at).toLocaleString();
     info.append(name, main, meta);

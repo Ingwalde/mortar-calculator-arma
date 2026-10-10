@@ -93,6 +93,7 @@ ul.list li.sel{background:color-mix(in srgb,var(--mortar) 16%,transparent)}
 .b-point{background:var(--point)}
 li .info{flex:1;min-width:0;cursor:pointer}
 li .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#logList li .name{white-space:normal;overflow-wrap:anywhere}
 li .sub{font-size:13px;color:var(--muted);margin-top:2px}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:110px}
