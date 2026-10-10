@@ -1,4 +1,4 @@
-import { fmtM, gridRef, parseGrid } from "@core/geometry";
+import { fmtM, gridRef, parseGrid, parseGridCorner } from "@core/geometry";
 import { PRESETS, findPreset } from "@core/terrains";
 import { TABLES, bearing, shellRange, solve, type WeaponId } from "@core/ballistics";
 import {
@@ -760,6 +760,33 @@ function renderCalibBoxes(): void {
     title.className = "t";
     title.textContent = t("pointLabel", { k: key.toUpperCase() }) + (p ? "" : t("pointNotFixed"));
     box.appendChild(title);
+
+    // Швидкий ввід: перетин ліній сітки з ігрової карти (напр. 030 029) заповнює X і Z.
+    const gridWrap = document.createElement("div");
+    gridWrap.className = "field";
+    gridWrap.style.marginBottom = "8px";
+    const gridLabel = document.createElement("label");
+    gridLabel.textContent = t("calibGridLabel");
+    const gridInput = document.createElement("input");
+    gridInput.autocomplete = "off";
+    gridInput.placeholder = "030 029";
+    gridInput.disabled = !p;
+    gridInput.onchange = () => {
+      const g = parseGridCorner(gridInput.value);
+      const c = getCurrent().calib[key];
+      if (!g || !c) {
+        toast(t("calibGridBad"));
+        return;
+      }
+      c.x = g.x;
+      c.z = g.z;
+      scheduleSave();
+      requestDraw();
+      renderCalibBoxes();
+    };
+    gridWrap.append(gridLabel, gridInput);
+    box.appendChild(gridWrap);
+
     const row = document.createElement("div");
     row.className = "row";
     const mk = (label: string, val: number, field: "x" | "z") => {

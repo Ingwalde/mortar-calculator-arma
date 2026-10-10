@@ -183,6 +183,11 @@ const DICT: Dict = {
   },
   lanError: { uk: "Не вдалося запустити сервер: {msg}", en: "Could not start the server: {msg}" },
 
+  calibGridLabel: {
+    uk: "Перетин сітки з карти (напр. 030 029) — заповнить X і Z",
+    en: "Grid intersection from the map (e.g. 030 029) — fills X and Z"
+  },
+  calibGridBad: { uk: "Не схоже на підпис сітки: дві групи цифр однакової довжини", en: "Not a grid reference: two digit groups of equal length" },
   pointLabel: { uk: "Точка {k}", en: "Point {k}" },
   pointNotFixed: { uk: " — не зафіксована", en: " — not fixed" },
   refixBtn: { uk: "Перезафіксувати", en: "Re-fix" },
