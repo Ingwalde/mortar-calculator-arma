@@ -38,7 +38,7 @@ a{color:inherit}
 .map{position:absolute;inset:0;background:var(--mapblank);overflow:hidden;touch-action:none}
 canvas{display:block;width:100%;height:100%;cursor:grab}
 canvas:active{cursor:grabbing}
-.cross{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none;
+.cross{position:absolute;left:50%;top:calc((100% - var(--covered,0px)) / 2);width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none;
   filter:drop-shadow(0 0 1.5px rgba(0,0,0,.85)) drop-shadow(0 0 1.5px rgba(0,0,0,.85))}
 .cross::before,.cross::after{content:"";position:absolute;background:var(--target)}
 .cross::before{left:21px;top:0;width:2px;height:44px;clip-path:polygon(0 0,100% 0,100% 38%,0 38%,0 62%,100% 62%,100% 100%,0 100%)}
@@ -157,8 +157,8 @@ dialog h3{margin:0 0 10px;font-size:18px}
   header h1,#status{display:none}
   #terrainSel{max-width:none;flex:1}
   .hl{flex:1;flex-wrap:nowrap}
-  /* Під час тяги бровки карта "заморожена" (--map-bottom) і не перераховується щокадру — панель просто лежить поверх. */
-  .map{bottom:var(--map-bottom,calc(var(--sheet-h) + var(--safe-b)))}
+  /* Полотно завжди на весь екран; шторка його перекриває, а приціл і координати стоять над нею (--covered). */
+  .app{--covered:calc(var(--sheet-h) + var(--safe-b))}
   /* Панель притиснута до низу екрана без зазору; під домашньою смугою iPhone лишається її власний фон. */
   .panel{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;height:calc(var(--sheet-h) + var(--safe-b));border-radius:20px 20px 0 0;border-bottom:0;background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none}
   .app.sheet-collapsed .tabs,.app.sheet-collapsed .pane{display:none}
@@ -166,6 +166,8 @@ dialog h3{margin:0 0 10px;font-size:18px}
   .app.sheet-collapsed .sheet-handle{height:calc(29px + var(--safe-b))}
   .app.sheet-collapsed .sheet-handle::after{top:11px}
   .app:not(.dragging) .panel{transition:height .18s ease}
+  .app:not(.dragging) .readout{transition:bottom .18s ease}
+  .app:not(.dragging) .cross{transition:top .18s ease}
   .panel{will-change:height}
   .sheet-handle{display:block;flex:0 0 auto;width:100%;height:28px;border:0;background:none;cursor:grab;position:relative;padding:0;touch-action:none}
   .app.dragging .sheet-handle{cursor:grabbing}
@@ -175,7 +177,7 @@ dialog h3{margin:0 0 10px;font-size:18px}
   /* Прокрутка йде аж до низу екрана; нижній відступ дає змогу докрутити останній елемент над домашньою смугою. */
   .pane{padding:10px 12px calc(18px + var(--safe-b))}
   .mapbtns{right:12px;top:calc(64px + var(--safe-t))}
-  .readout{left:8px;right:8px;bottom:12px}
+  .readout{left:8px;right:8px;bottom:calc(var(--covered,0px) + 12px)}
   .coords .grid{font-size:18px}
   .solution-meta{grid-template-columns:1fr 1fr 1fr}
 }
@@ -184,7 +186,7 @@ html.ios-short{--safe-b:0px}
 
 /* Карта на весь екран: лишаються карта, приціл, координати й кнопки масштабу. */
 .app.immersive header,.app.immersive .panel,.app.immersive #placeBtn{display:none}
-.app.immersive .map{inset:0}
+.app.immersive{--covered:0px}
 .app.immersive .mapbtns{top:calc(16px + env(safe-area-inset-top,0px));right:16px}
 .app.immersive .readout{right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
 .app.immersive .coords{flex:0 1 auto}

@@ -5,6 +5,7 @@
  */
 import { $ } from "./dom";
 import { t } from "./i18n";
+import { notifyCoverChanged } from "./mapView";
 
 const STORAGE_KEY = "mortar.sheet";
 /** Висота панелі, коли видно лише бровку. */
@@ -51,6 +52,7 @@ export function initSheet(): void {
     app.classList.toggle("sheet-collapsed", collapsed);
     app.style.setProperty("--sheet-h", (collapsed ? HANDLE_H : height) + "px");
     handle.setAttribute("aria-expanded", String(!collapsed));
+    notifyCoverChanged();
   }
   apply(pref.height, pref.collapsed);
 
@@ -63,13 +65,10 @@ export function initSheet(): void {
 
   /** Висота, яку чекає наступний кадр: оновлюємо стиль не частіше за один раз на кадр. */
   let pendingH: number | null = null;
-  const mapWrap = document.getElementById("mapWrap")!;
 
   handle.addEventListener("pointerdown", (e) => {
     dragging = true;
     moved = false;
-    // Карта не змінює розмір, поки бровку тягнуть: інакше полотно перевиділялось би на кожен рух пальця.
-    app.style.setProperty("--map-bottom", getComputedStyle(mapWrap).bottom);
     startY = e.clientY;
     startH = pref.collapsed ? HANDLE_H : pref.height;
     heightBeforeDrag = pref.height;
@@ -90,6 +89,7 @@ export function initSheet(): void {
       requestAnimationFrame(() => {
         if (pendingH !== null) app.style.setProperty("--sheet-h", pendingH + "px");
         pendingH = null;
+        notifyCoverChanged();
       });
     }
     pendingH = h;
@@ -99,7 +99,6 @@ export function initSheet(): void {
     dragging = false;
     pendingH = null;
     app.classList.remove("dragging");
-    app.style.removeProperty("--map-bottom");
     if (moved) {
       if (pref.collapsed) pref.height = heightBeforeDrag;
       apply(pref.height, pref.collapsed);

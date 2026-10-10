@@ -76,20 +76,46 @@ export function scrFromWorld(x: number, z: number) {
   const p = pxFromWorld(geometry(), x, z);
   return scrFromPx(p.px, p.py);
 }
+/**
+ * Нижню частину полотна може закривати панель-шторка (телефон): полотно завжди на весь екран,
+ * а "видима" висота — без закритого низу. Її віддає CSS-змінна --covered через невидимий зонд.
+ */
+const coverProbe = document.createElement("div");
+coverProbe.style.cssText = "position:absolute;left:0;top:0;width:0;visibility:hidden;pointer-events:none;height:var(--covered,0px)";
+$("mapWrap").appendChild(coverProbe);
+function viewH(): number {
+  return Math.max(1, H - coverProbe.offsetHeight);
+}
+
+let lastViewH = 0;
+
+/**
+ * Шторка рухається: приціл і координати "їдуть" за нею, а світова точка під прицілом лишається та сама
+ * (карта зсувається на пів зміни висоти) — наведена ціль не втікає з-під прицілу, коли відкриваєш панель.
+ */
+export function notifyCoverChanged(): void {
+  const vh = viewH();
+  if (lastViewH) view.oy += (vh - lastViewH) / 2;
+  lastViewH = vh;
+  updateReadout();
+  requestDraw();
+}
+
 export function centerWorld(): Vec2 {
-  return worldFromScr(W / 2, H / 2);
+  return worldFromScr(W / 2, viewH() / 2);
 }
 
 function kLimits() {
-  const fitK = Math.min(W / imgW, H / imgH);
+  const fitK = Math.min(W / imgW, viewH() / imgH);
   return { min: fitK * 0.5, max: Math.max(fitK * 2, 60 * metersPerPx(geometry())) };
 }
 
 export function fit(): void {
   if (!W) return;
-  view.k = Math.min(W / imgW, H / imgH) * 0.96;
+  const vh = viewH();
+  view.k = Math.min(W / imgW, vh / imgH) * 0.96;
   view.ox = (W - imgW * view.k) / 2;
-  view.oy = (H - imgH * view.k) / 2;
+  view.oy = (vh - imgH * view.k) / 2;
   requestDraw();
 }
 
@@ -106,7 +132,7 @@ export function zoomAt(factor: number, sx: number, sy: number): void {
 export function centerOnWorld(x: number, z: number): void {
   const p = pxFromWorld(geometry(), x, z);
   view.ox = W / 2 - p.px * view.k;
-  view.oy = H / 2 - p.py * view.k;
+  view.oy = viewH() / 2 - p.py * view.k;
   requestDraw();
 }
 
@@ -118,7 +144,7 @@ function resize(): void {
   // Світова точка під центром (під прицілом) лишається на місці, коли розмір карти міняється
   // (бровка панелі, режим на весь екран, зміна вікна) — інакше приціл зсувався б із цілі.
   const cx = first ? 0 : (W / 2 - view.ox) / view.k;
-  const cy = first ? 0 : (H / 2 - view.oy) / view.k;
+  const cy = first ? 0 : (viewH() / 2 - view.oy) / view.k;
   W = r.width;
   H = r.height;
   cv.width = Math.round(W * dpr);
@@ -126,8 +152,9 @@ function resize(): void {
   if (first) fit();
   else {
     view.ox = W / 2 - cx * view.k;
-    view.oy = H / 2 - cy * view.k;
+    view.oy = viewH() / 2 - cy * view.k;
   }
+  lastViewH = viewH();
   requestDraw();
 }
 new ResizeObserver(resize).observe($("mapWrap"));
@@ -509,7 +536,7 @@ export interface TapHandlers {
 }
 
 export function centerPx(): { px: number; py: number } {
-  return pxFromScr(W / 2, H / 2);
+  return pxFromScr(W / 2, viewH() / 2);
 }
 let tapHandlers: TapHandlers | null = null;
 export function setTapHandlers(h: TapHandlers): void {
@@ -604,8 +631,8 @@ function tap(x: number, y: number): void {
   centerOnWorld(w.x, w.z);
 }
 
-$<HTMLButtonElement>("zin").onclick = () => zoomAt(1.6, W / 2, H / 2);
-$<HTMLButtonElement>("zout").onclick = () => zoomAt(1 / 1.6, W / 2, H / 2);
+$<HTMLButtonElement>("zin").onclick = () => zoomAt(1.6, W / 2, viewH() / 2);
+$<HTMLButtonElement>("zout").onclick = () => zoomAt(1 / 1.6, W / 2, viewH() / 2);
 $<HTMLButtonElement>("fit").onclick = () => fit();
 
 export function resetView(): void {
