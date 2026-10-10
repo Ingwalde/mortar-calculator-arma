@@ -49,8 +49,12 @@ export interface Selection {
   t: string;
   shell: string;
   charge: number | null;
-  /** Яку папку/місію зараз показуємо в списку, на карті й у розрахунку. */
+  /** Яку папку/місію зараз показуємо в списку й на карті. */
   folder: string;
+  /** З якої папки брати міномети для розрахунку (ALL_FOLDERS = з усіх) — незалежно від folder. */
+  mortarFolder: string;
+  /** З якої папки брати цілі/точки для розрахунку (ALL_FOLDERS = з усіх). */
+  targetFolder: string;
 }
 
 export interface TerrainState {
@@ -89,7 +93,7 @@ export function blankTerrain(sizeX: number, sizeZ: number): TerrainState {
     markers: [],
     calib: { mode: "size", size: sizeX, sizeZ, a: null, b: null },
     map: null,
-    sel: { m: null, t: "__center", shell: "HE", charge: null, folder: ALL_FOLDERS },
+    sel: { m: null, t: "__center", shell: "HE", charge: null, folder: ALL_FOLDERS, mortarFolder: ALL_FOLDERS, targetFolder: ALL_FOLDERS },
     heights: null,
     fireLog: []
   };
@@ -161,6 +165,9 @@ function normalizeTerrain(d: unknown, sizeX: number, sizeZ: number): TerrainStat
     if (r.calib && typeof r.calib === "object") Object.assign(n.calib, r.calib);
     if ("map" in r) n.map = r.map as MapState | null;
     if (r.sel && typeof r.sel === "object") Object.assign(n.sel, r.sel);
+    for (const key of ["folder", "mortarFolder", "targetFolder"] as const) {
+      if (typeof n.sel[key] !== "string") n.sel[key] = ALL_FOLDERS;
+    }
     if (r.heights && typeof r.heights === "object") n.heights = r.heights as TerrainState["heights"];
     if (Array.isArray(r.fireLog)) {
       n.fireLog = r.fireLog.map(normalizeFireLogEntry).filter((e): e is FireLogEntry => e !== null).slice(-FIRE_LOG_LIMIT);
@@ -227,9 +234,14 @@ export function currentMeta(): TerrainMeta {
 
 /** Мітки поточного терену з урахуванням фільтра папки/місії (ALL_FOLDERS = без фільтра). */
 export function getVisibleMarkers(): Marker[] {
+  return markersInFolder(getCurrent().sel.folder);
+}
+
+/** Мітки поточного терену з однієї папки (ALL_FOLDERS = усі). */
+export function markersInFolder(folder: string): Marker[] {
   const S = getCurrent();
-  if (S.sel.folder === ALL_FOLDERS) return S.markers;
-  return S.markers.filter((m) => m.folder === S.sel.folder);
+  if (folder === ALL_FOLDERS) return S.markers;
+  return S.markers.filter((m) => m.folder === folder);
 }
 
 /** Відсортований список назв папок/місій, наявних серед міток поточного терену. */

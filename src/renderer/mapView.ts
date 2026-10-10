@@ -114,11 +114,19 @@ function resize(): void {
   const r = cv.getBoundingClientRect();
   dpr = window.devicePixelRatio || 1;
   const first = W === 0;
+  // Світова точка під центром (під прицілом) лишається на місці, коли розмір карти міняється
+  // (бровка панелі, режим на весь екран, зміна вікна) — інакше приціл зсувався б із цілі.
+  const cx = first ? 0 : (W / 2 - view.ox) / view.k;
+  const cy = first ? 0 : (H / 2 - view.oy) / view.k;
   W = r.width;
   H = r.height;
   cv.width = Math.round(W * dpr);
   cv.height = Math.round(H * dpr);
   if (first) fit();
+  else {
+    view.ox = W / 2 - cx * view.k;
+    view.oy = H / 2 - cy * view.k;
+  }
   requestDraw();
 }
 new ResizeObserver(resize).observe($("mapWrap"));

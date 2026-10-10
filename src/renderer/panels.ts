@@ -11,6 +11,7 @@ import {
   getFolderNames,
   getRoot,
   getVisibleMarkers,
+  markersInFolder,
   removeCustomTerrain,
   scheduleSave,
   switchTerrain,
@@ -32,6 +33,7 @@ import {
 import { $, ask, toast } from "./dom";
 import { ensureHeights, ensureMapImage, getAutoHeight, startMapImportUi } from "./mapImport";
 import { onLangChange, t } from "./i18n";
+import { initImmersive, initSheet } from "./sheet";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
@@ -280,8 +282,15 @@ $<HTMLFormElement>("dlgForm").addEventListener("submit", (e) => {
     const m: Marker = { id: uid(), ...data };
     S.markers.push(m);
     selectedId = m.id;
-    if (m.type === "mortar") S.sel.m = m.id;
-    if (m.type === "target") S.sel.t = m.id;
+    if (m.type === "mortar") {
+      S.sel.m = m.id;
+      // Нова мітка має лишитись доступною в розрахунку, навіть якщо вибрана інша папка.
+      if (S.sel.mortarFolder !== ALL_FOLDERS && S.sel.mortarFolder !== m.folder) S.sel.mortarFolder = ALL_FOLDERS;
+    }
+    if (m.type === "target") {
+      S.sel.t = m.id;
+      if (S.sel.targetFolder !== ALL_FOLDERS && S.sel.targetFolder !== m.folder) S.sel.targetFolder = ALL_FOLDERS;
+    }
   }
   scheduleSave();
   renderAll();
@@ -314,15 +323,15 @@ interface FirePairPoint {
 }
 function firePair(): { m: Marker; t: FirePairPoint } | null {
   const S = getCurrent();
-  const visible = getVisibleMarkers();
-  const m = visible.find((x) => x.id === S.sel.m && x.type === "mortar") ?? visible.find((x) => x.type === "mortar");
+  const mortars = markersInFolder(S.sel.mortarFolder).filter((x) => x.type === "mortar");
+  const m = mortars.find((x) => x.id === S.sel.m) ?? mortars[0];
   if (!m) return null;
   let target: FirePairPoint | null = null;
   if (S.sel.t === "__center") {
     const w = centerWorld();
     target = { x: w.x, z: w.z, h: null, name: t("centerName") };
   } else {
-    const found = visible.find((x) => x.id === S.sel.t);
+    const found = markersInFolder(S.sel.targetFolder).find((x) => x.id === S.sel.t && x.type !== "mortar");
     if (found) target = found;
   }
   if (!target) return null;
@@ -330,14 +339,30 @@ function firePair(): { m: Marker; t: FirePairPoint } | null {
 }
 setDrawCallbacks({ firePair });
 
+/** Папки, у яких є хоча б одна мітка потрібного виду, плюс "усі папки". */
+function fillFolderOptions(sel: HTMLSelectElement, current: string, wantMortar: boolean): string {
+  sel.textContent = "";
+  sel.add(new Option(t("allFolders"), ALL_FOLDERS));
+  const names = new Set(
+    getCurrent()
+      .markers.filter((m) => (m.type === "mortar") === wantMortar)
+      .map((m) => m.folder)
+  );
+  for (const f of [...names].sort((a, b) => a.localeCompare(b, "uk"))) sel.add(new Option(f || t("noFolder"), f));
+  const value = [...sel.options].some((o) => o.value === current) ? current : ALL_FOLDERS;
+  sel.value = value;
+  return value;
+}
+
 function fillFireSelects(): void {
   const S = getCurrent();
-  const visible = getVisibleMarkers();
+  S.sel.mortarFolder = fillFolderOptions($<HTMLSelectElement>("selMFolder"), S.sel.mortarFolder, true);
+  S.sel.targetFolder = fillFolderOptions($<HTMLSelectElement>("selTFolder"), S.sel.targetFolder, false);
   const selM = $<HTMLSelectElement>("selM");
   const selT = $<HTMLSelectElement>("selT");
   selM.textContent = "";
   selT.textContent = "";
-  const mortars = visible.filter((x) => x.type === "mortar");
+  const mortars = markersInFolder(S.sel.mortarFolder).filter((x) => x.type === "mortar");
   if (!mortars.length) {
     selM.add(new Option(t("noMortars"), ""));
     selM.disabled = true;
@@ -348,10 +373,25 @@ function fillFireSelects(): void {
   if (mortars.length && !mortars.some((m) => m.id === S.sel.m)) S.sel.m = mortars[0].id;
   selM.value = S.sel.m ?? "";
   selT.add(new Option(t("centerOption"), "__center"));
-  for (const m of visible.filter((x) => x.type !== "mortar")) selT.add(new Option(m.name, m.id));
+  for (const m of markersInFolder(S.sel.targetFolder).filter((x) => x.type !== "mortar")) selT.add(new Option(m.name, m.id));
   if (![...selT.options].some((o) => o.value === S.sel.t)) S.sel.t = "__center";
   selT.value = S.sel.t;
 }
+function onFireFolderChanged(): void {
+  scheduleSave();
+  fillFireSelects();
+  fillShellOptions();
+  renderFire();
+  requestDraw();
+}
+$<HTMLSelectElement>("selMFolder").onchange = (e) => {
+  getCurrent().sel.mortarFolder = (e.target as HTMLSelectElement).value;
+  onFireFolderChanged();
+};
+$<HTMLSelectElement>("selTFolder").onchange = (e) => {
+  getCurrent().sel.targetFolder = (e.target as HTMLSelectElement).value;
+  onFireFolderChanged();
+};
 $<HTMLSelectElement>("selM").onchange = (e) => {
   getCurrent().sel.m = (e.target as HTMLSelectElement).value;
   scheduleSave();
@@ -830,7 +870,6 @@ function renderStaticHints(): void {
 // ---------- tabs ----------
 type TabName = "marks" | "fire" | "log" | "setup" | "about";
 function showTab(name: TabName): void {
-  document.querySelector(".app")!.classList.remove("sheet-collapsed");
   for (const b of document.querySelectorAll<HTMLButtonElement>(".tabs button")) {
     b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
   }
@@ -969,7 +1008,8 @@ export function initPanels(): void {
   startMapImportUi(() => onTerrainSwitched());
   onLangChange(onLanguageChanged);
   initLanPanel();
-  $<HTMLButtonElement>("sheetHandle").onclick = () => document.querySelector(".app")!.classList.toggle("sheet-collapsed");
+  initSheet();
+  initImmersive();
   window.api.store.onChanged(() => void reloadFromStore());
   renderAll();
 }
