@@ -61,9 +61,15 @@ export function initSheet(): void {
   let dragging = false;
   let moved = false;
 
+  /** Висота, яку чекає наступний кадр: оновлюємо стиль не частіше за один раз на кадр. */
+  let pendingH: number | null = null;
+  const mapWrap = document.getElementById("mapWrap")!;
+
   handle.addEventListener("pointerdown", (e) => {
     dragging = true;
     moved = false;
+    // Карта не змінює розмір, поки бровку тягнуть: інакше полотно перевиділялось би на кожен рух пальця.
+    app.style.setProperty("--map-bottom", getComputedStyle(mapWrap).bottom);
     startY = e.clientY;
     startH = pref.collapsed ? HANDLE_H : pref.height;
     heightBeforeDrag = pref.height;
@@ -78,14 +84,22 @@ export function initSheet(): void {
     app.classList.add("dragging");
     // Під час тяги показуємо реальну висоту; нижче порогу відпустка прилипне до бровки.
     app.classList.remove("sheet-collapsed");
-    app.style.setProperty("--sheet-h", h + "px");
     pref.collapsed = h < SNAP_COLLAPSE;
     if (!pref.collapsed) pref.height = h;
+    if (pendingH === null) {
+      requestAnimationFrame(() => {
+        if (pendingH !== null) app.style.setProperty("--sheet-h", pendingH + "px");
+        pendingH = null;
+      });
+    }
+    pendingH = h;
   });
   const end = () => {
     if (!dragging) return;
     dragging = false;
+    pendingH = null;
     app.classList.remove("dragging");
+    app.style.removeProperty("--map-bottom");
     if (moved) {
       if (pref.collapsed) pref.height = heightBeforeDrag;
       apply(pref.height, pref.collapsed);

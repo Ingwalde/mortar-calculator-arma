@@ -12,7 +12,7 @@ import { PYRAMID_TILE_SIZE, planPyramid, type PyramidPlan } from "@core/tilePyra
 import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
 import { t } from "./i18n";
-import { onlineTileSrc, pyramidTileSrc } from "./platform";
+import { isRemote, onlineTileSrc, pyramidTileSrc } from "./platform";
 
 const cv = $<HTMLCanvasElement>("cv");
 const ctx = cv.getContext("2d")!;
@@ -112,7 +112,8 @@ export function centerOnWorld(x: number, z: number): void {
 
 function resize(): void {
   const r = cv.getBoundingClientRect();
-  dpr = window.devicePixelRatio || 1;
+  // На телефоні (3× екран) полотно в 3× важке для перемальовування щокадру; 2× майже не відрізнити, а тече плавніше.
+  dpr = Math.min(window.devicePixelRatio || 1, isRemote ? 2 : 4);
   const first = W === 0;
   // Світова точка під центром (під прицілом) лишається на місці, коли розмір карти міняється
   // (бровка панелі, режим на весь екран, зміна вікна) — інакше приціл зсувався б із цілі.
