@@ -74,14 +74,24 @@ describe("LAN server", () => {
     expect((await fetch(`${base}/?k=wrong`, { redirect: "manual" })).status).toBe(401);
   });
 
-  it("turns ?k= into an HttpOnly cookie and redirects to a clean URL", async () => {
+  it("turns ?k= into an HttpOnly cookie and keeps serving at the same URL", async () => {
     const res = await fetch(`${base}/?k=${TOKEN}`, { redirect: "manual" });
-    expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe("/");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("planshet");
     const sc = res.headers.get("set-cookie")!;
     expect(sc).toContain(`mk=${TOKEN}`);
     expect(sc).toContain("HttpOnly");
     expect(sc).toContain("SameSite=Strict");
+  });
+
+  it("serves a manifest whose start_url carries the key, and public icons", async () => {
+    expect((await fetch(`${base}/manifest.webmanifest`)).status).toBe(401);
+    const m = await fetch(`${base}/manifest.webmanifest`, { headers: cookie });
+    const json = (await m.json()) as { start_url: string; display: string };
+    expect(json.start_url).toBe(`/?k=${TOKEN}`);
+    expect(json.display).toBe("standalone");
+    // іконки без cookie: файл відсутній у тестовому каталозі, але це 404, а не 401
+    expect((await fetch(`${base}/icons/icon-192.png`)).status).toBe(404);
   });
 
   it("serves static files and blocks path traversal", async () => {

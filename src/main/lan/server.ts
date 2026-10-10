@@ -146,6 +146,10 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", "http://lan.local");
+
+    // Іконки не секретні, а ОС тягне їх при додаванні на головний екран без наших cookie.
+    if (url.pathname.startsWith("/icons/") && (req.method ?? "GET") === "GET") return serveStatic(req, url, res);
+
     const auth = authorized(req, url);
     if (!auth.ok) {
       return send(res, 401, "Потрібне посилання з QR-коду застосунку «Планшет мінометника».", {
@@ -153,15 +157,26 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
       });
     }
     if (auth.viaQuery) {
-      // Токен з посилання → cookie, і чистимо адресний рядок (токен не лишається в історії/Referer).
-      const clean = new URL(url);
-      clean.searchParams.delete("k");
-      res.writeHead(302, {
-        "set-cookie": `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000`,
-        location: clean.pathname + clean.search,
-        "cache-control": "no-store"
-      });
-      return void res.end();
+      // Токен з посилання → cookie. Адресу з ?k= лишаємо як є: саме її iOS запам’ятовує для іконки
+      // на головному екрані (там cookie Safari недоступні), тож запуск з іконки знову поставить cookie.
+      res.setHeader("set-cookie", `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000`);
+    }
+
+    if (url.pathname === "/manifest.webmanifest") {
+      const manifest = {
+        name: "Планшет мінометника",
+        short_name: "Мінометник",
+        start_url: `/?k=${token}`,
+        scope: "/",
+        display: "standalone",
+        background_color: "#161c18",
+        theme_color: "#161c18",
+        icons: [
+          { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+        ]
+      };
+      return send(res, 200, JSON.stringify(manifest), { "content-type": "application/manifest+json; charset=utf-8" });
     }
 
     const path = url.pathname;
