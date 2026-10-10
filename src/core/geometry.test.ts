@@ -5,6 +5,7 @@ import {
   type MapGeometry,
   pad,
   parseGrid,
+  parseGridCorner,
   ptsOK,
   pxFromWorld,
   worldFromPx
@@ -29,6 +30,18 @@ describe("pad / gridRef", () => {
   it("formats a grid reference as two 4-digit groups", () => {
     expect(gridRef(4830, 11720)).toBe("0483 1172");
     expect(gridRef(0, 0)).toBe("0000 0000");
+  });
+});
+
+describe("parseGridCorner", () => {
+  it("returns the grid line intersection, not the cell centre", () => {
+    expect(parseGridCorner("030 029")).toEqual({ x: 3000, z: 2900, res: 100 });
+    expect(parseGridCorner("0483 1172")).toEqual({ x: 4830, z: 11720, res: 10 });
+    expect(parseGridCorner("12,09")).toEqual({ x: 12000, z: 9000, res: 1000 });
+  });
+  it("rejects mismatched digit counts and junk", () => {
+    expect(parseGridCorner("03 029")).toBeNull();
+    expect(parseGridCorner("abc")).toBeNull();
   });
 });
 

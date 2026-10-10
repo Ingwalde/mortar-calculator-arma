@@ -125,6 +125,19 @@ export interface ParsedGrid {
 }
 
 /** Розбір сітки виду "0483 1172" (2–5 цифр на вісь; координата — центр комірки). */
+/**
+ * Підпис сітки як ПЕРЕТИН ліній (кут клітинки), а не її центр: "030 029" на ігровій карті з кроком
+ * 100 м — це X=3000, Z=2900. Потрібно для калібрування за двома перетинами сітки.
+ */
+export function parseGridCorner(t: string): ParsedGrid | null {
+  const m = String(t)
+    .trim()
+    .match(/^(\d{2,5})[\s,;/-]+(\d{2,5})$/);
+  if (!m || m[1].length !== m[2].length) return null;
+  const res = Math.pow(10, 5 - m[1].length);
+  return { x: +m[1] * res, z: +m[2] * res, res };
+}
+
 export function parseGrid(t: string): ParsedGrid | null {
   const m = String(t)
     .trim()
