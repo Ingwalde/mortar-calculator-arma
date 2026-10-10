@@ -159,15 +159,19 @@ dialog h3{margin:0 0 10px;font-size:18px}
   .hl{flex:1;flex-wrap:nowrap}
   .map{bottom:calc(var(--sheet-h) + var(--safe-b))}
   /* Панель притиснута до низу екрана без зазору; під домашньою смугою iPhone лишається її власний фон. */
-  .panel{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;height:calc(var(--sheet-h) + var(--safe-b));padding-bottom:var(--safe-b);border-radius:20px 20px 0 0;border-bottom:0}
+  .panel{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;height:calc(var(--sheet-h) + var(--safe-b));border-radius:20px 20px 0 0;border-bottom:0}
   .app.sheet-collapsed .tabs,.app.sheet-collapsed .pane{display:none}
+  /* Схована панель: бровка займає всю висоту, включно зі смугою під домашньою смугою iPhone. */
+  .app.sheet-collapsed .sheet-handle{height:calc(29px + var(--safe-b))}
+  .app.sheet-collapsed .sheet-handle::after{top:11px}
   .app:not(.dragging) .map,.app:not(.dragging) .panel{transition:bottom .18s ease,height .18s ease}
   .sheet-handle{display:block;flex:0 0 auto;width:100%;height:28px;border:0;background:none;cursor:grab;position:relative;padding:0;touch-action:none}
   .app.dragging .sheet-handle{cursor:grabbing}
   .sheet-handle::after{content:"";position:absolute;left:50%;top:11px;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:var(--muted);opacity:.7}
   .tabs{margin:0 10px 4px}
   .tabs button{padding:10px 2px;font-size:12px}
-  .pane{padding:10px 12px 18px}
+  /* Прокрутка йде аж до низу екрана; нижній відступ дає змогу докрутити останній елемент над домашньою смугою. */
+  .pane{padding:10px 12px calc(18px + var(--safe-b))}
   .mapbtns{right:12px;top:calc(64px + var(--safe-t))}
   .readout{left:8px;right:8px;bottom:12px}
   .coords .grid{font-size:18px}
