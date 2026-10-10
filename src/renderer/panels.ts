@@ -5,6 +5,7 @@ import {
   addCustomTerrain,
   addFireLogEntry,
   ALL_FOLDERS,
+  applyExternalState,
   currentMeta,
   getCurrent,
   getFolderNames,
@@ -25,11 +26,13 @@ import {
   resetView,
   setDrawCallbacks,
   setShowPlaces,
-  setTapHandlers
+  setTapHandlers,
+  syncImageSize
 } from "./mapView";
 import { $, ask, toast } from "./dom";
 import { ensureHeights, ensureMapImage, getAutoHeight, startMapImportUi } from "./mapImport";
 import { onLangChange, t } from "./i18n";
+import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
   return { mortar: t("typeMortar"), target: t("typeTarget"), point: t("typePoint") }[type];
@@ -827,6 +830,7 @@ function renderStaticHints(): void {
 // ---------- tabs ----------
 type TabName = "marks" | "fire" | "log" | "setup" | "about";
 function showTab(name: TabName): void {
+  document.querySelector(".app")!.classList.remove("sheet-collapsed");
   for (const b of document.querySelectorAll<HTMLButtonElement>(".tabs button")) {
     b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
   }
@@ -838,7 +842,10 @@ function showTab(name: TabName): void {
     renderFire();
   }
   if (name === "log") renderLog();
-  if (name === "setup") renderSetup();
+  if (name === "setup") {
+    renderSetup();
+    void refreshLanPanel();
+  }
   if (name === "about") renderAbout();
 }
 document.querySelector(".tabs")!.addEventListener("click", (e) => {
@@ -910,6 +917,31 @@ function onTerrainSwitched(): void {
   void ensureMapImage(renderAll);
 }
 
+function mapKey(): string {
+  return getRoot().cur + ":" + JSON.stringify(getCurrent().map ?? null);
+}
+
+/** Інший клієнт (телефон чи ПК) змінив спільний стан — перечитуємо його й перемальовуємо UI. */
+export async function reloadFromStore(): Promise<void> {
+  const before = mapKey();
+  const result = applyExternalState(await window.api.store.load());
+  if (result === "skipped") return;
+  fillTerrainSelect();
+  if (result === "terrain-changed") {
+    onTerrainSwitched();
+    return;
+  }
+  const S = getCurrent();
+  if (selectedId && !S.markers.some((m) => m.id === selectedId)) {
+    selectedId = null;
+    setDrawCallbacks({ selectedId });
+  }
+  if (editing) editing = S.markers.find((m) => m.id === editing!.id) ?? editing;
+  if (mapKey() !== before) resetView();
+  else syncImageSize();
+  renderAll();
+}
+
 export function renderAll(): void {
   renderMarksList();
   if (!$("pane-fire").hidden) {
@@ -925,6 +957,7 @@ function onLanguageChanged(): void {
   fillTerrainSelect();
   renderStaticHints();
   if (!$("pane-about").hidden) renderAbout();
+  relocalizeLanPanel();
   renderAll();
 }
 
@@ -935,5 +968,8 @@ export function initPanels(): void {
   setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });
   startMapImportUi(() => onTerrainSwitched());
   onLangChange(onLanguageChanged);
+  initLanPanel();
+  $<HTMLButtonElement>("sheetHandle").onclick = () => document.querySelector(".app")!.classList.toggle("sheet-collapsed");
+  window.api.store.onChanged(() => void reloadFromStore());
   renderAll();
 }

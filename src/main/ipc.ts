@@ -2,7 +2,8 @@ import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import { randomUUID } from "node:crypto";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
-import { loadStore, saveStore } from "./store";
+import { loadStore, saveStore, storeEvents, LOCAL_SOURCE } from "./store";
+import { getLanInfo, lanQrSvg, regenerateLanToken, setLanEnabled } from "./lan";
 import { buildTilePyramid, ImportCancelledError, type ImportProgress } from "./tiles/import";
 import { downloadFile } from "./tiles/download";
 import { convertHeightData, heightsPath, readHeights } from "./tiles/heights";
@@ -13,7 +14,17 @@ let currentImport: AbortController | null = null;
 
 export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle("store:load", () => loadStore());
-  ipcMain.handle("store:save", (_e, data: unknown) => saveStore(data));
+  ipcMain.handle("store:save", (_e, data: unknown) => saveStore(data, LOCAL_SOURCE));
+
+  // Телефон (LAN) змінив стан — повідомляємо вікно застосунку, щоб воно перечитало його.
+  storeEvents.on("saved", (source: string) => {
+    if (source !== LOCAL_SOURCE) getWindow()?.webContents.send("store:changed");
+  });
+
+  ipcMain.handle("lan:info", () => getLanInfo());
+  ipcMain.handle("lan:setEnabled", (_e, enabled: boolean) => setLanEnabled(enabled === true));
+  ipcMain.handle("lan:regenerate", () => regenerateLanToken());
+  ipcMain.handle("lan:qr", (_e, url: string) => lanQrSvg(String(url)));
 
   ipcMain.handle("dialog:pickImageFile", async () => {
     const win = getWindow();

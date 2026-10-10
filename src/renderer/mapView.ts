@@ -12,6 +12,7 @@ import { PYRAMID_TILE_SIZE, planPyramid, type PyramidPlan } from "@core/tilePyra
 import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
 import { t } from "./i18n";
+import { onlineTileSrc, pyramidTileSrc } from "./platform";
 
 const cv = $<HTMLCanvasElement>("cv");
 const ctx = cv.getContext("2d")!;
@@ -204,7 +205,7 @@ function drawOnlineLod(lod: number, fetchIt: boolean): void {
   if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) > 400) return;
   for (let tx = tx0; tx <= tx1; tx++) {
     for (let ty = ty0; ty <= ty1; ty++) {
-      const url = `tile://${meta.id}/${lod}/${tx}/${ty}`;
+      const url = onlineTileSrc(meta.id, lod, tx, ty);
       const im = loadTile(url, fetchIt);
       if (!im) continue;
       const a = scrFromWorld(tx * span - 50, (ty + 1) * span - 50);
@@ -244,7 +245,7 @@ function drawPyramidLevel(z: number, fetchIt: boolean): boolean {
       // sharp().tile({layout:"google"}) записує файли як {z}/{рядок}/{колонка}.jpg — не
       // {z}/{колонка}/{рядок}, як інтуїтивно очікувалось. Для квадратних зображень (rows===cols)
       // різниці не видно, тому бага не проявлялась на Everon/Kolguyev — лише на непрямокутних.
-      const url = `localtile://${meta.id}/${z}/${row}/${col}`;
+      const url = pyramidTileSrc(meta.id, z, row, col);
       const im = loadTile(url, fetchIt);
       if (im) ctx.drawImage(im, 0, 0, tileSrcW, tileSrcH, a.sx, a.sy, w + 0.6, h + 0.6);
       else all = false;
