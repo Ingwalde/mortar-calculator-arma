@@ -533,14 +533,14 @@ export function renderFire(): void {
     box.appendChild(table);
     const note = document.createElement("p");
     note.className = "hint";
-    note.style.margin = "6px 0 0";
+    note.style.margin = "10px 0 0";
     note.textContent = t("bestChargeNote");
     box.appendChild(note);
     if (S.sel.charge === null || !sols.some((o) => o.charge === S.sel.charge)) S.sel.charge = sols[0].charge;
 
     const saveBtn = document.createElement("button");
     saveBtn.className = "btn primary save-log";
-    saveBtn.style.marginTop = "12px";
+    saveBtn.style.marginTop = "24px";
     saveBtn.textContent = t("saveToLogBtn");
     saveBtn.onclick = () => {
       const best = sols[0];

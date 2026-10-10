@@ -123,7 +123,7 @@ p.hint{font-size:14px;color:var(--muted);margin:4px 0 12px;max-width:60ch}
 .charges tr.best td{background:color-mix(in srgb,var(--accent) 16%,transparent);font-weight:700}
 .charges td.el{font-size:22px;font-weight:700}
 .tblwrap{overflow-x:auto;margin-top:8px}
-details.tbl{margin-top:16px;border-top:1px solid var(--glass-border);padding-top:8px}
+details.tbl{margin-top:28px;border-top:1px solid var(--glass-border);padding-top:8px}
 details.tbl summary{cursor:pointer;font-weight:600;padding:6px 0}
 .rt{width:100%;border-collapse:collapse;font-size:14px}
 .rt th,.rt td{padding:4px 8px;text-align:right;border-bottom:1px solid var(--glass-border)}
