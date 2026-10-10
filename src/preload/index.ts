@@ -27,7 +27,8 @@ const api = {
   remote: false,
   store: {
     load: (): Promise<unknown> => ipcRenderer.invoke("store:load"),
-    save: (data: unknown): Promise<void> => ipcRenderer.invoke("store:save", data),
+    /** true — стан змінився при злитті з чужими правками, його треба перечитати. */
+    save: (data: unknown): Promise<boolean> => ipcRenderer.invoke("store:save", data),
     /** Стан змінив інший клієнт (телефон) — треба перечитати. */
     onChanged: (cb: () => void): (() => void) => {
       const listener = () => cb();

@@ -32,6 +32,7 @@ function createWebApi(): MortarApi {
         });
         if (!res.ok) throw new Error(`Не вдалося зберегти стан: ${res.status}`);
         lastRev = Number(res.headers.get("x-rev")) || lastRev;
+        return res.headers.get("x-merged") === "1";
       },
       onChanged(cb) {
         const es = new EventSource(`/api/events?c=${encodeURIComponent(clientId)}`);

@@ -15,6 +15,8 @@ export interface Marker {
   w: WeaponId;
   /** Місія/папка — порожній рядок означає "без місії". */
   folder: string;
+  /** Час останньої правки (мс) — за ним зливаються копії з різних пристроїв. */
+  u: number;
 }
 
 export type MapState = { kind: "none" } | { kind: "pyramid"; width: number; height: number };
@@ -66,6 +68,8 @@ export interface TerrainState {
   heights: { rows: number; cols: number } | null;
   /** Журнал збережених розрахунків вогню, найновіші останні. */
   fireLog: FireLogEntry[];
+  /** Надгробки: id видаленої мітки/запису журналу -> час видалення (для злиття між пристроями). */
+  deleted: Record<string, number>;
 }
 
 export interface CustomTerrainMeta {
@@ -82,6 +86,8 @@ export interface RootState {
   cur: string;
   customTerrains: CustomTerrainMeta[];
   data: Record<string, TerrainState>;
+  /** Надгробки видалених власних теренів. */
+  deletedTerrains: Record<string, number>;
 }
 
 export function uid(): string {
@@ -95,7 +101,8 @@ export function blankTerrain(sizeX: number, sizeZ: number): TerrainState {
     map: null,
     sel: { m: null, t: "__center", shell: "HE", charge: null, folder: ALL_FOLDERS, mortarFolder: ALL_FOLDERS, targetFolder: ALL_FOLDERS },
     heights: null,
-    fireLog: []
+    fireLog: [],
+    deleted: {}
   };
 }
 
@@ -107,7 +114,7 @@ function allTerrainMetas(root: RootState): Array<{ id: string; sizeX: number; si
 }
 
 export function blankRoot(): RootState {
-  const root: RootState = { v: 1, showPlaces: true, lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {} };
+  const root: RootState = { v: 1, showPlaces: true, lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
   for (const p of PRESETS) root.data[p.id] = blankTerrain(p.sizeX, p.sizeZ);
   return root;
 }
@@ -126,8 +133,20 @@ function normalizeMarker(m: unknown): Marker | null {
     z: Number(r.z),
     h: isFinite(h as number) ? (h as number) : null,
     w: r.w === "2B14" ? "2B14" : "M252",
-    folder: typeof r.folder === "string" ? r.folder.slice(0, 40) : ""
+    folder: typeof r.folder === "string" ? r.folder.slice(0, 40) : "",
+    u: isFinite(Number(r.u)) ? Number(r.u) : 0
   };
+}
+
+function normalizeTombs(v: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (v && typeof v === "object" && !Array.isArray(v)) {
+    for (const [id, ts] of Object.entries(v as Record<string, unknown>)) {
+      const n = Number(ts);
+      if (isFinite(n) && n > 0) out[id] = n;
+    }
+  }
+  return out;
 }
 
 function normalizeFireLogEntry(e: unknown): FireLogEntry | null {
@@ -172,6 +191,7 @@ function normalizeTerrain(d: unknown, sizeX: number, sizeZ: number): TerrainStat
     if (Array.isArray(r.fireLog)) {
       n.fireLog = r.fireLog.map(normalizeFireLogEntry).filter((e): e is FireLogEntry => e !== null).slice(-FIRE_LOG_LIMIT);
     }
+    n.deleted = normalizeTombs(r.deleted);
   }
   return n;
 }
@@ -201,6 +221,7 @@ export function normalizeRoot(raw: unknown): RootState {
     root.data[meta.id] = normalizeTerrain(dataObj[meta.id], meta.sizeX, meta.sizeZ);
   }
 
+  root.deletedTerrains = normalizeTombs(r.deletedTerrains);
   root.showPlaces = r.showPlaces !== false;
   root.lang = r.lang === "en" ? "en" : "uk";
   root.cur = allTerrainMetas(root).some((m) => m.id === r.cur) ? (r.cur as string) : DEFAULT_TERRAIN_ID;
@@ -257,12 +278,29 @@ export async function loadState(): Promise<void> {
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
+let mergedHook: (() => void) | null = null;
+
+/** Викликається, коли після збереження сервер дозлив у стан чужі правки — UI має перечитати його. */
+export function setMergedHook(hook: () => void): void {
+  mergedHook = hook;
+}
+
 export function scheduleSave(): void {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = undefined;
-    void window.api.store.save(ROOT);
+    void window.api.store
+      .save(ROOT)
+      .then((merged) => {
+        if (merged && mergedHook) mergedHook();
+      })
+      .catch(() => undefined);
   }, 400);
+}
+
+/** Позначає мітку/запис журналу видаленими (надгробок) у поточному тереині. */
+export function markDeleted(id: string): void {
+  getCurrent().deleted[id] = Date.now();
 }
 
 export type ExternalApply = "skipped" | "applied" | "terrain-changed";
@@ -308,6 +346,7 @@ export function addFireLogEntry(entry: Omit<FireLogEntry, "id" | "at">): void {
 }
 
 export function removeCustomTerrain(id: string): void {
+  ROOT.deletedTerrains[id] = Date.now();
   ROOT.customTerrains = ROOT.customTerrains.filter((c) => c.id !== id);
   delete ROOT.data[id];
   if (ROOT.cur === id) ROOT.cur = DEFAULT_TERRAIN_ID;
