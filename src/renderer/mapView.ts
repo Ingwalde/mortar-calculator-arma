@@ -8,6 +8,7 @@ import {
   type Vec2
 } from "@core/geometry";
 import { tileIndexForWorld, tileSpan } from "@core/onlineTiles";
+import { TIER_SCALE, TIER_WEIGHT, type PlaceTier } from "@core/places";
 import { PYRAMID_TILE_SIZE, planPyramid, type PyramidPlan } from "@core/tilePyramid";
 import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
@@ -451,28 +452,42 @@ function drawCalibPoints(c: Record<string, string>): void {
 function drawPlaces(c: Record<string, string>): void {
   const preset = currentMeta().preset;
   if (!getShowPlaces() || !preset?.places) return;
-  ctx.font = '500 11px "IBM Plex Sans Condensed",sans-serif';
   ctx.textBaseline = "middle";
-  for (const p of preset.places) {
-    const s = scrFromWorld(p.x, p.z);
-    if (s.sx < -80 || s.sy < -20 || s.sx > W + 20 || s.sy > H + 20) continue;
-    ctx.fillStyle = c.ink;
-    ctx.beginPath();
-    ctx.arc(s.sx, s.sy, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    const tw = ctx.measureText(p.name).width;
-    ctx.fillStyle = c.surface;
-    ctx.globalAlpha = 0.7;
-    ctx.fillRect(s.sx + 4, s.sy - 7, tw + 6, 14);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = c.ink;
-    ctx.fillText(p.name, s.sx + 7, s.sy);
+  // Головні пункти (тир 1) пишемо найбільшим і жирним шрифтом, другорядні (тир 3) — дрібніше.
+  // Важливіші малюємо останніми, щоб їхні підписи лишались зверху при перекритті.
+  for (const tier of [3, 2, 1] as const) {
+    if (tier > placesLevel) continue;
+    const px = 11 * placesScale * TIER_SCALE[tier];
+    ctx.font = `${TIER_WEIGHT[tier]} ${px.toFixed(1)}px "IBM Plex Sans Condensed",sans-serif`;
+    const boxH = px + 3;
+    for (const p of preset.places) {
+      if (p.tier !== tier) continue;
+      const s = scrFromWorld(p.x, p.z);
+      if (s.sx < -80 || s.sy < -20 || s.sx > W + 20 || s.sy > H + 20) continue;
+      ctx.fillStyle = c.ink;
+      ctx.beginPath();
+      ctx.arc(s.sx, s.sy, (tier === 1 ? 3.2 : 2.5) * Math.max(0.8, placesScale), 0, Math.PI * 2);
+      ctx.fill();
+      const tw = ctx.measureText(p.name).width;
+      ctx.fillStyle = c.surface;
+      ctx.globalAlpha = 0.7;
+      ctx.fillRect(s.sx + 4, s.sy - boxH / 2, tw + 6, boxH);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = c.ink;
+      ctx.fillText(p.name, s.sx + 7, s.sy);
+    }
   }
 }
 
 let showPlaces = true;
 export function setShowPlaces(v: boolean): void {
   showPlaces = v;
+}
+let placesScale = 1;
+let placesLevel: PlaceTier = 3;
+export function setPlacesStyle(scale: number, level: PlaceTier): void {
+  placesScale = scale;
+  placesLevel = level;
 }
 function getShowPlaces(): boolean {
   return showPlaces;
