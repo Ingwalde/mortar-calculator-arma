@@ -27,7 +27,10 @@ const BASE = [
   {
     id: "everon", name: "Everon", sizeX: 12800, sizeZ: 12800, official: true,
     tiles: { base: "https://reforger.recoil.org/map-tiles/everon/", maxLod: 5 },
-    places: [["Airport",4893,11801],["St Phillipe",4501,10776],["Power Plant",5827,9787],["St Pierre",9689,1558],["Meaux",4518,9468],["Tyrone",4949,9076],["Andres Beacon",6844,8191],["Gravette",4128,7792],["Villeneuve",2847,6340],["Morton",5137,4010],["Lamentin",1281,5947],["Chotain",7088,6012],["Montignac",4776,7087],["Provins",5488,6083],["Figari",5256,5341],["Camurac",6594,3117],["Quarry",8787,3913],["Regina",7188,2312],["Durras",8826,2746],["Farm",5010,9964],["Gorey",4845,8089],["Sawmill",3114,5222],["Chotain Industrial",6456,6487],["Hillside",6918,4450],["Coastal Base Chotain",7444,6698],["Military Base Levie",7477,4302],["Military Hospital",3905,8450],["Coastal Base Lamentin",1063,6048],["Coastal Base Morton",4957,3876]]
+    places: [["Airport",4893,11801],["St Phillipe",4501,10776],["Power Plant",5827,9787],["St Pierre",9689,1558],["Meaux",4518,9468],["Tyrone",4949,9076],["Andres Beacon",6844,8191],["Gravette",4128,7792],["Villeneuve",2847,6340],["Morton",5137,4010],["Lamentin",1281,5947],["Chotain",7088,6012],["Montignac",4776,7087],["Provins",5488,6083],["Figari",5256,5341],["Camurac",6594,3117],["Quarry",8787,3913],["Regina",7188,2312],["Durras",8826,2746],["Farm",5010,9964],["Gorey",4845,8089],["Sawmill",3114,5222],["Chotain Industrial",6456,6487],["Hillside",6918,4450],["Coastal Base Chotain",7444,6698],["Military Base Levie",7477,4302],["Military Hospital",3905,8450],["Coastal Base Lamentin",1063,6048],["Coastal Base Morton",4957,3876],
+      // Контрольні точки з reforger.recoil.org/everon (назви без префіксів TownBase/SmallBase/...). Це
+      // центри зон захоплення, тож позиція наближена до населеного пункту, а не точний центр селища.
+      ["Vernon",9128,2292],["Black Lake",9453,2946],["Laruns",7403,5281],["Pennants Pass",8238,2164],["Kermovan",6437,9667],["Simons Wood",6579,5136],["Maidens Bay",5229,10702],["Entre-Deux",6015,7178],["Hornbeam Valley",5377,8334],["Tillers Find",3790,6998],["Richemont",4539,4994],["Shepherds",3295,4471],["Le Moule",2439,5438],["Main Base North",4406,11035],["Main Base South",10173,1540]]
   },
   {
     id: "arland", name: "Arland", sizeX: 4095, sizeZ: 4095, official: true,
