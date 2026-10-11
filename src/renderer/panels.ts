@@ -34,6 +34,7 @@ import {
 } from "./mapView";
 import { $, ask, toast } from "./dom";
 import { ensureHeights, ensureMapImage, getAutoHeight, startMapImportUi } from "./mapImport";
+import { heightAt, onHeightsLoaded } from "./terrainHeight";
 import { onLangChange, t } from "./i18n";
 import { initImmersive, initSheet } from "./sheet";
 import { initWakeLock } from "./wakeLock";
@@ -470,10 +471,17 @@ export function renderFire(): void {
   const dist = Math.hypot(dx, dz);
   lastDist = dist;
   const b = bearing(dx, dz, weapon.milsPerCircle);
-  const dh =
-    p.m.h !== null && isFinite(p.m.h) && p.t.h !== null && p.t.h !== undefined && isFinite(p.t.h)
-      ? p.t.h - p.m.h
-      : null;
+  // Висота: вказана на мітці, інакше — з даних рельєфу (для цілі "центр прицілу" теж).
+  const terr = currentMeta();
+  const heightOf = (pt: { x: number; z: number; h: number | null | undefined }) => {
+    if (pt.h !== null && pt.h !== undefined && isFinite(pt.h)) return { v: pt.h, auto: false };
+    const v = heightAt(terr.id, pt.x, pt.z, terr.sizeX, terr.sizeZ);
+    return v === null ? null : { v, auto: true };
+  };
+  const hm = heightOf(p.m);
+  const ht = heightOf(p.t);
+  const dh = hm && ht ? ht.v - hm.v : null;
+  const heightsFromTerrain = !!(hm && ht && (hm.auto || ht.auto));
   const sols = solve(w, S.sel.shell, Math.round(dist), dh);
 
   box.innerHTML = "";
@@ -509,6 +517,13 @@ export function renderFire(): void {
   cell(meta, t("cellHeightDiff"), dh === null ? "—" : (dh > 0 ? "+" : "") + fmtM(dh), dh === null ? undefined : t("unitM"));
   meta.style.gridTemplateColumns = "1fr 1fr";
   box.append(hero, meta);
+  if (heightsFromTerrain) {
+    const note = document.createElement("p");
+    note.className = "hint";
+    note.style.margin = "8px 0 0";
+    note.textContent = t("heightFromTerrain");
+    box.appendChild(note);
+  }
 
   if (!sols.length) {
     const r = shellRange(w, S.sel.shell);
@@ -1077,6 +1092,7 @@ export function initPanels(): void {
   startMapImportUi(() => onTerrainSwitched());
   onLangChange(onLanguageChanged);
   initLanPanel();
+  onHeightsLoaded(() => renderAll());
   setMergedHook(() => void reloadFromStore());
   initSheet();
   initImmersive();

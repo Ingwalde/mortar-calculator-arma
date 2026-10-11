@@ -183,6 +183,7 @@ const DICT: Dict = {
   },
   lanError: { uk: "Не вдалося запустити сервер: {msg}", en: "Could not start the server: {msg}" },
 
+  heightFromTerrain: { uk: "Висоту (однієї чи обох точок) взято з даних рельєфу карти.", en: "Height (of one or both points) taken from the map's terrain data." },
   calibGridLabel: {
     uk: "Перетин сітки з карти (напр. 030 029) — заповнить X і Z",
     en: "Grid intersection from the map (e.g. 030 029) — fills X and Z"
