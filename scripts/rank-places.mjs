@@ -8,7 +8,8 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 const TOPOS = {
   bystrany: "D:/arma-mods/out/topo/bystrany.topo",
   kirovograd: "D:/arma-mods/out/topo/kirovograd.topo",
-  mogadishu: "D:/arma-mods/out/mog/mog.topo"
+  mogadishu: "D:/arma-mods/out/mog/mog.topo",
+  novyinovka: "D:/arma-mods/out/topo/novyinovka.topo"
 };
 // дзеркало core/places.ts (скрипт без TS-збірки)
 const MAJOR = /\b(airport|airfield|air ?base|base|military|power plant|hospital|port|refinery|factory|castle|city|town|administration|capital)\b/i;

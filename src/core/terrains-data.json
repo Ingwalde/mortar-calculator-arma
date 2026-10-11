@@ -1613,5 +1613,86 @@
         2
       ]
     ]
+  },
+  {
+    "id": "novyinovka",
+    "name": "Novyinovka",
+    "sizeX": 4096,
+    "sizeZ": 4096,
+    "official": false,
+    "places": [
+      [
+        "Military Scrap Yard",
+        884,
+        1501,
+        1
+      ],
+      [
+        "School",
+        1929,
+        2450,
+        1
+      ],
+      [
+        "Western Farm",
+        395,
+        966,
+        3
+      ],
+      [
+        "Generals Mansion",
+        1444,
+        1233,
+        2
+      ],
+      [
+        "Military Base",
+        3384,
+        2888,
+        1
+      ],
+      [
+        "Government",
+        2022,
+        2589,
+        2
+      ],
+      [
+        "Hospital",
+        2114,
+        2409,
+        1
+      ],
+      [
+        "Factory",
+        1605,
+        2967,
+        1
+      ],
+      [
+        "Eastern Farm",
+        3235,
+        1831,
+        2
+      ],
+      [
+        "Communication Tower",
+        3166,
+        1034,
+        2
+      ],
+      [
+        "City Center",
+        2039,
+        2087,
+        1
+      ],
+      [
+        "Trench FOB",
+        951,
+        2897,
+        2
+      ]
+    ]
   }
 ]

@@ -99,6 +99,12 @@ const MANUAL = [
     // 3073 вершини x 2 м = 6144 м. Зображення карти — власна мозаїка користувача (2000x2000 м,
     // X 2000–4000, Z 2000–4000), прив'язана двома перетинами сітки; розмір терену тут справжній.
     places: [["West FOB",143,1055],["East FOB",5830,4156],["Old Town",1084,1535],["Mosque",3104,2522],["Hospital Area",3557,2649],["Sea Port",2770,2062],["Palm Town",4180,2975],["Construction Site",4828,3503],["Airport",1780,1767],["Hotel Area",2699,2566],["Bus Station",2680,2423],["Industrial Zone",2568,2075],["Favella Area",2983,2366],["Embassy District",3447,2429],["Wreck Yard",2572,2249],["Radio Station",2322,2342],["Mogadishu",2957,2671],["Metal Blocks",2754,2801],["Old Market",3019,2918],["Dry Fields",2472,2701],["Dry Riverbed",1832,2600],["Old Town",1937,4997],["Central District",2923,2529],["Artillery Hill",3889,3048],["Stone Ridge 1",3259,2829],["Stone Ridge 2",3063,2704],["Stone Ridge 3",2843,2654],["Wind Hill",2204,2098],["Dry Bush Ridge",816,2435],["Red Hill",5024,3602],["Xamar Tunnel",396,3124],["Buuro Tunnel",5892,4913],["Dry Bush Ridge",457,2215],["Dry Bush Ridge",307,1649],["Coastal Bunkers",671,1422],["Shore Battery",781,1146],["Wreck Beach",678,1045],["Quiet Beach",845,1214],["Sun Beach",2938,2254],["Sandy Beach",3628,2494],["Long Beach",4093,2802],["Wide Beach",5570,3654],["Old Eagle OP",2430,2770],["Stadium",3211,2931],["Old Depot",2816,3196]]
+  },
+  {
+    id: "novyinovka", name: "Novyinovka", sizeX: 4096, sizeZ: 4096, official: false,
+    // Мод «Novyinovka - Russia» (Itzz Coach, 689E376275A6AF90): 2049 вершини x 2 м = 4096 м.
+    // Підписи — сутності Name Generic з шарів мода (без службових: назви мапи й автора).
+    places: [["Military Scrap Yard",884,1501],["School",1929,2450],["Western Farm",395,966],["Generals Mansion",1444,1233],["Military Base",3384,2888],["Government",2022,2589],["Hospital",2114,2409],["Factory",1605,2967],["Eastern Farm",3235,1831],["Communication Tower",3166,1034],["City Center",2039,2087],["Trench FOB",951,2897]]
   }
 ];
 

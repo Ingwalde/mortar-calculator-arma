@@ -14,7 +14,8 @@ const CONFIG = {
   bystrany: { prefix: "Worlds/Bystrany/Bystrany/.Data/Bystrany_", tiles: 64, cell: 1.5, step: 8, offset: -204.78125 },
   ironholdcastle: { prefix: "World/Terrain/.Data/Terrain_", tiles: 4, cell: 2, step: 1, offset: -204.78125 },
   kirovograd: { prefix: "Terrain/.Data/Terrain_", tiles: 32, cell: 2, step: 4, offset: -204.78125 },
-  mogadishu: { prefix: "Worlds/Mogadishu/mogadishu/.Data/mogadishu_", tiles: 24, cell: 2, step: 3, offset: -204.78125 }
+  mogadishu: { prefix: "Worlds/Mogadishu/mogadishu/.Data/mogadishu_", tiles: 24, cell: 2, step: 3, offset: -204.78125 },
+  novyinovka: { prefix: "worlds/Terrain/.Data/Terrain_", tiles: 16, cell: 2, step: 2, offset: -204.78125 }
 };
 const SCALE = 0.03125;
 // Для рендеру карт рельєфу: STEP=<вершин> (менше = детальніше), HSCALE=<множник> (значення зберігаємо як
@@ -111,7 +112,7 @@ writeFileSync(OUT, out);
 console.log(`${id}: ${dim}x${dim} (крок ${step * cfg.cell} м), терен ${N * cfg.cell} м, висоти ${min}..${max} м, ${(out.length / 1048576).toFixed(1)} МБ`);
 
 // перевірка за висотами підписів із шарів мода (якщо є файл labels)
-const labelsFile = `D:/arma-mods/out/${{ bystrany: "Bystrany", ironholdcastle: "IronHoldCastle", kirovograd: "Chernorus_Kirovograd", mogadishu: "Mogadishu" }[id]}-labels.json`;
+const labelsFile = `D:/arma-mods/out/${{ bystrany: "Bystrany", ironholdcastle: "IronHoldCastle", kirovograd: "Chernorus_Kirovograd", mogadishu: "Mogadishu", novyinovka: "Novyinovka" }[id]}-labels.json`;
 if (existsSync(labelsFile)) {
   const labels = JSON.parse(readFileSync(labelsFile, "utf8"));
   const errs = [];

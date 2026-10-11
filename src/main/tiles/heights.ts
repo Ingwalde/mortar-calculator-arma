@@ -9,13 +9,15 @@ import bystranyBundled from "../../../resources/heights/bystrany.bin?asset";
 import ironholdBundled from "../../../resources/heights/ironholdcastle.bin?asset";
 import kirovogradBundled from "../../../resources/heights/kirovograd.bin?asset";
 import mogadishuBundled from "../../../resources/heights/mogadishu.bin?asset";
+import novyinovkaBundled from "../../../resources/heights/novyinovka.bin?asset";
 
 const BUNDLED: Record<string, string> = {
   badorb: badorbBundled,
   bystrany: bystranyBundled,
   ironholdcastle: ironholdBundled,
   kirovograd: kirovogradBundled,
-  mogadishu: mogadishuBundled
+  mogadishu: mogadishuBundled,
+  novyinovka: novyinovkaBundled
 };
 
 export function heightsPath(terrainId: string): string {
