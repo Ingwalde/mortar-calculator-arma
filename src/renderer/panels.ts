@@ -662,30 +662,72 @@ function renderLog(): void {
     ul.appendChild(li);
     return;
   }
+  const unit = t("unitM");
+  let lastDay = "";
   for (const e of entries) {
+    const when = new Date(e.at);
+    const day = when.toDateString();
+    if (day !== lastDay) {
+      lastDay = day;
+      const head = document.createElement("li");
+      head.className = "loghead";
+      head.textContent = dayLabel(when);
+      ul.appendChild(head);
+    }
+    const bearingDeg = ((e.bearingMils * 360) / (e.milsPerCircle || 6400)).toFixed(1);
+    const rangeM = Math.round(e.range);
+
     const li = document.createElement("li");
-    const badge = document.createElement("div");
-    badge.className = "badge b-mortar";
-    const bs = document.createElement("span");
-    bs.textContent = t("badgeMortar");
-    badge.appendChild(bs);
-    const info = document.createElement("div");
-    info.className = "info";
+    li.className = "logcard";
+
+    const top = document.createElement("div");
+    top.className = "logtop";
     const name = document.createElement("div");
     name.className = "name";
-    // Назва запису: «вихід - ціль»; координати сітки йдуть у нижній рядок.
+    // Назва запису: «вихід - ціль»
     name.textContent = `${e.mortarName} - ${e.targetName}`;
-    const main = document.createElement("div");
-    main.className = "sub";
-    const bearingDeg = ((e.bearingMils * 360) / (e.milsPerCircle || 6400)).toFixed(1);
-    main.textContent = t("logEntryDeg", { bearing: bearingDeg, elevation: e.elevation });
+    const time = document.createElement("div");
+    time.className = "when";
+    time.textContent = when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    top.append(name, time);
+
+    // Головні значення — великими й одразу видно, без розкривання запису.
+    const vals = document.createElement("div");
+    vals.className = "logvals";
+    const addVal = (value: string, label: string, cls = ""): void => {
+      const v = document.createElement("div");
+      v.className = "lv " + cls;
+      const b = document.createElement("b");
+      b.textContent = value;
+      const sp = document.createElement("span");
+      sp.textContent = label;
+      v.append(b, sp);
+      vals.appendChild(v);
+    };
+    addVal(`${bearingDeg}°`, t("logAzimuth"), "primary");
+    addVal(String(e.elevation), t("logElevation"), "primary");
+    addVal(`${rangeM} ${unit}`, t("logRange"));
+    addVal(String(e.charge), t("logCharge"));
+    if (e.tof !== null && e.tof !== undefined) addVal(`${e.tof.toFixed(1)} ${t("unitSec")}`, t("logTof"));
+    if (e.heightDiff !== null && e.heightDiff !== undefined) {
+      const dh = Math.round(e.heightDiff);
+      addVal(`${dh > 0 ? "+" : ""}${dh} ${unit}`, t("logDh"));
+    }
+
     const meta = document.createElement("div");
     meta.className = "sub";
-    meta.textContent =
-      `${e.mortarGrid} → ${e.targetGrid}  •  ` +
-      t("logEntryMeta", { weapon: weaponName(e.weapon), shell: shellName(e.shell), charge: e.charge, range: Math.round(e.range) }) +
-      "  •  " + new Date(e.at).toLocaleString();
-    info.append(name, main, meta);
+    meta.textContent = `${weaponName(e.weapon)} • ${shellName(e.shell)} • ${e.mortarGrid} → ${e.targetGrid}`;
+
+    const acts = document.createElement("div");
+    acts.className = "logact";
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "btn small";
+    copyBtn.textContent = t("copyBtn");
+    copyBtn.onclick = () =>
+      void copyText(
+        `${e.mortarName} - ${e.targetName}: ${t("logAzimuth")} ${bearingDeg}°, ${t("logElevation")} ${e.elevation}, ` +
+          `${t("logRange")} ${rangeM} ${unit}, ${t("logCharge")} ${e.charge} (${weaponName(e.weapon)}, ${shellName(e.shell)})`
+      );
     const delBtn = document.createElement("button");
     delBtn.className = "btn small";
     delBtn.textContent = t("deleteBtn");
@@ -695,9 +737,20 @@ function renderLog(): void {
       scheduleSave();
       renderLog();
     };
-    li.append(badge, info, delBtn);
+    acts.append(copyBtn, delBtn);
+
+    li.append(top, vals, meta, acts);
     ul.appendChild(li);
   }
+}
+
+function dayLabel(d: Date): string {
+  const today = new Date();
+  const y = new Date();
+  y.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return t("logToday");
+  if (d.toDateString() === y.toDateString()) return t("logYesterday");
+  return d.toLocaleDateString([], { day: "numeric", month: "long", year: "numeric" });
 }
 $<HTMLButtonElement>("clearLog").onclick = async () => {
   const S = getCurrent();
