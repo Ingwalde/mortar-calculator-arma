@@ -13,6 +13,7 @@ import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
 import { t } from "./i18n";
 import { isRemote, onlineTileSrc, pyramidTileSrc } from "./platform";
+import { heightAt, onHeightsLoaded } from "./terrainHeight";
 
 const cv = $<HTMLCanvasElement>("cv");
 const ctx = cv.getContext("2d")!;
@@ -88,6 +89,7 @@ function viewH(): number {
 }
 
 let lastViewH = 0;
+onHeightsLoaded(() => updateReadout());
 
 /**
  * Шторка рухається: приціл і координати "їдуть" за нею, а світова точка під прицілом лишається та сама
@@ -527,7 +529,10 @@ function updateReadout(): void {
   const w = centerWorld();
   $("coords").querySelector(".grid")!.textContent = gridRef(w.x, w.z);
   const u = t("unitM");
-  $("coords").querySelector(".m")!.textContent = "X " + fmtM(w.x) + " " + u + "   Z " + fmtM(w.z) + " " + u;
+  const meta = currentMeta();
+  const h = heightAt(meta.id, w.x, w.z, meta.sizeX, meta.sizeZ);
+  $("coords").querySelector(".m")!.textContent =
+    "X " + fmtM(w.x) + " " + u + "   Z " + fmtM(w.z) + " " + u + (h !== null ? "   h " + fmtM(h) + " " + u : "");
 }
 
 // ---------- gestures ----------

@@ -197,7 +197,8 @@ html.ios-short{--safe-b:0px}
 .app.immersive header,.app.immersive .panel,.app.immersive #placeBtn{display:none}
 .app.immersive{--covered:0px}
 .app.immersive .mapbtns{top:calc(16px + env(safe-area-inset-top,0px));right:16px}
-.app.immersive .readout{right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+/* var(--safe-b), а не env(): в режимі iOS «ios-short» нижній відступ уже обнулено, інакше він додавався б удруге. */
+.app.immersive .readout{right:16px;bottom:calc(12px + var(--safe-b,0px))}
 .app.immersive .coords{flex:0 1 auto}
 .app.immersive .ic-expand{display:none}
 .app.immersive .ic-shrink{display:block}

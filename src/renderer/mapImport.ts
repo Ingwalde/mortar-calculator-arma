@@ -1,21 +1,13 @@
-import { decodeHeightGrid, sampleHeight, type HeightGrid } from "@core/heightGrid";
 import { currentMeta, getCurrent, scheduleSave, type TerrainMeta } from "./state";
 import { resetView } from "./mapView";
 import { $, toast } from "./dom";
 import type { MapImportProgress } from "../preload/index";
 import { t } from "./i18n";
 import { isRemote } from "./platform";
+import { forgetHeights, heightAt, loadHeightGrid } from "./terrainHeight";
 
-const heightCache = new Map<string, HeightGrid | null>();
 let importing = false;
 
-async function loadHeightGrid(terrainId: string): Promise<HeightGrid | null> {
-  if (heightCache.has(terrainId)) return heightCache.get(terrainId)!;
-  const buf = await window.api.heights.read(terrainId);
-  const grid = buf ? decodeHeightGrid(buf) : null;
-  heightCache.set(terrainId, grid);
-  return grid;
-}
 
 /**
  * Автовисота під міткою — використовується в діалозі додавання мітки.
@@ -25,10 +17,8 @@ async function loadHeightGrid(terrainId: string): Promise<HeightGrid | null> {
  * півночі на південь) описано в core/heightGrid.ts.
  */
 export async function getAutoHeight(terrainId: string, x: number, z: number, sizeX: number, sizeZ: number): Promise<number | null> {
-  const grid = await loadHeightGrid(terrainId);
-  if (!grid) return null;
-  const h = sampleHeight(grid, x, z, sizeX, sizeZ);
-  return h === 0 ? null : h;
+  await loadHeightGrid(terrainId);
+  return heightAt(terrainId, x, z, sizeX, sizeZ);
 }
 
 /**
@@ -40,18 +30,21 @@ export async function ensureHeights(onDone: () => void): Promise<void> {
   const S = getCurrent();
   const meta = currentMeta();
   if (!meta.preset?.heightData) return;
-  if (!S.heights && !isRemote) {
+  let grid = await loadHeightGrid(meta.id);
+  // У стані може бути позначено, що висоти є, а файлу на диску вже нема (видалено/інша машина) —
+  // тоді перекачуємо, а не лишаємось мовчки без висот.
+  if (!grid && !isRemote) {
     try {
       const info = await window.api.heights.importFromUrl(meta.id, meta.preset.heightData);
       S.heights = info;
-      heightCache.delete(meta.id);
+      forgetHeights(meta.id);
       scheduleSave();
-      onDone();
+      grid = await loadHeightGrid(meta.id);
     } catch {
       return; // дані висот не критичні — тихо лишаємось без автовисоти для цього терену
     }
   }
-  void loadHeightGrid(meta.id);
+  if (grid) onDone();
 }
 
 function setProgressText(text: string | null): void {
@@ -81,7 +74,7 @@ async function runDownloadImport(meta: TerrainMeta, imageUrl: string, onDone: ()
       return;
     }
     getCurrent().map = { kind: "pyramid", width: res.croppedWidth!, height: res.croppedHeight! };
-    heightCache.delete(meta.id);
+    forgetHeights(meta.id);
     scheduleSave();
     resetView();
     onDone();
@@ -123,7 +116,7 @@ export function startMapImportUi(onDone: () => void): void {
         return;
       }
       getCurrent().map = { kind: "pyramid", width: res.croppedWidth!, height: res.croppedHeight! };
-      heightCache.delete(meta.id);
+      forgetHeights(meta.id);
       scheduleSave();
       resetView();
       onDone();
@@ -144,7 +137,7 @@ export function startMapImportUi(onDone: () => void): void {
   $<HTMLButtonElement>("clearMap").onclick = async () => {
     const meta = currentMeta();
     getCurrent().map = { kind: "none" };
-    heightCache.delete(meta.id);
+    forgetHeights(meta.id);
     scheduleSave();
     resetView();
     onDone();
