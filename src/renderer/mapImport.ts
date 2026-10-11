@@ -20,12 +20,9 @@ async function loadHeightGrid(terrainId: string): Promise<HeightGrid | null> {
 /**
  * Автовисота під міткою — використовується в діалозі додавання мітки.
  *
- * Прогалини у height_data (GeNeFRAG/ArmaReforger) — клітинки з сентинелом 0 замість реального
- * рельєфу (перевірено на Everon: "0" траплявся в ~68% клітинок, у 25 разів частіше за наступне
- * популярне значення, включно з реально гірськими ділянками) — уже заповнені значенням
- * найближчої реальної клітинки при імпорті (main/tiles/heights.ts, fillHeightGaps). Перевірка
- * тут — лише запобіжник на випадок, якщо вся сітка терену виявиться нульовою (нема з чого
- * заповнювати) — тоді чесно кажемо "невідомо", а не показуємо оманливий нуль.
+ * Нулі в height_data — це море (перевірено накладенням на тайли Everon, Arland і Kolguyev), тож
+ * на воді чесно кажемо "невідомо" замість нуля. Орієнтацію сітки (рядок = X, стовпець йде з
+ * півночі на південь) описано в core/heightGrid.ts.
  */
 export async function getAutoHeight(terrainId: string, x: number, z: number, sizeX: number, sizeZ: number): Promise<number | null> {
   const grid = await loadHeightGrid(terrainId);
