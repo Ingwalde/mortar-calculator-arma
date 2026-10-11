@@ -5,8 +5,18 @@ import { encodeHeightGrid, parseHeightJson } from "../../core/heightGrid";
 // Висоти, яких нема в каталозі GeNeFRAG, але які зібрано з файлів модів і поставляються разом із застосунком
 // (scripts/extract-badorb-heights.mjs). Імпорт ?asset копіює файл у out/main і дає шлях до нього.
 import badorbBundled from "../../../resources/heights/badorb.bin?asset";
+import bystranyBundled from "../../../resources/heights/bystrany.bin?asset";
+import ironholdBundled from "../../../resources/heights/ironholdcastle.bin?asset";
+import kirovogradBundled from "../../../resources/heights/kirovograd.bin?asset";
+import mogadishuBundled from "../../../resources/heights/mogadishu.bin?asset";
 
-const BUNDLED: Record<string, string> = { badorb: badorbBundled };
+const BUNDLED: Record<string, string> = {
+  badorb: badorbBundled,
+  bystrany: bystranyBundled,
+  ironholdcastle: ironholdBundled,
+  kirovograd: kirovogradBundled,
+  mogadishu: mogadishuBundled
+};
 
 export function heightsPath(terrainId: string): string {
   return join(app.getPath("userData"), "heights", `${terrainId}.bin`);

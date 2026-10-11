@@ -49,5 +49,6 @@ export function heightAt(terrainId: string, x: number, z: number, sizeX: number,
     return null;
   }
   const h = sampleHeight(grid, x, z, sizeX, sizeZ);
-  return h === null || h === 0 ? null : h;
+  // 0 і менше — вода (дно моря в модових сітках від'ємне): "невідомо", а не висота
+  return h === null || h <= 0 ? null : h;
 }

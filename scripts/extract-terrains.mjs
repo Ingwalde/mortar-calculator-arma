@@ -75,38 +75,30 @@ const BASE = [
 // Карту зображення треба буде завантажити вручну («Завантажити карту», власний скріншот
 // зверху з редактора чи гри) — автоімпорту з мережі для цих теренів нема.
 const MANUAL = [
+  // Усі п'ять — моди Workshop; розмір, назви пунктів і висоти прочитано з файлів самих модів
+  // (Terrain.HEAD: вершин x крок; SCR_MapDescriptorComponent у шарах .layer; .ttile -> висоти).
+  // Супутникового знімка в них немає — карту зображенням завантажує користувач («Карта» → «Завантажити карту…»).
   {
-    id: "bystrany", name: "Bystrany", sizeX: 5000, sizeZ: 5000, official: false
-    // https://reforger.armaplatform.com/workshop/6626CB89B6B9C913 — офіційний опис каже
-    // "~25 км² завершеної площі" (перевірено); 5000x5000 м = 25 км² при припущенні
-    // квадратної форми (форма терену не квадратна, тож це наближення).
+    id: "bystrany", name: "Bystrany", sizeX: 12288, sizeZ: 12288, official: false,
+    // 8193 вершини x 1.5 м = 12288 м (раніше було припущено 5000 за "~25 км²" з опису).
+    places: [["Kamoryn",3368,8265],["Old Checkpoint",3012,8664],["Old Checkpoint",2727,8538],["Mostni Forest",5035,7639],["Bysovice Airfield",3593,9609],["Bysovice Military Base",3901,9354],["Klesnov",640,11118],["Skalovice",573,8714],["Mezna",6578,9358],["Stara Olesov",8160,7158],["Kamna Srbice",9464,9564],["Janovice",10468,7494],["Luzohrad",6209,6371],["Hnevice",5887,5876],["Javory",5091,9754],["Mirkov",3106,7039],["Drahov",732,4506],["Rajewka",5162,11739],["Luziny",9441,7909],["Hrad Pasastejn",4842,6380],["Dolina",6278,8716],["Vysoka",6441,4532],["Arntsevo",3092,11176],["Nova Olesov",7105,7913],["Pasastejn",5026,6289],["Featherfall Pond",7054,8156],["Rockslide Pond",7381,8179],["Stonewatch Cave",799,9182],["Threebrook Hollow",5897,7243],["Summerstone Cave",5886,8625],["Hunter's Rest",4008,8639],["Rootgrave Hollow",5032,8833],["Rabbit's Locker",3305,10066],["Kamoryn Military Base",4069,7575],["Power Plant",6520,6502],["Industrial",3319,9202],["Hnevice Military Base",6545,5817],["Industrial",6877,5951],["Dobrinka",5128,3791],["Lovetin",2311,6067]]
   },
   {
-    id: "ironholdcastle", name: "Iron Hold Castle", sizeX: 10240, sizeZ: 10240, official: false
-    // https://reforger.armaplatform.com/workshop/697F774C5FD21619-IronHoldCastle (автор
-    // WoodyCracudo) — маленька острівна фортеця-архіпелаг ("ancient ocean fortress"), пакунок
-    // лише 12.93 МБ. Це натякає на терен значно менший за 10240x10240 (100 км²!), але розмір
-    // архіву не є надійним доказом розміру терену (текстури/матеріали можуть братися з
-    // базової гри) — 10240 лишено як недоведену заглушку, ОБОВ'ЯЗКОВО поправити вручну.
+    id: "ironholdcastle", name: "Iron Hold Castle", sizeX: 1024, sizeZ: 1024, official: false,
+    // 513 вершин x 2 м = 1024 м — це крихітний острів, а не 10 км.
+    places: [["Keep Ruin",426,532]]
   },
   {
-    id: "kirovograd", name: "Kirovograd", sizeX: 10240, sizeZ: 10240, official: false
-    // Реальна назва на воркшопі — "Chernorus_Kirovograd" (автор knisez, ID 6608D15676B2EACC,
-    // https://reforger.armaplatform.com/workshop/6608D15676B2EACC-Chernorus_Kirovograd) —
-    // регіон реального Чернаруса (Kirovograd, північ від Приморська), ще не завершений.
-    // Розмір на сторінці не вказано (не повний Чернарус, лише його частина) — 10240 недоведено.
+    id: "kirovograd", name: "Kirovograd", sizeX: 8192, sizeZ: 8192, official: false,
+    // 4097 вершин x 2 м = 8192 м. Назви — шари Dubkovicy_Layers (світ мода); Cherno_Layers належать
+    // іншому світу й сюди не беруться.
+    places: [["Lesniki",802,2185],["Bugor Military",1147,3870],["Druzhba",1988,4553],["Kamensk Mine",2093,5248],["Polyanka",1170,907],["Oil refinery",3151,7163],["Zvezda factory",3721,3455],["Pig farms",1045,4302],["Mezciems",966,7548],["Mucenieki ",4579,4139],["City Administration",4059,3736],["City Administration",2184,2219],["Kirovo military base",1678,3814],["Pogorevka",1020,5735],["Marianka military base",5810,2903],["Marianka",3534,4830],["Lesniki",439,1198],["Alexandrovka",3218,4348],["Borzovka",5309,2809],["Kopachi",2721,6367],["Pogorevka",5007,2071],["Dobropole",4008,2128],["Pogorevka",1060,6248],["Kazachye Pole",4873,5842],["Stepanovka",1850,4409],["Cherno Mine",2169,3826],["Grachovka",5853,6334],["Kirovograd",1997,2111],["Matveyevka",6916,4090],["International Airport Matveyev",6871,5452],["Berezovsk",3953,3842],["Seversk",1856,7001]]
   },
   {
-    id: "mogadishu", name: "Mogadishu", sizeX: 2290, sizeZ: 1645, official: false
-    // https://reforger.armaplatform.com/workshop/5F1D02080409E128-Mogadishu (автор KIOK, той
-    // самий автор що ArmaTerrainCore/KunarProvince) — 94% рейтинг, 70 297 завантажень, явно
-    // основний/канонічний мод з цією назвою (інші "Mogadishu"-записи на воркшопі — сценарії чи
-    // event-паки поверх нього). Опис лише "Mogadishu-Somalia, WIP TEST 1.7" — сторінка розміру
-    // не дає. Користувач надав власний top-down скріншот гри з рідною сіткою (крок цифри = 100 м,
-    // підтверджено користувачем); 2290×1645 — підрахунок за пікселями міток сітки на цьому
-    // скріні (019→040 по X ≈ 1157px/2100м), НЕ офіційне значення — точність обмежена точністю
-    // зчитування піксельних позицій міток. Уточнити двоточковою прив'язкою за реальними
-    // координатами з гри, коли буде нагода.
+    id: "mogadishu", name: "Mogadishu", sizeX: 6144, sizeZ: 6144, official: false,
+    // 3073 вершини x 2 м = 6144 м. Зображення карти — власна мозаїка користувача (2000x2000 м,
+    // X 2000–4000, Z 2000–4000), прив'язана двома перетинами сітки; розмір терену тут справжній.
+    places: [["West FOB",143,1055],["East FOB",5830,4156],["Old Town",1084,1535],["Mosque",3104,2522],["Hospital Area",3557,2649],["Sea Port",2770,2062],["Palm Town",4180,2975],["Construction Site",4828,3503],["Airport",1780,1767],["Hotel Area",2699,2566],["Bus Station",2680,2423],["Industrial Zone",2568,2075],["Favella Area",2983,2366],["Embassy District",3447,2429],["Wreck Yard",2572,2249],["Radio Station",2322,2342],["Mogadishu",2957,2671],["Metal Blocks",2754,2801],["Old Market",3019,2918],["Dry Fields",2472,2701],["Dry Riverbed",1832,2600],["Old Town",1937,4997],["Central District",2923,2529],["Artillery Hill",3889,3048],["Stone Ridge 1",3259,2829],["Stone Ridge 2",3063,2704],["Stone Ridge 3",2843,2654],["Wind Hill",2204,2098],["Dry Bush Ridge",816,2435],["Red Hill",5024,3602],["Xamar Tunnel",396,3124],["Buuro Tunnel",5892,4913],["Dry Bush Ridge",457,2215],["Dry Bush Ridge",307,1649],["Coastal Bunkers",671,1422],["Shore Battery",781,1146],["Wreck Beach",678,1045],["Quiet Beach",845,1214],["Sun Beach",2938,2254],["Sandy Beach",3628,2494],["Long Beach",4093,2802],["Wide Beach",5570,3654],["Old Eagle OP",2430,2770],["Stadium",3211,2931],["Old Depot",2816,3196]]
   }
 ];
 
