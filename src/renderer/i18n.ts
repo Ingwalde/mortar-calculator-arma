@@ -218,7 +218,7 @@ const DICT: Dict = {
       Ліцензія: <a href="https://github.com/GeNeFRAG/ArmaReforger/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>.
       <a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">github.com/GeNeFRAG/ArmaReforger</a></p>
     <p class="hint"><b>reforger.recoil.org</b> — джерело онлайн-тайлів Everon, Arland і Kolguyev та контрольних точок Kolguyev.</p>
-    <p class="hint"><b>Gogland</b> (Temppa) і <b>Bad Orb</b> (Aphex26) — назви пунктів і розмір терену прочитано з файлів самих модів (Arma Public License).</p>`,
+    <p class="hint"><b>Gogland</b> (Temppa) і <b>Bad Orb</b> (Aphex26) — назви пунктів і розмір терену прочитано з файлів самих модів; висоти Bad Orb теж (Arma Public License).</p>`,
     en: `<h2>About</h2>
     <p class="hint">A mortar tablet for Arma Reforger. Non-commercial app for personal and in-game use.</p>
     <h2>Sources and attribution</h2>
@@ -229,7 +229,7 @@ const DICT: Dict = {
       License: <a href="https://github.com/GeNeFRAG/ArmaReforger/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>.
       <a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">github.com/GeNeFRAG/ArmaReforger</a></p>
     <p class="hint"><b>reforger.recoil.org</b> — source of Everon, Arland and Kolguyev online tiles and the Kolguyev control points.</p>
-    <p class="hint"><b>Gogland</b> (Temppa) and <b>Bad Orb</b> (Aphex26) — place names and terrain size read from the mods' own files (Arma Public License).</p>`
+    <p class="hint"><b>Gogland</b> (Temppa) and <b>Bad Orb</b> (Aphex26) — place names and terrain size read from the mods' own files; Bad Orb heights too (Arma Public License).</p>`
   },
 
   importPhaseDownload: { uk: "Завантаження зображення", en: "Downloading image" },
