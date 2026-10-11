@@ -188,7 +188,24 @@ function boxBlur(src, rows, cols, r) {
   }
   return out;
 }
-const forest = parseForest();
+// BASEMAP=<png>: готове зображення всього терену (2D-карта мода) замість тіньового рельєфу й лісу;
+// зверху лишаються вектори доріг і будівель.
+const BASEMAP = process.env.BASEMAP || null;
+let base = null;
+if (BASEMAP) {
+  const { data, info } = await sharp(BASEMAP, { limitInputPixels: false }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  base = { data, w: info.width, h: info.height };
+  console.log("BASEMAP:", info.width + "x" + info.height);
+}
+function baseAt(X, Z, out, di, chunk) {
+  const fx = Math.min(base.w - 1.001, Math.max(0, (X / SIZE) * base.w - 0.5)), fy = Math.min(base.h - 1.001, Math.max(0, ((SIZE - Z) / SIZE) * base.h - 0.5));
+  const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+  const i = (y0 * base.w + x0) * 3, j = i + base.w * 3;
+  for (let c = 0; c < 3; c++) {
+    chunk[di + c] = base.data[i + c] * (1 - tx) * (1 - ty) + base.data[i + 3 + c] * tx * (1 - ty) + base.data[j + c] * (1 - tx) * ty + base.data[j + 3 + c] * tx * ty;
+  }
+}
+const forest = BASEMAP ? null : parseForest();
 function forestAt(X, Z) {
   if (!forest) return 0;
   const { G, data } = forest;
@@ -276,8 +293,9 @@ for (let cy = 0; cy < outH; cy += CH) {
       const Z = z1 - (cy + yy + 0.5) / PPM;
       for (let xx = 0; xx < w; xx++) {
         const X = x0 + (cx + xx + 0.5) / PPM;
-        const elevHere = bil(rawGrid, X, Z);
         const di = (yy * w + xx) * 3;
+        if (base) { baseAt(X, Z, null, di, chunk); continue; }
+        const elevHere = bil(rawGrid, X, Z);
         if (elevHere <= 0.35) { chunk[di] = SEA[0]; chunk[di + 1] = SEA[1]; chunk[di + 2] = SEA[2]; }
         else {
           const sh = bil(shadeG, X, Z);
