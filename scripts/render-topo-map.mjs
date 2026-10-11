@@ -13,7 +13,9 @@ import sharp from "sharp";
 const [id, topoPath, sizeArg, ppmArg, outPath, ...bbox] = process.argv.slice(2);
 const SIZE = Number(sizeArg);
 const PPM = Number(ppmArg);
-const heightsPath = new URL(`../resources/heights/${id}.bin`, import.meta.url);
+// HEIGHTS=<файл> і HEIGHT_SCALE=<n>: детальніша сітка висот (значення = метри * n), див. extract-mod-heights.mjs
+const heightsPath = process.env.HEIGHTS || new URL(`../resources/heights/${id}.bin`, import.meta.url);
+const HEIGHT_SCALE = Number(process.env.HEIGHT_SCALE) || 1;
 // "-" замість .topo: лише рельєф і море (для модів без топографічних даних)
 const b = topoPath === "-" ? Buffer.alloc(0) : readFileSync(topoPath);
 
@@ -103,7 +105,7 @@ function parseBuildings() {
 // AREA: облако точок (u32 6, 6 x 0, 6, 6 x 0, u32 N, далі N x (f32 x, f32 z)) — випадкові вибірки всередині
 // багатокутників рослинності (ліс, чагарі). Саму геометрію полігонів у файлі не збережено, тому
 // відновлюємо покриття морфологічним "закриттям" растру точок.
-const FOREST_CELL = 4;
+const FOREST_CELL = Number(process.env.FOREST_CELL) || 4;
 function parseForest() {
   const s = sections.get("AREA");
   if (!s) return null;
@@ -139,19 +141,19 @@ function parseForest() {
       }
     }
     console.log("AREA (меші):", meshes, "полігонів,", tris, "трикутників");
-    return { G, data: boxBlur(boxBlur(m, G, G, 1), G, G, 1) };
+    return { G, data: boxBlur(m, G, G, 1) };
   }
   for (let i = 0; i < N; i++) {
     const x = b.readFloatLE(s.payload + 60 + i * 8), z = SIZE - b.readFloatLE(s.payload + 64 + i * 8);
     const gx = Math.floor(x / FOREST_CELL), gy = Math.floor((SIZE - z) / FOREST_CELL);
     if (gx >= 0 && gx < G && gy >= 0 && gy < G) m[gy * G + gx] = 1;
   }
-  const R = 6;
+  const R = Math.round(24 / FOREST_CELL);
   let d = boxBlur(m, G, G, R);
   for (let i = 0; i < d.length; i++) d[i] = d[i] > 0.0005 ? 1 : 0;
   let e = boxBlur(d, G, G, R);
   for (let i = 0; i < e.length; i++) e[i] = e[i] > 0.999 ? 1 : 0;
-  e = boxBlur(boxBlur(e, G, G, 2), G, G, 2); // згладжений контур; різкість повертає smoothstep при вибірці
+  e = boxBlur(e, G, G, 1); // згладжений контур; різкість повертає smoothstep при вибірці
   console.log("AREA:", N, "точок, сітка", G + "x" + G);
   return { G, data: e };
 }
@@ -161,8 +163,9 @@ const buildings = parseBuildings();
 // ---- висоти -> базовий растр (колір рельєфу) і маска моря
 const hb = readFileSync(heightsPath);
 const rows = hb.readInt32LE(0), cols = hb.readInt32LE(4);
-const H = new Int16Array(rows * cols);
-for (let i = 0; i < rows * cols; i++) H[i] = hb.readInt16LE(8 + i * 2);
+const Hraw = new Int16Array(rows * cols);
+for (let i = 0; i < rows * cols; i++) Hraw[i] = hb.readInt16LE(8 + i * 2);
+const H = HEIGHT_SCALE === 1 ? Hraw : Float32Array.from(Hraw, (v) => v / HEIGHT_SCALE);
 const cell = SIZE / (rows - 1);
 // Висоти в сітці — цілі метри: на рівнинах це дає "сходинки" й шумне тіньове освітлення. Згладжуємо
 // (кілька проходів ковзного середнього), тоді рельєф лягає м'якими плямами, як на карті гри.
@@ -192,11 +195,13 @@ function forestAt(X, Z) {
   const fx = Math.min(G - 1.001, Math.max(0, X / FOREST_CELL - 0.5)), fy = Math.min(G - 1.001, Math.max(0, (SIZE - Z) / FOREST_CELL - 0.5));
   const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0, i = y0 * G + x0;
   const v = data[i] * (1 - tx) * (1 - ty) + data[i + 1] * tx * (1 - ty) + data[i + G] * (1 - tx) * ty + data[i + G + 1] * tx * ty;
-  const t = Math.min(1, Math.max(0, (v - 0.3) / 0.4));
+  const t = Math.min(1, Math.max(0, (v - 0.4) / 0.2));
   return t * t * (3 - 2 * t);
 }
 let Hs = Hf;
-for (let i = 0; i < 3; i++) Hs = boxBlur(Hs, rows, cols, 2);
+// згладжування за метрами, а не клітинками: ~3 проходи по 2 клітинки на сітці 6-12 м
+const blurR = Math.max(1, Math.round(12 / cell));
+for (let i = 0; i < 3; i++) Hs = boxBlur(Hs, rows, cols, blurR);
 // растр: x = рядок (схід), y = стовпець (північ угорі)
 const W = rows, Hh = cols;
 const elev = (x, y) => H[Math.max(0, Math.min(rows - 1, x)) * cols + Math.max(0, Math.min(cols - 1, y))];
