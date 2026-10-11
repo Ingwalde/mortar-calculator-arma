@@ -29,7 +29,11 @@ export async function getAutoHeight(terrainId: string, x: number, z: number, siz
 export async function ensureHeights(onDone: () => void): Promise<void> {
   const S = getCurrent();
   const meta = currentMeta();
-  if (!meta.preset?.heightData) return;
+  // Терени без heightData у каталозі (Bad Orb) можуть мати висоти, поставлені разом із застосунком.
+  if (!meta.preset?.heightData) {
+    if (await loadHeightGrid(meta.id)) onDone();
+    return;
+  }
   let grid = await loadHeightGrid(meta.id);
   // У стані може бути позначено, що висоти є, а файлу на диску вже нема (видалено/інша машина) —
   // тоді перекачуємо, а не лишаємось мовчки без висот.

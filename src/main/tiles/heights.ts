@@ -2,6 +2,11 @@ import { app } from "electron";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { encodeHeightGrid, parseHeightJson } from "../../core/heightGrid";
+// Висоти, яких нема в каталозі GeNeFRAG, але які зібрано з файлів модів і поставляються разом із застосунком
+// (scripts/extract-badorb-heights.mjs). Імпорт ?asset копіює файл у out/main і дає шлях до нього.
+import badorbBundled from "../../../resources/heights/badorb.bin?asset";
+
+const BUNDLED: Record<string, string> = { badorb: badorbBundled };
 
 export function heightsPath(terrainId: string): string {
   return join(app.getPath("userData"), "heights", `${terrainId}.bin`);
@@ -25,6 +30,12 @@ export async function readHeights(terrainId: string): Promise<Uint8Array | null>
   try {
     return await readFile(heightsPath(terrainId));
   } catch {
-    return null;
+    const bundled = BUNDLED[terrainId];
+    if (!bundled) return null;
+    try {
+      return await readFile(bundled);
+    } catch {
+      return null;
+    }
   }
 }
