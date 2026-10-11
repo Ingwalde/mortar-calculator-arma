@@ -5,6 +5,14 @@ import { initPanels } from "./panels";
 import { $ } from "./dom";
 import { applyStaticTranslations, getLang, setLang, setLangSilent, t } from "./i18n";
 
+/** Заставку з іконкою знімаємо, щойно стан завантажено й інтерфейс готовий. */
+function hideSplash(): void {
+  const el = document.getElementById("splash");
+  if (!el) return;
+  el.classList.add("done");
+  setTimeout(() => el.remove(), 400);
+}
+
 async function boot(): Promise<void> {
   await loadState();
   setLangSilent(getRoot().lang);
@@ -13,6 +21,7 @@ async function boot(): Promise<void> {
   resetView();
   initPanels();
   $("status").textContent = t("statusSaved");
+  hideSplash();
 
   $<HTMLButtonElement>("langBtn").onclick = () => {
     const next = getLang() === "uk" ? "en" : "uk";
@@ -23,4 +32,7 @@ async function boot(): Promise<void> {
   };
 }
 
-void boot();
+void boot().catch((e) => {
+  hideSplash();
+  throw e;
+});
