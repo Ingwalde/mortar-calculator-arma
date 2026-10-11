@@ -40,7 +40,11 @@ const BASE = [
     // мережевими запитами реальної сторінки /kolguyev — не "kolguyev"/"kolguev"). Онлайн-тайли
     // тут візуально чистіші за 2.4 ГБ PNG з GeNeFRAG (той має видимий шов різної експозиції
     // між знімками — перевірено складанням тайлів піраміди напряму з диска).
-    tiles: { base: "https://reforger.recoil.org/map-tiles/cain/", maxLod: 5 }
+    tiles: { base: "https://reforger.recoil.org/map-tiles/cain/", maxLod: 5 },
+    // Пункти — контрольні точки з карти reforger.recoil.org/kolguyev (ті самі, що там показано на
+    // шарі "Control points"; у коді сайту вони названі CP_*). Перевірено накладанням на тайли:
+    // усі сім лягають на відповідні селища/об'єкти з точністю до десятків метрів.
+    places: [["Kamensk",11867,10680],["Mineraly",6322,8012],["Ugoldar",6642,3907],["Crossroad",8559,9376],["Gorshkovo",8422,6592],["Mine",3674,5223],["Villa",1951,7401]]
   },
   { id: "badorb", name: "Bad Orb", sizeX: 5120, sizeZ: 5120, official: false },
   { id: "gogland", name: "Gogland", sizeX: 12286, sizeZ: 12286, official: false }
