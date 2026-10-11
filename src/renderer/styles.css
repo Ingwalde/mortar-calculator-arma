@@ -98,6 +98,17 @@ header h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.01em}
 .empty{color:var(--muted);padding:6px 0}
 ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 ul.list li{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--ink) 6%,transparent)}
+ul.list li.loghead{background:none;padding:6px 4px 0;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+ul.list li.logcard{display:block;padding:12px 14px}
+.logtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.logtop .name{font-weight:600;font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.logtop .when{color:var(--muted);font-size:13px;white-space:nowrap}
+.logvals{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px 12px;margin:10px 0 8px}
+.lv b{display:block;font-size:17px;line-height:1.15;font-variant-numeric:tabular-nums}
+.lv.primary b{font-size:24px;color:var(--accent)}
+.lv span{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.logcard .sub{font-size:12.5px;color:var(--muted)}
+.logact{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 ul.list li.sel{background:color-mix(in srgb,var(--mortar) 16%,transparent)}
 .badge{flex:0 0 28px;height:28px;display:grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;font-size:14px}
 .b-mortar{background:var(--mortar)}.b-target{background:var(--target);border-radius:8px;transform:rotate(45deg)}.b-target span{transform:rotate(-45deg)}
