@@ -148,7 +148,13 @@ export function mergeRoots(base: unknown, incoming: unknown, now: number = Date.
       fireLog = [...fireLog].sort((a, b) => num(a.at) - num(b.at)).slice(-FIRE_LOG_CAP);
     }
     if (markers.changed || log.changed) changed = true;
-    data[terrainId] = { ...ti, markers: markers.list, fireLog, deleted: tomb };
+    // Клієнт із порожнім (ще не завантаженим / подвоєним HMR-модулем) станом не повинен стирати карту й
+    // висоти: легітимне «без карти» — це {kind:"none"}, а не null.
+    const keep: Obj = {};
+    if (ti.map == null && isObj(tb.map)) keep.map = tb.map;
+    if (ti.heights == null && isObj(tb.heights)) keep.heights = tb.heights;
+    if (Object.keys(keep).length) changed = true;
+    data[terrainId] = { ...ti, ...keep, markers: markers.list, fireLog, deleted: tomb };
   }
   // Терени, яких клієнт не знає (створені деінде) — беремо з бази як є.
   for (const [terrainId, tb] of Object.entries(dataBase)) {

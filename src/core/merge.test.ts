@@ -105,4 +105,21 @@ describe("mergeRoots", () => {
     expect(mergeRoots(base, null, NOW).state).toBe(base);
     expect(mergeRoots(null, base, NOW).state).toBe(base);
   });
+
+  it("порожній клієнт не стирає карту й висоти терену", () => {
+    const base = { data: { bad: { map: { kind: "pyramid", width: 100, height: 100 }, heights: { rows: 3, cols: 3 }, markers: [], fireLog: [], deleted: {} } } };
+    const blank = { data: { bad: { map: null, heights: null, markers: [], fireLog: [], deleted: {} } } };
+    const r = mergeRoots(base, blank);
+    const d = (r.state as { data: { bad: { map: unknown; heights: unknown } } }).data.bad;
+    expect(d.map).toEqual({ kind: "pyramid", width: 100, height: 100 });
+    expect(d.heights).toEqual({ rows: 3, cols: 3 });
+    expect(r.changed).toBe(true);
+  });
+
+  it("{kind:none} — це явне «без карти», його зберігаємо", () => {
+    const base = { data: { bad: { map: { kind: "pyramid", width: 1, height: 1 }, markers: [], fireLog: [], deleted: {} } } };
+    const inc = { data: { bad: { map: { kind: "none" }, markers: [], fireLog: [], deleted: {} } } };
+    const d = (mergeRoots(base, inc).state as { data: { bad: { map: unknown } } }).data.bad;
+    expect(d.map).toEqual({ kind: "none" });
+  });
 });

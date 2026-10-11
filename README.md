@@ -32,8 +32,8 @@ npm run dist:linux  # AppImage + deb
 ```
 
 Готові файли після `npm run dist:win`:
-- `dist/Планшет мінометника 0.3.1.exe` — portable, без інсталяції.
-- `dist/Планшет мінометника Setup 0.3.1.exe` — інсталятор (NSIS).
+- `dist/Планшет мінометника 0.3.2.exe` — portable, без інсталяції.
+- `dist/Планшет мінометника Setup 0.3.2.exe` — інсталятор (NSIS).
 
 ### Windows: помилка розпакування winCodeSign
 
