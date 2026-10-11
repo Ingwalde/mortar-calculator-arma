@@ -463,30 +463,27 @@ function drawPlaces(c: Record<string, string>): void {
   // Важливіші малюємо останніми, щоб їхні підписи лишались зверху при перекритті.
   for (const tier of [3, 2, 1] as const) {
     if (tier > placesLevel) continue;
-    const px = 11 * placesScale * TIER_SCALE[tier];
-    ctx.font = `${TIER_WEIGHT[tier]} ${px.toFixed(1)}px "IBM Plex Sans Condensed",sans-serif`;
-    const boxH = px + 3;
+    const px = 11.5 * placesScale * TIER_SCALE[tier];
+    ctx.font = `${tier === 1 ? 600 : 500} ${px.toFixed(1)}px "IBM Plex Sans Condensed",sans-serif`;
     for (const p of preset.places) {
       if (p.tier !== tier) continue;
       const s = scrFromWorld(p.x, p.z);
       if (s.sx < -80 || s.sy < -20 || s.sx > W + 20 || s.sy > H + 20) continue;
       const col = c["pl-" + p.kind] || c.ink;
+      const dotR = (tier === 1 ? 3.6 : 3) * Math.max(0.85, placesScale);
+      // без рамок: м'яке свічення кольором панелей застосунку, лише щоб текст читався на будь-якому знімку
+      ctx.shadowColor = c.surface;
+      ctx.shadowBlur = 4 * Math.max(1, placesScale);
       ctx.fillStyle = col;
-      ctx.strokeStyle = c.ink;
-      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(s.sx, s.sy, (tier === 1 ? 3.2 : 2.5) * Math.max(0.8, placesScale), 0, Math.PI * 2);
+      ctx.arc(s.sx, s.sy, dotR, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
-      const tw = ctx.measureText(p.name).width;
-      ctx.fillStyle = c.surface;
-      ctx.globalAlpha = 0.7;
-      ctx.fillRect(s.sx + 4, s.sy - boxH / 2, tw + 6, boxH);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = col;
-      ctx.fillText(p.name, s.sx + 7, s.sy);
+      ctx.fillText(p.name, s.sx + dotR + 4, s.sy + 0.5);
+      ctx.fillText(p.name, s.sx + dotR + 4, s.sy + 0.5); // другий прохід підсилює свічення
     }
   }
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
 }
 
 let showPlaces = true;
