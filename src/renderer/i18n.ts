@@ -125,6 +125,12 @@ const DICT: Dict = {
   downloadImportBtn: { uk: "Завантажити й імпортувати", en: "Download and import" },
   clearMapBtn: { uk: "Прибрати карту", en: "Remove map" },
   showPlacesLabel: { uk: "Показувати назви пунктів", en: "Show place names" },
+  placesBtnAria: { uk: "Назви пунктів: розмір і важливість", en: "Place names: size and importance" },
+  placesSizeLabel: { uk: "Розмір назв", en: "Name size" },
+  placesLevelLabel: { uk: "Показувати", en: "Show" },
+  placesLevel1: { uk: "Лише головні", en: "Major only" },
+  placesLevel2: { uk: "Головні й звичайні", en: "Major and regular" },
+  placesLevel3: { uk: "Усі", en: "All" },
   placesHint: {
     uk: "Назви пунктів Everon та Arland: {link1} (APL-SA). Супутникові карти й дані висот: {link2} (MIT).",
     en: "Everon and Arland place names: {link1} (APL-SA). Satellite maps and height data: {link2} (MIT)."

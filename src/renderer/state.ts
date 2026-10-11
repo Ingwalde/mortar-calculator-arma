@@ -2,6 +2,7 @@ import type { Calib } from "@core/geometry";
 import { PRESETS, findPreset, DEFAULT_TERRAIN_ID, type TerrainPreset } from "@core/terrains";
 import type { WeaponId } from "@core/ballistics";
 import type { Lang } from "./i18n";
+import { clampPlacesScale, normalizePlacesLevel, type PlaceTier } from "@core/places";
 
 export type MarkerType = "mortar" | "target" | "point";
 
@@ -82,6 +83,10 @@ export interface CustomTerrainMeta {
 export interface RootState {
   v: number;
   showPlaces: boolean;
+  /** Масштаб шрифту назв пунктів (0.6–2). */
+  placesScale: number;
+  /** Показувати пункти з важливістю не нижче: 1 — лише головні, 2 — головні й звичайні, 3 — усі. */
+  placesLevel: PlaceTier;
   lang: Lang;
   cur: string;
   customTerrains: CustomTerrainMeta[];
@@ -114,7 +119,7 @@ function allTerrainMetas(root: RootState): Array<{ id: string; sizeX: number; si
 }
 
 export function blankRoot(): RootState {
-  const root: RootState = { v: 1, showPlaces: true, lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
+  const root: RootState = { v: 1, showPlaces: true, placesScale: 1, placesLevel: 3, lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
   for (const p of PRESETS) root.data[p.id] = blankTerrain(p.sizeX, p.sizeZ);
   return root;
 }
@@ -223,6 +228,8 @@ export function normalizeRoot(raw: unknown): RootState {
 
   root.deletedTerrains = normalizeTombs(r.deletedTerrains);
   root.showPlaces = r.showPlaces !== false;
+  root.placesScale = clampPlacesScale(r.placesScale);
+  root.placesLevel = normalizePlacesLevel(r.placesLevel);
   root.lang = r.lang === "en" ? "en" : "uk";
   root.cur = allTerrainMetas(root).some((m) => m.id === r.cur) ? (r.cur as string) : DEFAULT_TERRAIN_ID;
   return root;
@@ -315,6 +322,9 @@ export function applyExternalState(raw: unknown): ExternalApply {
   const next = normalizeRoot(raw);
   const prev = ROOT;
   next.lang = prev.lang;
+  // розмір і рівень назв — налаштування екрана (телефон і ПК мають різні)
+  next.placesScale = prev.placesScale;
+  next.placesLevel = prev.placesLevel;
   for (const id of Object.keys(next.data)) {
     if (prev.data[id]) next.data[id].sel = prev.data[id].sel;
   }

@@ -4,11 +4,14 @@
  * див. scripts/extract-terrains.mjs. Дані генеруються, а не пишуться руками.
  */
 import rawData from "./terrains-data.json";
+import { placeTier, type PlaceTier } from "./places";
 
 export interface Place {
   name: string;
   x: number;
   z: number;
+  /** Важливість: 1 — головні, 2 — звичайні, 3 — другорядні (див. core/places.ts). */
+  tier: PlaceTier;
 }
 
 export interface OnlineTiles {
@@ -46,14 +49,14 @@ interface RawPreset {
   sizeZ: number;
   official: boolean;
   tiles?: OnlineTiles;
-  places?: [string, number, number][];
+  places?: [string, number, number, number?][];
   mapImage?: string;
   heightData?: string | null;
 }
 
 export const PRESETS: TerrainPreset[] = (rawData as RawPreset[]).map((t) => ({
   ...t,
-  places: t.places?.map(([name, x, z]) => ({ name, x, z }))
+  places: t.places?.map(([name, x, z, tier]) => ({ name, x, z, tier: tier === 1 || tier === 2 || tier === 3 ? tier : placeTier(name) }))
 }));
 
 export function findPreset(id: string): TerrainPreset | undefined {

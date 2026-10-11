@@ -1,3 +1,4 @@
+import { clampPlacesScale, normalizePlacesLevel } from "@core/places";
 import { fmtM, gridRef, parseGrid, parseGridCorner } from "@core/geometry";
 import { PRESETS, findPreset } from "@core/terrains";
 import { TABLES, bearing, shellRange, solve, type WeaponId } from "@core/ballistics";
@@ -29,6 +30,7 @@ import {
   resetView,
   setDrawCallbacks,
   setShowPlaces,
+  setPlacesStyle,
   setTapHandlers,
   syncImageSize
 } from "./mapView";
@@ -902,11 +904,40 @@ $<HTMLButtonElement>("wipe").onclick = async () => {
     renderAll();
   }
 };
-$<HTMLInputElement>("placesToggle").onchange = (e) => {
-  getRoot().showPlaces = (e.target as HTMLInputElement).checked;
-  setShowPlaces(getRoot().showPlaces);
+function applyPlacesStyle(): void {
+  const r = getRoot();
+  setPlacesStyle(r.placesScale, r.placesLevel);
+  ($("placesScale") as HTMLInputElement).value = String(Math.round(r.placesScale * 100));
+  $("placesScaleVal").textContent = `${Math.round(r.placesScale * 100)}%`;
+  ($("placesLevel") as HTMLSelectElement).value = String(r.placesLevel);
+  ($("placesToggle2") as HTMLInputElement).checked = r.showPlaces;
+}
+$<HTMLInputElement>("placesScale").oninput = (e) => {
+  getRoot().placesScale = clampPlacesScale(Number((e.target as HTMLInputElement).value) / 100);
+  applyPlacesStyle();
   scheduleSave();
   requestDraw();
+};
+$<HTMLSelectElement>("placesLevel").onchange = (e) => {
+  getRoot().placesLevel = normalizePlacesLevel(Number((e.target as HTMLSelectElement).value));
+  applyPlacesStyle();
+  scheduleSave();
+  requestDraw();
+};
+function onPlacesToggle(e: Event): void {
+  getRoot().showPlaces = (e.target as HTMLInputElement).checked;
+  setShowPlaces(getRoot().showPlaces);
+  ($("placesToggle") as HTMLInputElement).checked = getRoot().showPlaces;
+  ($("placesToggle2") as HTMLInputElement).checked = getRoot().showPlaces;
+  scheduleSave();
+  requestDraw();
+}
+$<HTMLInputElement>("placesToggle").onchange = onPlacesToggle;
+$<HTMLInputElement>("placesToggle2").onchange = onPlacesToggle;
+$<HTMLButtonElement>("placesBtn").onclick = () => {
+  const pop = $("placesPop");
+  pop.hidden = !pop.hidden;
+  $("placesBtn").setAttribute("aria-pressed", String(!pop.hidden));
 };
 
 // ---------- about ----------
@@ -1086,6 +1117,7 @@ function initAboutDialog(): void {
 
 export function initPanels(): void {
   setShowPlaces(getRoot().showPlaces);
+  applyPlacesStyle();
   fillTerrainSelect();
   renderStaticHints();
   setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });
