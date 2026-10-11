@@ -26,3 +26,15 @@ describe("налаштування назв", () => {
     expect(normalizePlacesLevel(7)).toBe(3);
   });
 });
+
+describe("placeKind", () => {
+  it("визначає категорію за назвою", async () => {
+    const { placeKind } = await import("./places");
+    expect(placeKind("Coastal Base Chotain")).toBe("military");
+    expect(placeKind("Airport")).toBe("transport");
+    expect(placeKind("Power Plant")).toBe("industry");
+    expect(placeKind("Long Beach")).toBe("water");
+    expect(placeKind("Stone Ridge 1")).toBe("nature");
+    expect(placeKind("Montignac")).toBe("settlement");
+  });
+});

@@ -3,6 +3,7 @@
   --mortar:#27628f;--target:#b9481a;--point:#5e4f8c;--grid:rgba(29,39,33,.42);--gridfine:rgba(29,39,33,.14);
   --mapblank:#dfe3d6;--focus:#27628f;
   --accent:#1f8f5f;--on-accent:#f5f6f0;
+  --pl-settlement:#1d2721;--pl-military:#b3261e;--pl-transport:#9a6400;--pl-industry:#7a3d94;--pl-water:#00778b;--pl-nature:#2f7d32;
   --glass:color-mix(in srgb,var(--surface) 62%,transparent);
   --glass-strong:color-mix(in srgb,var(--surface) 86%,transparent);
   --glass-border:color-mix(in srgb,var(--ink) 12%,transparent);
@@ -15,6 +16,7 @@
     --mortar:#7db0d8;--target:#f0975a;--point:#b2a3d8;--grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);
     --mapblank:#1b221d;--focus:#7db0d8;
     --accent:#6ee7a8;--on-accent:#0d1a10;
+    --pl-settlement:#e3e1d4;--pl-military:#ff8a7a;--pl-transport:#ffc05a;--pl-industry:#d7a5ee;--pl-water:#5fd3e6;--pl-nature:#8fdc8f;
   }
 }
 :root[data-theme="dark"]{
@@ -22,6 +24,7 @@
   --mortar:#7db0d8;--target:#f0975a;--point:#b2a3d8;--grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);
   --mapblank:#1b221d;--focus:#7db0d8;
   --accent:#6ee7a8;--on-accent:#0d1a10;
+  --pl-settlement:#e3e1d4;--pl-military:#ff8a7a;--pl-transport:#ffc05a;--pl-industry:#d7a5ee;--pl-water:#5fd3e6;--pl-nature:#8fdc8f;
 }
 html{height:100%;overscroll-behavior:none}
 body{margin:0;height:100%;background:var(--bg);color:var(--ink);
@@ -59,6 +62,9 @@ header h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.01em}
 .mapbtns .btn.icon svg{width:16px;height:16px}
 .placespop{position:absolute;right:440px;top:88px;z-index:16;display:flex;flex-direction:column;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--line,rgba(0,0,0,.15));border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:13px;min-width:230px}
 .placespop[hidden]{display:none}
+.placeslegend{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12px}
+.placeslegend span{display:flex;align-items:center;gap:6px}
+.placeslegend i{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid color-mix(in srgb,var(--ink) 35%,transparent)}
 .placespop input[type=range]{width:120px}
 @media (max-width:820px){.placespop{right:60px;top:calc(64px + var(--safe-t))}}
 .app.immersive .placespop{top:calc(16px + env(safe-area-inset-top,0px));right:64px}
@@ -209,3 +215,4 @@ html.ios-short{--safe-b:0px}
 .app.immersive .ic-shrink{display:block}
 
 @media (prefers-reduced-motion:reduce){.toast,.btn,.tabs button,.seg button{transition:none}}
+.placespop select{background:var(--raised);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font:inherit}
