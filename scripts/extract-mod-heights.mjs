@@ -18,6 +18,10 @@ const CONFIG = {
   mogadishu: { prefix: "Worlds/Mogadishu/mogadishu/.Data/mogadishu_", tiles: 24, cell: 2, step: 3, offset: -204.78125 }
 };
 const SCALE = 0.03125;
+// Для рендеру карт рельєфу: STEP=<вершин> (менше = детальніше), HSCALE=<множник> (значення зберігаємо як
+// round(метри * HSCALE), щоб не було "терас" від цілих метрів), OUT=<файл>.
+const STEP = Number(process.env.STEP) || 0;
+const HSCALE = Number(process.env.HSCALE) || 1;
 
 const [id, pak] = process.argv.slice(2);
 const cfg = CONFIG[id];
@@ -86,25 +90,26 @@ console.log(`шви: ${((1 - bad / total) * 100).toFixed(2)}% збігаютьс
 
 const toM = (raw) => raw * SCALE + cfg.offset;
 // вихідна сітка: рядок = X, стовпець = з півночі на південь
-const dim = Math.floor(N / cfg.step) + 1;
+const step = STEP || cfg.step;
+const dim = Math.floor(N / step) + 1;
 const out = Buffer.alloc(8 + dim * dim * 2);
 out.writeInt32LE(dim, 0);
 out.writeInt32LE(dim, 4);
 let min = 1e9, max = -1e9;
 for (let row = 0; row < dim; row++) {
-  const x = Math.min(N, row * cfg.step);
+  const x = Math.min(N, row * step);
   for (let col = 0; col < dim; col++) {
-    const z = Math.max(0, N - col * cfg.step);
-    const m = Math.round(toM(grid[z * (N + 1) + x]));
+    const z = Math.max(0, N - col * step);
+    const m = Math.round(toM(grid[z * (N + 1) + x]) * HSCALE);
     if (m < min) min = m;
     if (m > max) max = m;
     out.writeInt16LE(m, 8 + (row * dim + col) * 2);
   }
 }
-const OUT = fileURLToPath(new URL(`../resources/heights/${id}.bin`, import.meta.url));
+const OUT = process.env.OUT || fileURLToPath(new URL(`../resources/heights/${id}.bin`, import.meta.url));
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, out);
-console.log(`${id}: ${dim}x${dim} (крок ${cfg.step * cfg.cell} м), терен ${N * cfg.cell} м, висоти ${min}..${max} м, ${(out.length / 1048576).toFixed(1)} МБ`);
+console.log(`${id}: ${dim}x${dim} (крок ${step * cfg.cell} м), терен ${N * cfg.cell} м, висоти ${min}..${max} м, ${(out.length / 1048576).toFixed(1)} МБ`);
 
 // перевірка за висотами підписів із шарів мода (якщо є файл labels)
 const labelsFile = `D:/arma-mods/out/${{ bystrany: "Bystrany", operationrepulse: "OperationRepulse", ironholdcastle: "IronHoldCastle", kirovograd: "Chernorus_Kirovograd", mogadishu: "Mogadishu" }[id]}-labels.json`;
