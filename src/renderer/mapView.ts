@@ -322,6 +322,12 @@ function draw(): void {
     blank: css("--mapblank"),
     ink: css("--ink"),
     surface: css("--raised"),
+    "pl-settlement": css("--pl-settlement"),
+    "pl-military": css("--pl-military"),
+    "pl-transport": css("--pl-transport"),
+    "pl-industry": css("--pl-industry"),
+    "pl-water": css("--pl-water"),
+    "pl-nature": css("--pl-nature"),
     mortar: css("--mortar"),
     target: css("--target"),
     point: css("--point")
@@ -464,16 +470,20 @@ function drawPlaces(c: Record<string, string>): void {
       if (p.tier !== tier) continue;
       const s = scrFromWorld(p.x, p.z);
       if (s.sx < -80 || s.sy < -20 || s.sx > W + 20 || s.sy > H + 20) continue;
-      ctx.fillStyle = c.ink;
+      const col = c["pl-" + p.kind] || c.ink;
+      ctx.fillStyle = col;
+      ctx.strokeStyle = c.ink;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(s.sx, s.sy, (tier === 1 ? 3.2 : 2.5) * Math.max(0.8, placesScale), 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
       const tw = ctx.measureText(p.name).width;
       ctx.fillStyle = c.surface;
       ctx.globalAlpha = 0.7;
       ctx.fillRect(s.sx + 4, s.sy - boxH / 2, tw + 6, boxH);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = c.ink;
+      ctx.fillStyle = col;
       ctx.fillText(p.name, s.sx + 7, s.sy);
     }
   }

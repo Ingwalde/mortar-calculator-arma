@@ -31,3 +31,21 @@ export function clampPlacesScale(v: unknown): number {
 export function normalizePlacesLevel(v: unknown): PlaceTier {
   return v === 1 || v === 2 ? v : 3;
 }
+
+/** Чого стосується назва — від цього залежить колір підпису на карті. */
+export type PlaceKind = "settlement" | "military" | "transport" | "industry" | "water" | "nature";
+
+export const PLACE_KINDS: PlaceKind[] = ["settlement", "military", "transport", "industry", "water", "nature"];
+
+const KIND_RULES: [PlaceKind, RegExp][] = [
+  ["military", /\b(base|military|fob|op|checkpoint|battery|bunkers?|barracks|camp|outpost|fort|castle|garrison|artillery|command)\b/i],
+  ["transport", /\b(airport|airfield|airstrip|runway|port|harbou?r|station|tunnel|pass|bridge|crossroads?|junction|railway|dock|highway)\b/i],
+  ["industry", /\b(power plant|plant|factory|refinery|mine|quarry|sawmill|industrial|depot|oil|radio|fm|tower|antenna|warehouse|wasserversorgung|forstfahrzeug-wartungshof|blocks)\b/i],
+  ["water", /\b(beach|bay|lake|pond|river|riverbed|water|spring|coast|island|sea)\b/i],
+  ["nature", /\b(hill|ridge|forest|hollow|woods?|valley|cave|mountain|mount|peak|rock(slide)?|mound|stone|bush|fields?|spielfeld)\b|berg\b/i]
+];
+
+export function placeKind(name: string): PlaceKind {
+  for (const [kind, re] of KIND_RULES) if (re.test(name)) return kind;
+  return "settlement";
+}

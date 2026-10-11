@@ -4,7 +4,7 @@
  * див. scripts/extract-terrains.mjs. Дані генеруються, а не пишуться руками.
  */
 import rawData from "./terrains-data.json";
-import { placeTier, type PlaceTier } from "./places";
+import { placeKind, placeTier, type PlaceKind, type PlaceTier } from "./places";
 
 export interface Place {
   name: string;
@@ -12,6 +12,8 @@ export interface Place {
   z: number;
   /** Важливість: 1 — головні, 2 — звичайні, 3 — другорядні (див. core/places.ts). */
   tier: PlaceTier;
+  /** Категорія (від неї колір підпису), визначається за назвою. */
+  kind: PlaceKind;
 }
 
 export interface OnlineTiles {
@@ -56,7 +58,7 @@ interface RawPreset {
 
 export const PRESETS: TerrainPreset[] = (rawData as RawPreset[]).map((t) => ({
   ...t,
-  places: t.places?.map(([name, x, z, tier]) => ({ name, x, z, tier: tier === 1 || tier === 2 || tier === 3 ? tier : placeTier(name) }))
+  places: t.places?.map(([name, x, z, tier]) => ({ name, x, z, tier: tier === 1 || tier === 2 || tier === 3 ? tier : placeTier(name), kind: placeKind(name) }))
 }));
 
 export function findPreset(id: string): TerrainPreset | undefined {
