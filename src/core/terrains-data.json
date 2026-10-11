@@ -219,6 +219,43 @@
       "base": "https://reforger.recoil.org/map-tiles/cain/",
       "maxLod": 5
     },
+    "places": [
+      [
+        "Kamensk",
+        11867,
+        10680
+      ],
+      [
+        "Mineraly",
+        6322,
+        8012
+      ],
+      [
+        "Ugoldar",
+        6642,
+        3907
+      ],
+      [
+        "Crossroad",
+        8559,
+        9376
+      ],
+      [
+        "Gorshkovo",
+        8422,
+        6592
+      ],
+      [
+        "Mine",
+        3674,
+        5223
+      ],
+      [
+        "Villa",
+        1951,
+        7401
+      ]
+    ],
     "mapImage": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/kolguev_sat_z7_full.png",
     "heightData": "https://pub-65310bd5bcd44d68b30addfbacb31e51.r2.dev/height_data/kolguev_height.json"
   },

@@ -216,7 +216,7 @@ const DICT: Dict = {
     <p class="hint"><b>GeNeFRAG/ArmaReforger</b> — балістичні таблиці M252/2Б14, розміри теренів, супутникові знімки, дані висот.
       Ліцензія: <a href="https://github.com/GeNeFRAG/ArmaReforger/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>.
       <a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">github.com/GeNeFRAG/ArmaReforger</a></p>
-    <p class="hint"><b>reforger.recoil.org</b> — джерело онлайн-тайлів Everon і Arland.</p>`,
+    <p class="hint"><b>reforger.recoil.org</b> — джерело онлайн-тайлів Everon, Arland і Kolguyev та контрольних точок Kolguyev.</p>`,
     en: `<h2>About</h2>
     <p class="hint">A mortar tablet for Arma Reforger. Non-commercial app for personal and in-game use.</p>
     <h2>Sources and attribution</h2>
@@ -226,7 +226,7 @@ const DICT: Dict = {
     <p class="hint"><b>GeNeFRAG/ArmaReforger</b> — M252/2B14 ballistic tables, terrain sizes, satellite images, height data.
       License: <a href="https://github.com/GeNeFRAG/ArmaReforger/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>.
       <a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">github.com/GeNeFRAG/ArmaReforger</a></p>
-    <p class="hint"><b>reforger.recoil.org</b> — source of Everon and Arland online tiles.</p>`
+    <p class="hint"><b>reforger.recoil.org</b> — source of Everon, Arland and Kolguyev online tiles and the Kolguyev control points.</p>`
   },
 
   importPhaseDownload: { uk: "Завантаження зображення", en: "Downloading image" },
