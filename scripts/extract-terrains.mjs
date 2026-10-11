@@ -49,8 +49,21 @@ const BASE = [
     // усі сім лягають на відповідні селища/об'єкти з точністю до десятків метрів.
     places: [["Kamensk",11867,10680],["Mineraly",6322,8012],["Ugoldar",6642,3907],["Crossroad",8559,9376],["Gorshkovo",8422,6592],["Mine",3674,5223],["Villa",1951,7401]]
   },
-  { id: "badorb", name: "Bad Orb", sizeX: 5120, sizeZ: 5120, official: false },
-  { id: "gogland", name: "Gogland", sizeX: 12286, sizeZ: 12286, official: false }
+  {
+    id: "badorb", name: "Bad Orb", sizeX: 5120, sizeZ: 5120, official: false,
+    // Назви й координати — з самого мода (Bad Orb 5.0, Worlds/.../Labels/Place_Labels.layer,
+    // сутності з SCR_MapDescriptorComponent; тип Town/Settlement/Village/Local). Розмір 5120 м
+    // підтверджено заголовком Terrain (5121 вершина, крок 1 м).
+    places: [["Westen Bad Orb",4789,3572],["Wasserversorgung Bad Orb",3407,4456],["Hof Lomelsberg",1786,4066],["Ruckberg",2306,3986],["Allenburg",3247,3332],["Kasselberg",3491,2839],["Huhnerberg",3711,1985],["Sonnenberg",3740,1713],["Bocksberg",4454,1721],["Schubert Ranch",4373,2566],["Ersteberg",2020,2843],["Funf-Wege",4325,4360],["Forstfahrzeug-Wartungshof",4415,4816],["Bad Orb Spielfeld",3851,4140],["Krestberg",3594,4973],["Wasserberg",3486,3579],["Mittbach",450,5091],["Kassel",213,889],["FM 93.3",1342,3631]]
+  },
+  {
+    id: "gogland", name: "Gogland", sizeX: 12288, sizeZ: 12288, official: false,
+    // Каталог GeNeFRAG дає 12286, але заголовок Terrain мода (Gogland.terr) — 6145 вершин з кроком 2 м,
+    // тобто 12288 м (і 12288/32768 = 0.375 м/піксель знімка рівно). Беремо 12288.
+    sizeFromMod: true,
+    // Назви — з файлів мода (Gogland_Layers/Names.layer: сутності SCR_MapDescriptorComponent).
+    places: [["Kiiskinkylä",7221,5314],["Suurkylä",5463,9137],["Lounatrivi",7411,1093],["Vähäkorkia",7136,2124],["Mattila",6693,2110],["Valkiakallio",6695,1650],["Heikinhelli",5852,1435],["Vähäkorkianniemi",5842,1999],["Pahanraonkallio",5938,2978],["Maahelli",5604,3587],["Lounatkylä",6786,2885],["Lounatkorkia",6665,2797],["Maahellinkallio",5967,3998],["Suurlinna",5890,4256],["Mustalovi",5222,4462],["Lettolahti",5254,4822],["Selkäapajanniemi",4957,4961],["Alttarkallio",8012,2616],["Välikallio",7435,3886],["Kippariniemi",8266,3765],["Purjeniemi",7708,4706],["Somerikonkalliot",5440,5690],["Variskallio",6361,5723],["Liivalahti",6528,6635],["Haukkavuori",5601,6839],["Lammaskallio",6079,7111],["Mäkiinpäällys",5134,8019],["Purjekallio",4473,8502],["Kotokallio",5119,8367],["Majakallio",4636,9104],["Hirskallio",5679,9707],["Pohjoiskorkia",4427,9946],["Vähasomerikonlahti",4202,9024],["Mustakallio",4137,10290],["Pohjoisrivi",4623,11104],["Lipeäkallio",5976,7738],["Lounatjärvi",6762,3248],["Ruokolahdenjärvi",6358,4657],["Pahalampi",7367,3570],["Länsikallio",6588,5168],["Vetelijärvi",5994,5303],["Liiralahdenjärvi",5839,6067],["Mustajyrkkä",7134,5722],["Notkonhelli",4692,6416],["Kappeliniemi",5722,8554],["Pohjoissivunkallio",5049,10146],["Rivinkallio",4609,10612],["Isosommeri",2502,2103],["Ruuskeri",10130,6479],["Säkkiluoto",9453,10758],["säyvö",1128,5126],["Miettilä",6929,4092],["Jokela",5012,6420],["Niemenkylä",6289,7452],["Teollisuusalue",7486,3183],["Korkiala",4155,9836],["Armeijan varikko",4523,8824]]
+  }
 ];
 
 // Мод-карти поза каталогом GeNeFRAG — немає ні супутникового знімка, ні даних висот, ні
@@ -114,13 +127,14 @@ const fromCatalog = BASE.map((t) => {
   const ns = NAMESPACE_OVERRIDE[t.id] ?? t.id;
   const src = byNamespace.get(ns);
   if (!src) throw new Error(`Терен "${t.id}" (namespace "${ns}") відсутній у all_arma_maps.json`);
-  if (src.size[0] !== t.sizeX || src.size[1] !== t.sizeZ) {
+  if (!t.sizeFromMod && (src.size[0] !== t.sizeX || src.size[1] !== t.sizeZ)) {
     throw new Error(
       `Розмір "${t.id}" розходиться з all_arma_maps.json: маю ${t.sizeX}x${t.sizeZ}, там ${src.size[0]}x${src.size[1]}`
     );
   }
+  const { sizeFromMod, ...rest } = t; // sizeFromMod — лише службовий прапорець скрипта
   return {
-    ...t,
+    ...rest,
     mapImage: src.resources.map_image,
     heightData: src.resources.height_data ?? null
   };
