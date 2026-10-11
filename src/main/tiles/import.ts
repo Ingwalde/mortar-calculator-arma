@@ -97,7 +97,12 @@ export async function buildTilePyramid(
   }
 
   try {
-    await pipeline.tile({ size: 256, layout: "google" }).toFile(outDir);
+    // Плоскі карти з тонкими кольоровими лініями (дороги, сітка) псуються стандартним JPEG q80 із
+    // субдискретизацією кольору 4:2:0 — тримаємо повну кольорову роздільність і вищу якість.
+    await pipeline
+      .jpeg({ quality: 90, chromaSubsampling: "4:4:4" })
+      .tile({ size: 256, layout: "google" })
+      .toFile(outDir);
   } catch (err) {
     if (cancelled) throw new ImportCancelledError();
     throw err;
