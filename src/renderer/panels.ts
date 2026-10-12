@@ -42,7 +42,6 @@ import { initImmersive, initSheet } from "./sheet";
 import { initWakeLock } from "./wakeLock";
 import { isRemote } from "./platform";
 import { initOffline } from "./offline";
-import { onlineTileList } from "@core/onlineTiles";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
@@ -778,7 +777,6 @@ function renderSetup(): void {
   $<HTMLInputElement>("sizeZ").value = String(S.calib.sizeZ);
   $<HTMLButtonElement>("presetSize").textContent = `${meta.name} ${meta.sizeX}×${meta.sizeZ}`;
   $("placesToggle").hidden = false;
-  renderPrefetch();
   ($("placesToggle") as HTMLInputElement).checked = getRoot().showPlaces;
   $<HTMLButtonElement>("downloadImport").hidden = !meta.preset?.mapImage;
   $("mapInfo").hidden = true;
@@ -990,53 +988,6 @@ function onPlacesToggle(e: Event): void {
 }
 $<HTMLInputElement>("placesToggle").onchange = onPlacesToggle;
 
-// ---------- збереження онлайн-тайлів на диск ПК ----------
-function renderPrefetch(): void {
-  const box = $("prefetchBox");
-  const meta = currentMeta();
-  const tiles = meta.preset?.tiles;
-  box.hidden = isRemote || !tiles;
-  if (isRemote || !tiles) return;
-  const sel = $<HTMLSelectElement>("prefetchLevel");
-  const prev = sel.value;
-  sel.textContent = "";
-  const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
-  const lods = [...new Set([Math.min(tiles.maxLod, 3), Math.min(tiles.maxLod, 2), 1, 0])];
-  lods.forEach((lod, i) => {
-    const n = onlineTileList(meta.sizeX, meta.sizeZ, tiles.maxLod, lod).length;
-    const mb = Math.round((n * 40) / 1024);
-    sel.add(new Option(t("offlineOpt", { label: names[i] ?? names[names.length - 1], n, mb }), String(lod)));
-  });
-  if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
-}
-$<HTMLButtonElement>("prefetchGo").onclick = async () => {
-  const meta = currentMeta();
-  const bar = $<HTMLProgressElement>("prefetchProg");
-  const text = $("prefetchText");
-  const go = $<HTMLButtonElement>("prefetchGo");
-  const stop = $<HTMLButtonElement>("prefetchStop");
-  go.hidden = true;
-  stop.hidden = false;
-  bar.hidden = false;
-  text.hidden = false;
-  bar.value = 0;
-  bar.max = 1;
-  const off = window.api.tiles.onPrefetchProgress((p) => {
-    bar.max = p.total;
-    bar.value = p.done;
-    text.textContent = t("prefetchProgress", { done: p.done, total: p.total });
-  });
-  try {
-    const res = await window.api.tiles.prefetch(meta.id, Number($<HTMLSelectElement>("prefetchLevel").value));
-    text.textContent = res.cancelled ? t("prefetchCancelled") : t("prefetchDone", { done: res.done, failed: res.failed });
-  } finally {
-    off();
-    go.hidden = false;
-    stop.hidden = true;
-    bar.hidden = true;
-  }
-};
-$<HTMLButtonElement>("prefetchStop").onclick = () => void window.api.tiles.cancelPrefetch();
 $<HTMLInputElement>("placesToggle2").onchange = onPlacesToggle;
 $<HTMLButtonElement>("placesBtn").onclick = () => {
   const pop = $("placesPop");
@@ -1222,15 +1173,7 @@ function initAboutDialog(): void {
 export function initPanels(): void {
   setShowPlaces(getRoot().showPlaces);
   applyPlacesStyle();
-  initOffline(() => {
-    // ПК: онлайн-тайли зберігаються на диск у вкладці «Карта»; імпортована карта вже лежить на диску.
-    if (currentMeta().preset?.tiles) {
-      showTab("setup");
-      document.getElementById("prefetchBox")?.scrollIntoView({ block: "center", behavior: "smooth" });
-    } else {
-      toast(t("offlinePcLocal"));
-    }
-  });
+  initOffline();
   fillTerrainSelect();
   renderStaticHints();
   setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });

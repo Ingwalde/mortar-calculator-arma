@@ -138,17 +138,6 @@ html.no-splash #splash{display:none}
 
         <label class="row" style="margin-top:10px;gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
         <p class="hint" style="font-size:12px" id="placesHint"></p>
-        <div id="prefetchBox" hidden style="margin-top:14px">
-          <h2 data-i18n="prefetchHeading">Карта без інтернету</h2>
-          <p class="hint" data-i18n="prefetchHint"></p>
-          <div class="row" style="gap:8px;flex-wrap:wrap">
-            <select id="prefetchLevel" data-i18n-aria-label="offlineLevelAria" aria-label="Деталізація"></select>
-            <button class="btn" id="prefetchGo" data-i18n="prefetchGoBtn">Зберегти на диск</button>
-            <button class="btn" id="prefetchStop" hidden data-i18n="offlineStopBtn">Зупинити</button>
-          </div>
-          <progress id="prefetchProg" hidden style="width:100%;margin-top:8px"></progress>
-          <p class="hint" id="prefetchText" hidden></p>
-        </div>
         <div class="row" style="margin-top:8px" id="customRow" hidden>
           <button class="btn small danger" id="delTerrain" data-i18n="delTerrainBtn">Видалити цей терен зі списку</button>
         </div>
@@ -233,7 +222,7 @@ html.no-splash #splash{display:none}
 </dialog>
 <dialog id="offlineDlg">
   <h3 data-i18n="offlineTitle">Офлайн-режим</h3>
-  <p class="hint" data-i18n="offlineIntro"></p>
+  <p class="hint" id="offlineIntro" data-i18n="offlineIntro"></p>
   <p class="offline-state" id="offlineState"></p>
   <div class="field"><label><span data-i18n="offlineTerrainLabel">Терен</span>: <b id="offlineTerrain"></b></label></div>
   <p class="hint" id="offlineNoMap" hidden data-i18n="offlineNoMap"></p>

@@ -41,22 +41,32 @@ export async function getOnlineTile(terrainId: string, lod: number, x: number, y
   }
 }
 
-/** Гарантує, що онлайн-тайл лежить у дисковому кеші (без читання файлу). false — не вдалося. */
-export async function ensureOnlineTile(terrainId: string, lod: number, x: number, y: number): Promise<boolean> {
+export type EnsureTileResult = "ok" | "missing" | "failed";
+
+/**
+ * Гарантує, що онлайн-тайл лежить у дисковому кеші (без читання файлу).
+ * "missing" — сервер каже, що такого тайла нема (404: за межами карти, море), це не помилка;
+ * "failed" — мережева чи серверна помилка (одна повторна спроба).
+ */
+export async function ensureOnlineTile(terrainId: string, lod: number, x: number, y: number): Promise<EnsureTileResult> {
   const preset = findPreset(terrainId);
-  if (!preset?.tiles) return false;
+  if (!preset?.tiles) return "failed";
   const cachePath = join(tileCacheDir(terrainId), String(lod), String(x), `${y}.jpg`);
-  if (existsSync(cachePath)) return true;
-  try {
-    const remote = await net.fetch(tileUrl(preset.tiles.base, lod, x, y));
-    if (!remote.ok) return false;
-    const buf = Buffer.from(await remote.arrayBuffer());
-    await mkdir(join(tileCacheDir(terrainId), String(lod), String(x)), { recursive: true });
-    await writeFile(cachePath, buf);
-    return true;
-  } catch {
-    return false;
+  if (existsSync(cachePath)) return "ok";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const remote = await net.fetch(tileUrl(preset.tiles.base, lod, x, y));
+      if (remote.status === 404) return "missing";
+      if (!remote.ok) continue;
+      const buf = Buffer.from(await remote.arrayBuffer());
+      await mkdir(join(tileCacheDir(terrainId), String(lod), String(x)), { recursive: true });
+      await writeFile(cachePath, buf);
+      return "ok";
+    } catch {
+      // мережа — пробуємо ще раз
+    }
   }
+  return "failed";
 }
 
 /** Тайл імпортованої піраміди (sharp .tile google layout: {z}/{row}/{col}.jpg). */

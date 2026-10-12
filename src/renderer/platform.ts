@@ -164,7 +164,7 @@ function createWebApi(): MortarApi {
       onProgress: () => () => undefined
     },
     tiles: {
-      prefetch: async () => ({ ok: false, done: 0, failed: 0, total: 0 }),
+      prefetch: async () => ({ ok: false, done: 0, missing: 0, failed: 0, total: 0 }),
       cancelPrefetch: async () => undefined,
       onPrefetchProgress: () => () => undefined
     },

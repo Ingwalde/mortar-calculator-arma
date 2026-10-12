@@ -90,50 +90,85 @@ function terrainPrefixes(id: string): string[] {
 
 let abort: AbortController | null = null;
 
+function setBusy(busy: boolean): void {
+  $<HTMLButtonElement>("offlineSave").hidden = busy;
+  $<HTMLButtonElement>("offlineStop").hidden = !busy;
+  $<HTMLProgressElement>("offlineProg").hidden = !busy;
+  $<HTMLSelectElement>("offlineLevel").disabled = busy;
+}
+
+function summary(done: number, missing: number, failed: number, aborted: boolean): string {
+  if (aborted) return t("offlineStopped", { done });
+  if (done === 0 && failed > 0) return t("offlineFailed");
+  return t("offlineDone", { done, missing, failed });
+}
+
+/** Телефон: тайли тягнуться через service worker, що кладе їх у кеш пристрою. */
 async function download(opt: OfflineOption): Promise<void> {
   if (abort) return;
   abort = new AbortController();
   const signal = abort.signal;
   const bar = $<HTMLProgressElement>("offlineProg");
   const txt = $("offlineProgText");
-  bar.hidden = false;
   txt.hidden = false;
   bar.max = opt.urls.length;
   bar.value = 0;
-  $<HTMLButtonElement>("offlineSave").hidden = true;
-  $<HTMLButtonElement>("offlineStop").hidden = false;
+  setBusy(true);
   let done = 0;
+  let missing = 0;
   let failed = 0;
   let next = 0;
+  let finished = 0;
   const worker = async (): Promise<void> => {
     while (!signal.aborted) {
       const i = next++;
       if (i >= opt.urls.length) return;
       try {
         const res = await fetch(opt.urls[i], { signal });
-        if (!res.ok) failed++;
-        else await res.arrayBuffer();
+        if (res.status === 404) missing++;
+        else if (!res.ok) failed++;
+        else {
+          await res.arrayBuffer();
+          done++;
+        }
       } catch {
         if (signal.aborted) return;
         failed++;
       }
-      done++;
-      bar.value = done;
-      txt.textContent = t("offlineProgress", { done, total: opt.urls.length });
+      finished++;
+      bar.value = finished;
+      txt.textContent = t("offlineProgress", { done: finished, total: opt.urls.length });
     }
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   const aborted = signal.aborted;
   abort = null;
-  bar.hidden = true;
-  $<HTMLButtonElement>("offlineStop").hidden = true;
-  $<HTMLButtonElement>("offlineSave").hidden = false;
-  txt.textContent = aborted
-    ? t("offlineStopped", { done })
-    : failed > opt.urls.length / 2
-      ? t("offlineFailed")
-      : t("offlineDone", { done: done - failed, failed });
+  setBusy(false);
+  txt.textContent = summary(done, missing, failed, aborted);
   void refresh();
+}
+
+/** ПК: онлайн-тайли зберігаються в дисковий кеш застосунку (main-процес). */
+async function pcDownload(minLod: number): Promise<void> {
+  const meta = currentMeta();
+  const bar = $<HTMLProgressElement>("offlineProg");
+  const txt = $("offlineProgText");
+  txt.hidden = false;
+  bar.max = 1;
+  bar.value = 0;
+  setBusy(true);
+  const off = window.api.tiles.onPrefetchProgress((p) => {
+    bar.max = p.total;
+    bar.value = p.done;
+    txt.textContent = t("offlineProgress", { done: p.done, total: p.total });
+  });
+  try {
+    const res = await window.api.tiles.prefetch(meta.id, minLod);
+    txt.textContent = summary(res.done, res.missing, res.failed, res.cancelled === true);
+  } finally {
+    off();
+    setBusy(false);
+  }
 }
 
 async function clearTerrain(): Promise<void> {
@@ -151,8 +186,48 @@ async function clearTerrain(): Promise<void> {
   void refresh();
 }
 
-async function refresh(): Promise<void> {
+/** Варіанти деталізації для ПК: лише онлайн-тайли (імпортована карта вже на диску). */
+function pcOptions(): { key: string; minLod: number; label: string; n: number; bytes: number }[] {
   const meta = currentMeta();
+  const tiles = meta.preset?.tiles;
+  if (!tiles) return [];
+  const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
+  const lods = [...new Set([Math.min(tiles.maxLod, 3), Math.min(tiles.maxLod, 2), 1, 0])];
+  return lods.map((lod, i) => {
+    const n = onlineTileList(meta.sizeX, meta.sizeZ, tiles.maxLod, lod).length;
+    return { key: `o${lod}`, minLod: lod, label: names[i] ?? names[names.length - 1], n, bytes: n * ONLINE_TILE_BYTES };
+  });
+}
+
+function refreshPc(): void {
+  const meta = currentMeta();
+  const state = $("offlineState");
+  state.dataset.ok = "1";
+  $("offlineIntro").hidden = true;
+  $("offlineTerrain").textContent = meta.name;
+  const opts = pcOptions();
+  const sel = $<HTMLSelectElement>("offlineLevel");
+  const prev = sel.value;
+  sel.textContent = "";
+  for (const o of opts) sel.appendChild(new Option(t("offlineOpt", { label: o.label, n: o.n, mb: fmtMb(o.bytes) }), o.key));
+  if (opts.some((o) => o.key === prev)) sel.value = prev;
+  const has = opts.length > 0;
+  state.textContent = has ? t("offlinePcTiles") : t("offlinePcLocal");
+  sel.hidden = !has;
+  $<HTMLButtonElement>("offlineSave").hidden = !has || abort !== null;
+  $("offlineNoMap").hidden = true;
+  $("offlineSaved").hidden = true;
+  $("offlineUsage").hidden = true;
+  $<HTMLButtonElement>("offlineClear").hidden = true;
+}
+
+async function refresh(): Promise<void> {
+  if (!isRemote) {
+    refreshPc();
+    return;
+  }
+  const meta = currentMeta();
+  $("offlineIntro").hidden = false;
   const secure = window.isSecureContext;
   const controlled = "serviceWorker" in navigator && !!navigator.serviceWorker.controller;
   const state = $("offlineState");
@@ -173,7 +248,7 @@ async function refresh(): Promise<void> {
   }
   if (opts.some((o) => o.key === prev)) sel.value = prev;
   const hasMap = opts.length > 0;
-  sel.disabled = !hasMap;
+  sel.disabled = !hasMap || abort !== null;
   $<HTMLButtonElement>("offlineSave").disabled = !hasMap || !secure;
   $("offlineNoMap").hidden = hasMap;
 
@@ -192,16 +267,12 @@ async function refresh(): Promise<void> {
 }
 
 /**
- * Кнопка «хмарка» в шапці. На телефоні відкриває діалог збереження карти; на ПК (де карти й так на диску)
- * веде до «Карта без інтернету» у вкладці «Карта» — onPc викликається з боку панелей.
+ * Кнопка «хмарка» в шапці: діалог збереження карти. На телефоні — у кеш пристрою (service worker),
+ * на ПК — онлайн-тайли на диск (для імпортованих карт показує, що вони вже на диску).
  */
-export function initOffline(onPc: () => void): void {
+export function initOffline(): void {
   const btn = $<HTMLButtonElement>("offlineBtn");
   btn.hidden = false;
-  if (!isRemote) {
-    btn.onclick = onPc;
-    return;
-  }
   const dlg = $<HTMLDialogElement>("offlineDlg");
   btn.onclick = () => {
     dlg.showModal();
@@ -213,6 +284,11 @@ export function initOffline(onPc: () => void): void {
   });
   $<HTMLButtonElement>("offlineSave").onclick = () => {
     const key = $<HTMLSelectElement>("offlineLevel").value;
+    if (!isRemote) {
+      const opt = pcOptions().find((o) => o.key === key);
+      if (opt) void pcDownload(opt.minLod);
+      return;
+    }
     const opt = offlineOptions().find((o) => o.key === key);
     if (!opt) return;
     if (isOffline()) {
@@ -221,10 +297,12 @@ export function initOffline(onPc: () => void): void {
     }
     void download(opt);
   };
-  $<HTMLButtonElement>("offlineStop").onclick = () => abort?.abort();
+  $<HTMLButtonElement>("offlineStop").onclick = () => {
+    if (isRemote) abort?.abort();
+    else void window.api.tiles.cancelPrefetch();
+  };
   $<HTMLButtonElement>("offlineClear").onclick = () => void clearTerrain();
-  $<HTMLSelectElement>("offlineLevel").onchange = () => undefined;
-  if ("serviceWorker" in navigator) {
+  if (isRemote && "serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (dlg.open) void refresh();
     });

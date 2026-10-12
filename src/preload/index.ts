@@ -67,7 +67,10 @@ const api = {
     }
   },
   tiles: {
-    prefetch: (terrainId: string, minLod: number): Promise<{ ok: boolean; cancelled?: boolean; done: number; failed: number; total: number }> =>
+    prefetch: (
+      terrainId: string,
+      minLod: number
+    ): Promise<{ ok: boolean; cancelled?: boolean; done: number; missing: number; failed: number; total: number }> =>
       ipcRenderer.invoke("tiles:prefetch", terrainId, minLod),
     cancelPrefetch: (): Promise<void> => ipcRenderer.invoke("tiles:prefetchCancel"),
     onPrefetchProgress: (cb: (p: { done: number; total: number }) => void): (() => void) => {
