@@ -1222,7 +1222,15 @@ function initAboutDialog(): void {
 export function initPanels(): void {
   setShowPlaces(getRoot().showPlaces);
   applyPlacesStyle();
-  initOffline();
+  initOffline(() => {
+    // ПК: онлайн-тайли зберігаються на диск у вкладці «Карта»; імпортована карта вже лежить на диску.
+    if (currentMeta().preset?.tiles) {
+      showTab("setup");
+      document.getElementById("prefetchBox")?.scrollIntoView({ block: "center", behavior: "smooth" });
+    } else {
+      toast(t("offlinePcLocal"));
+    }
+  });
   fillTerrainSelect();
   renderStaticHints();
   setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });
