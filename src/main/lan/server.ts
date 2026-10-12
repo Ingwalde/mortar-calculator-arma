@@ -24,6 +24,8 @@ export interface LanDeps {
   readHeights(terrainId: string): Promise<Uint8Array | null>;
   onlineTile(terrainId: string, lod: number, x: number, y: number): Promise<Buffer | null>;
   pyramidTile(terrainId: string, z: string, row: string, col: string): Promise<Buffer | null>;
+  /** Середній розмір тайла піраміди терену в байтах (за вибіркою) — для оцінки обсягу; null — нема піраміди. */
+  pyramidAvgBytes?(terrainId: string): Promise<number | null>;
   /** Кореневий сертифікат локального CA (DER) для встановлення на телефон; null — HTTPS не налаштовано. */
   caCertDer?: Buffer | null;
 }
@@ -256,6 +258,12 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
       const buf = await deps.readHeights(m[1]);
       if (!buf) return send(res, 404, "Not found");
       return send(res, 200, buf, { "content-type": "application/octet-stream" });
+    }
+
+    m = /^\/api\/tilestat\/([A-Za-z0-9_-]+)$/.exec(path);
+    if (m && method === "GET") {
+      const avg = deps.pyramidAvgBytes ? await deps.pyramidAvgBytes(m[1]) : null;
+      return send(res, 200, JSON.stringify({ avgBytes: avg }), { "content-type": "application/json" });
     }
 
     m = /^\/tile\/([A-Za-z0-9_-]+)\/(\d+)\/(\d+)\/(\d+)$/.exec(path);

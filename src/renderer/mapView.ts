@@ -36,6 +36,38 @@ function css(v: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 }
 
+/** Кольори теми для канви. Читаються з CSS один раз і скидаються лише при зміні теми (а не щокадру). */
+interface MapColors {
+  [key: string]: string;
+}
+let colorCache: MapColors | null = null;
+function mapColors(): MapColors {
+  if (colorCache) return colorCache;
+  colorCache = {
+    grid: css("--grid"),
+    fine: css("--gridfine"),
+    blank: css("--mapblank"),
+    ink: css("--ink"),
+    surface: css("--raised"),
+    "pl-settlement": css("--pl-settlement"),
+    "pl-military": css("--pl-military"),
+    "pl-transport": css("--pl-transport"),
+    "pl-industry": css("--pl-industry"),
+    "pl-water": css("--pl-water"),
+    "pl-nature": css("--pl-nature"),
+    mortar: css("--mortar"),
+    target: css("--target"),
+    point: css("--point")
+  };
+  return colorCache;
+}
+function invalidateColors(): void {
+  colorCache = null;
+  requestDraw();
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", invalidateColors);
+new MutationObserver(invalidateColors).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class"] });
+
 function geometry(): MapGeometry {
   const S = getCurrent();
   const meta = currentMeta();
@@ -235,9 +267,11 @@ function loadTile(url: string, fetchIt = true): HTMLImageElement | null {
     setTimeout(requestDraw, TILE_RETRY_MS + 50);
   };
   im.src = url;
-  if (tileCache.size > 800) {
+  // Декодований тайл 256x256 ≈ 256 КБ пам'яті: на телефоні кеш менший, щоб iOS не вбивав вкладку.
+  const cap = isRemote ? 320 : 800;
+  if (tileCache.size > cap) {
     for (const k of tileCache.keys()) {
-      if (tileCache.size <= 600) break;
+      if (tileCache.size <= cap * 0.75) break;
       tileCache.delete(k);
     }
   }
@@ -350,22 +384,7 @@ function draw(): void {
   needsDraw = false;
   fading = false;
   if (!W) return;
-  const c = {
-    grid: css("--grid"),
-    fine: css("--gridfine"),
-    blank: css("--mapblank"),
-    ink: css("--ink"),
-    surface: css("--raised"),
-    "pl-settlement": css("--pl-settlement"),
-    "pl-military": css("--pl-military"),
-    "pl-transport": css("--pl-transport"),
-    "pl-industry": css("--pl-industry"),
-    "pl-water": css("--pl-water"),
-    "pl-nature": css("--pl-nature"),
-    mortar: css("--mortar"),
-    target: css("--target"),
-    point: css("--point")
-  };
+  const c = mapColors();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = c.blank;
   ctx.fillRect(0, 0, W, H);

@@ -3,6 +3,10 @@ productName: Планшет мінометника
 directories:
   output: dist
   buildResources: build
+electronLanguages:
+  - uk
+  - en-US
+compression: maximum
 files:
   - out/**/*
   - resources/**/*

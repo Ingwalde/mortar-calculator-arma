@@ -4,7 +4,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { hostname, networkInterfaces } from "node:os";
 import { join } from "node:path";
 import QRCode from "qrcode";
-import { getOnlineTile, getPyramidTile } from "../protocols";
+import { getOnlineTile, getPyramidTile, pyramidAvgBytes } from "../protocols";
 import { loadStore, saveStore, storeEvents } from "../store";
 import { readHeights } from "../tiles/heights";
 import { createLanServer, type LanServer } from "./server";
@@ -113,6 +113,7 @@ async function startServer(s: LanSettings): Promise<void> {
       readHeights: (id) => readHeights(id),
       onlineTile: getOnlineTile,
       pyramidTile: getPyramidTile,
+      pyramidAvgBytes,
       caCertDer: ca?.certDer ?? null
     },
     s.token
