@@ -33,7 +33,11 @@ const DICT: Dict = {
   offlineProgress: { uk: "Збережено {done} з {total}", en: "Saved {done} of {total}" },
   offlineStopped: { uk: "Зупинено: збережено {done}.", en: "Stopped: {done} saved." },
   offlineFailed: { uk: "Не вдалося завантажити — перевірте зв'язок з ПК.", en: "Download failed — check the connection to the PC." },
-  offlineDone: { uk: "Готово: збережено {done}, помилок {failed}.", en: "Done: {done} saved, {failed} failed." },
+  offlineDone: {
+    uk: "Готово: збережено {done}. Немає на сервері: {missing} (це за межами карти, так і має бути). Помилок: {failed}.",
+    en: "Done: {done} saved. Not on the server: {missing} (outside the map, expected). Errors: {failed}."
+  },
+  offlinePcTiles: { uk: "Онлайн-тайли цього терену зберігаються на диск ПК, щоб карта відкривалась без інтернету.", en: "Online tiles of this terrain are saved to the PC disk so the map opens without internet." },
   offlineCleared: { uk: "Збережену карту видалено", en: "Saved map deleted" },
   offlineSaved: { uk: "Збережено на пристрої для цього терену: {n} файлів", en: "Saved on this device for this terrain: {n} files" },
   offlineUsage: { uk: "Зайнято на пристрої: {mb} МБ із {quota} МБ", en: "Used on this device: {mb} MB of {quota} MB" },

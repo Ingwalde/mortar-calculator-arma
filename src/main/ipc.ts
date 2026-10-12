@@ -27,12 +27,13 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
   let prefetch: AbortController | null = null;
   ipcMain.handle("tiles:prefetch", async (event, terrainId: string, minLod: number) => {
     const preset = findPreset(String(terrainId));
-    if (!preset?.tiles) return { ok: false as const, done: 0, failed: 0, total: 0 };
-    if (prefetch) return { ok: false as const, done: 0, failed: 0, total: 0 };
+    if (!preset?.tiles) return { ok: false as const, done: 0, missing: 0, failed: 0, total: 0 };
+    if (prefetch) return { ok: false as const, done: 0, missing: 0, failed: 0, total: 0 };
     const ac = new AbortController();
     prefetch = ac;
     const list = onlineTileList(preset.sizeX, preset.sizeZ, preset.tiles.maxLod, Math.max(0, Math.floor(Number(minLod) || 0)));
     let done = 0;
+    let missing = 0;
     let failed = 0;
     let next = 0;
     let lastSent = 0;
@@ -41,13 +42,14 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
         const i = next++;
         if (i >= list.length) return;
         const c = list[i];
-        const ok = await ensureOnlineTile(preset.id, c.lod, c.x, c.y);
-        if (ok) done++;
+        const res = await ensureOnlineTile(preset.id, c.lod, c.x, c.y);
+        if (res === "ok") done++;
+        else if (res === "missing") missing++;
         else failed++;
         const now = Date.now();
-        if (now - lastSent > 150 || done + failed === list.length) {
+        if (now - lastSent > 150 || done + missing + failed === list.length) {
           lastSent = now;
-          event.sender.send("tiles:prefetchProgress", { done: done + failed, total: list.length });
+          event.sender.send("tiles:prefetchProgress", { done: done + missing + failed, total: list.length });
         }
       }
     };
@@ -56,7 +58,7 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
     } finally {
       prefetch = null;
     }
-    return { ok: !ac.signal.aborted, cancelled: ac.signal.aborted, done, failed, total: list.length };
+    return { ok: !ac.signal.aborted, cancelled: ac.signal.aborted, done, missing, failed, total: list.length };
   });
   ipcMain.handle("tiles:prefetchCancel", () => {
     prefetch?.abort();
