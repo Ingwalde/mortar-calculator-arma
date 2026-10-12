@@ -191,11 +191,17 @@ async function refresh(): Promise<void> {
   $("offlineUsage").textContent = usage;
 }
 
-export function initOffline(): void {
+/**
+ * Кнопка «хмарка» в шапці. На телефоні відкриває діалог збереження карти; на ПК (де карти й так на диску)
+ * веде до «Карта без інтернету» у вкладці «Карта» — onPc викликається з боку панелей.
+ */
+export function initOffline(onPc: () => void): void {
   const btn = $<HTMLButtonElement>("offlineBtn");
-  // У HTML кнопка схована за замовчуванням; показуємо лише в веб-версії для телефона.
-  btn.hidden = !isRemote;
-  if (!isRemote) return;
+  btn.hidden = false;
+  if (!isRemote) {
+    btn.onclick = onPc;
+    return;
+  }
   const dlg = $<HTMLDialogElement>("offlineDlg");
   btn.onclick = () => {
     dlg.showModal();

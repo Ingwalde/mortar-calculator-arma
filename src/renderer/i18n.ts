@@ -43,6 +43,7 @@ const DICT: Dict = {
     uk: "Офлайн недоступний: відкрито через http. На ПК у «Перегляд з телефона» візьміть посилання «офлайн (HTTPS)» і встановіть сертифікат довіри.",
     en: "Offline is unavailable: opened over http. On the PC, use the “offline (HTTPS)” link under “View from phone” and install the trust certificate."
   },
+  offlinePcLocal: { uk: "На ПК карта цього терену вже на диску й працює без інтернету.", en: "On the PC this terrain's map is already on disk and works without internet." },
   offlineNeedsPc: { uk: "Для збереження карти потрібен зв'язок з ПК", en: "Saving a map needs a connection to the PC" },
   statusOffline: { uk: "Офлайн: зміни на цьому пристрої, синхронізуються з ПК пізніше", en: "Offline: changes are kept on this device and sync with the PC later" },
   statusSaved: { uk: "Мітки збережено на цьому пристрої", en: "Marks are saved on this device" },
