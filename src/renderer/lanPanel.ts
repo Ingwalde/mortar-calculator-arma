@@ -26,6 +26,7 @@ async function drawQr(): Promise<void> {
 function render(next: LanInfo): void {
   info = next;
   $<HTMLInputElement>("lanToggle").checked = next.enabled;
+  $("lanSummary").textContent = next.enabled ? t("lanStateOn") : t("lanStateOff");
   const details = $("lanDetails");
   details.hidden = !next.enabled || next.urls.length === 0;
 
