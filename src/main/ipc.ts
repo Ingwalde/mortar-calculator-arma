@@ -7,7 +7,9 @@ import { getLanInfo, lanQrSvg, regenerateLanToken, setLanEnabled } from "./lan";
 import { buildTilePyramid, ImportCancelledError, type ImportProgress } from "./tiles/import";
 import { downloadFile } from "./tiles/download";
 import { convertHeightData, heightsPath, readHeights } from "./tiles/heights";
-import { pyramidDir } from "./protocols";
+import { ensureOnlineTile, pyramidDir } from "./protocols";
+import { findPreset } from "../core/terrains";
+import { onlineTileList } from "../core/onlineTiles";
 
 /** Лише один імпорт карти одночасно — так само, як в UI прототипу (один прогрес-бар). */
 let currentImport: AbortController | null = null;
@@ -19,6 +21,45 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
   // Телефон (LAN) змінив стан — повідомляємо вікно застосунку, щоб воно перечитало його.
   storeEvents.on("saved", (source: string) => {
     if (source !== LOCAL_SOURCE) getWindow()?.webContents.send("store:changed");
+  });
+
+  // Заздалегідне збереження онлайн-тайлів у дисковий кеш (щоб Everon/Arland працювали без інтернету).
+  let prefetch: AbortController | null = null;
+  ipcMain.handle("tiles:prefetch", async (event, terrainId: string, minLod: number) => {
+    const preset = findPreset(String(terrainId));
+    if (!preset?.tiles) return { ok: false as const, done: 0, failed: 0, total: 0 };
+    if (prefetch) return { ok: false as const, done: 0, failed: 0, total: 0 };
+    const ac = new AbortController();
+    prefetch = ac;
+    const list = onlineTileList(preset.sizeX, preset.sizeZ, preset.tiles.maxLod, Math.max(0, Math.floor(Number(minLod) || 0)));
+    let done = 0;
+    let failed = 0;
+    let next = 0;
+    let lastSent = 0;
+    const worker = async (): Promise<void> => {
+      while (!ac.signal.aborted) {
+        const i = next++;
+        if (i >= list.length) return;
+        const c = list[i];
+        const ok = await ensureOnlineTile(preset.id, c.lod, c.x, c.y);
+        if (ok) done++;
+        else failed++;
+        const now = Date.now();
+        if (now - lastSent > 150 || done + failed === list.length) {
+          lastSent = now;
+          event.sender.send("tiles:prefetchProgress", { done: done + failed, total: list.length });
+        }
+      }
+    };
+    try {
+      await Promise.all(Array.from({ length: 6 }, worker));
+    } finally {
+      prefetch = null;
+    }
+    return { ok: !ac.signal.aborted, cancelled: ac.signal.aborted, done, failed, total: list.length };
+  });
+  ipcMain.handle("tiles:prefetchCancel", () => {
+    prefetch?.abort();
   });
 
   ipcMain.handle("lan:info", () => getLanInfo());

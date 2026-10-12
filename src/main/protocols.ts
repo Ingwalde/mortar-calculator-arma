@@ -41,6 +41,24 @@ export async function getOnlineTile(terrainId: string, lod: number, x: number, y
   }
 }
 
+/** Гарантує, що онлайн-тайл лежить у дисковому кеші (без читання файлу). false — не вдалося. */
+export async function ensureOnlineTile(terrainId: string, lod: number, x: number, y: number): Promise<boolean> {
+  const preset = findPreset(terrainId);
+  if (!preset?.tiles) return false;
+  const cachePath = join(tileCacheDir(terrainId), String(lod), String(x), `${y}.jpg`);
+  if (existsSync(cachePath)) return true;
+  try {
+    const remote = await net.fetch(tileUrl(preset.tiles.base, lod, x, y));
+    if (!remote.ok) return false;
+    const buf = Buffer.from(await remote.arrayBuffer());
+    await mkdir(join(tileCacheDir(terrainId), String(lod), String(x)), { recursive: true });
+    await writeFile(cachePath, buf);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Тайл імпортованої піраміди (sharp .tile google layout: {z}/{row}/{col}.jpg). */
 export async function getPyramidTile(terrainId: string, z: string, row: string, col: string): Promise<Buffer | null> {
   // terrainId/z/row/col приходять з URL (в т.ч. з LAN) — лише прості сегменти, без виходу з каталогу піраміди.

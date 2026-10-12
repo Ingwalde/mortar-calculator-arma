@@ -44,3 +44,14 @@ describe("tileUrl", () => {
     );
   });
 });
+
+describe("onlineTileList", () => {
+  it("рахує тайли від найгрубшого LOD до вказаного", async () => {
+    const { onlineTileList, tileSpan, EDGE_OFFSET } = await import("./onlineTiles");
+    const list = onlineTileList(12800, 12800, 5, 3);
+    const per = (lod: number) => Math.ceil((12800 + EDGE_OFFSET) / tileSpan(lod));
+    expect(list.length).toBe(per(5) ** 2 + per(4) ** 2 + per(3) ** 2);
+    expect(list.every((c) => c.lod >= 3 && c.lod <= 5)).toBe(true);
+    expect(list[0]).toEqual({ lod: 5, x: 0, y: 0 });
+  });
+});

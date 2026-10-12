@@ -4,6 +4,47 @@ type Dict = Record<string, { uk: string; en: string }>;
 
 const DICT: Dict = {
   appTitle: { uk: "Планшет мінометника", en: "Mortar Tablet" },
+  prefetchHeading: { uk: "Карта без інтернету", en: "Map without internet" },
+  prefetchHint: {
+    uk: "Онлайн-тайли цього терену зберігаються на диск ПК, щоб карта відкривалась і без інтернету. Деталізація більша — файлів більше.",
+    en: "Online tiles of this terrain are saved to the PC disk so the map opens without internet. Higher detail means more files."
+  },
+  prefetchGoBtn: { uk: "Зберегти на диск", en: "Save to disk" },
+  prefetchProgress: { uk: "Збережено {done} з {total}", en: "Saved {done} of {total}" },
+  prefetchDone: { uk: "Готово: {done} тайлів на диску, не вдалося {failed}.", en: "Done: {done} tiles on disk, {failed} failed." },
+  prefetchCancelled: { uk: "Зупинено.", en: "Stopped." },
+  offlineBtnAria: { uk: "Офлайн-режим", en: "Offline mode" },
+  offlineTitle: { uk: "Офлайн-режим", en: "Offline mode" },
+  offlineIntro: {
+    uk: "Збережіть карту на телефоні, щоб працювати без Wi-Fi і ПК. Мітки й журнал теж зберігаються на пристрої та зливаються з ПК, коли зв'язок повернеться.",
+    en: "Save the map on this phone to work without Wi-Fi or the PC. Marks and log are kept on the device too and merge with the PC when the connection returns."
+  },
+  offlineTerrainLabel: { uk: "Терен", en: "Terrain" },
+  offlineNoMap: { uk: "У цього терену нема карти для збереження (порожня сітка працює й так).", en: "This terrain has no map to save (the blank grid works offline anyway)." },
+  offlineLevelAria: { uk: "Деталізація", en: "Detail level" },
+  offlineLevelLow: { uk: "Оглядова", en: "Overview" },
+  offlineLevelMid: { uk: "Середня", en: "Medium" },
+  offlineLevelHigh: { uk: "Детальна", en: "Detailed" },
+  offlineLevelFull: { uk: "Максимальна", en: "Maximum" },
+  offlineOpt: { uk: "{label}: {n} тайлів, ≈{mb} МБ", en: "{label}: {n} tiles, ≈{mb} MB" },
+  offlineSaveBtn: { uk: "Зберегти карту", en: "Save map" },
+  offlineStopBtn: { uk: "Зупинити", en: "Stop" },
+  offlineClearBtn: { uk: "Видалити збережене", en: "Delete saved" },
+  offlineProgress: { uk: "Збережено {done} з {total}", en: "Saved {done} of {total}" },
+  offlineStopped: { uk: "Зупинено: збережено {done}.", en: "Stopped: {done} saved." },
+  offlineFailed: { uk: "Не вдалося завантажити — перевірте зв'язок з ПК.", en: "Download failed — check the connection to the PC." },
+  offlineDone: { uk: "Готово: збережено {done}, помилок {failed}.", en: "Done: {done} saved, {failed} failed." },
+  offlineCleared: { uk: "Збережену карту видалено", en: "Saved map deleted" },
+  offlineSaved: { uk: "Збережено на пристрої для цього терену: {n} файлів", en: "Saved on this device for this terrain: {n} files" },
+  offlineUsage: { uk: "Зайнято на пристрої: {mb} МБ із {quota} МБ", en: "Used on this device: {mb} MB of {quota} MB" },
+  offlineActive: { uk: "Офлайн-режим активний: застосунок відкриється й без ПК.", en: "Offline mode is active: the app opens even without the PC." },
+  offlineNotYet: { uk: "Офлайн-режим готується — перезавантажте застосунок один раз.", en: "Offline mode is getting ready — reload the app once." },
+  offlineNoHttps: {
+    uk: "Офлайн недоступний: відкрито через http. На ПК у «Перегляд з телефона» візьміть посилання «офлайн (HTTPS)» і встановіть сертифікат довіри.",
+    en: "Offline is unavailable: opened over http. On the PC, use the “offline (HTTPS)” link under “View from phone” and install the trust certificate."
+  },
+  offlineNeedsPc: { uk: "Для збереження карти потрібен зв'язок з ПК", en: "Saving a map needs a connection to the PC" },
+  statusOffline: { uk: "Офлайн: зміни на цьому пристрої, синхронізуються з ПК пізніше", en: "Offline: changes are kept on this device and sync with the PC later" },
   statusSaved: { uk: "Мітки збережено на цьому пристрої", en: "Marks are saved on this device" },
   langToggle: { uk: "EN", en: "UA" },
 
@@ -182,6 +223,12 @@ const DICT: Dict = {
   lanToggleLabel: { uk: "Доступ з локальної мережі", en: "Local network access" },
   lanQrAria: { uk: "QR-код посилання", en: "Link QR code" },
   lanUrlAria: { uk: "Посилання для телефона", en: "Link for the phone" },
+  lanOptOffline: { uk: "офлайн (HTTPS)", en: "offline (HTTPS)" },
+  lanOptCert: { uk: "Сертифікат довіри (одноразово)", en: "Trust certificate (one time)" },
+  lanOfflineHint: {
+    uk: "Офлайн-режим телефона: 1) у списку виберіть «Сертифікат довіри», відскануйте QR на iPhone й встановіть профіль (Налаштування → Профіль завантажено); 2) Налаштування → Загальні → Про пристрій → Довіра сертифікатам → увімкніть «Планшет мінометника»; 3) відкрийте посилання «офлайн (HTTPS)» (порт {https}), додайте на головний екран. Потім у застосунку на телефоні відкрийте «Офлайн» і збережіть потрібну карту.",
+    en: "Phone offline mode: 1) pick “Trust certificate” in the list, scan the QR on the iPhone and install the profile (Settings → Profile Downloaded); 2) Settings → General → About → Certificate Trust Settings → enable “Mortar Tablet”; 3) open the “offline (HTTPS)” link (port {https}) and add it to the Home Screen. Then open “Offline” in the phone app and save the map you need."
+  },
   lanCopyBtn: { uk: "Копіювати посилання", en: "Copy link" },
   lanCopied: { uk: "Посилання скопійовано", en: "Link copied" },
   lanRegenBtn: { uk: "Новий ключ", en: "New key" },

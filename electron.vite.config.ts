@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+
+const pkg = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf8")) as { version: string };
 
 export default defineConfig({
   main: {
@@ -20,6 +23,7 @@ export default defineConfig({
   },
   renderer: {
     root: "src/renderer",
+    define: { __APP_VERSION__: JSON.stringify(pkg.version) },
     build: {
       rollupOptions: {
         input: { index: resolve(__dirname, "src/renderer/index.html") }

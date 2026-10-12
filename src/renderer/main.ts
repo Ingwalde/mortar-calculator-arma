@@ -13,6 +13,15 @@ function hideSplash(): void {
   setTimeout(() => el.remove(), 400);
 }
 
+let offline = false;
+function updateStatus(): void {
+  $("status").textContent = t(offline ? "statusOffline" : "statusSaved");
+}
+window.addEventListener("mortar:connectivity", (e) => {
+  offline = !(e as CustomEvent<{ online: boolean }>).detail.online;
+  updateStatus();
+});
+
 async function boot(): Promise<void> {
   await loadState();
   setLangSilent(getRoot().lang);
@@ -20,7 +29,7 @@ async function boot(): Promise<void> {
   applyStaticTranslations();
   resetView();
   initPanels();
-  $("status").textContent = t("statusSaved");
+  updateStatus();
   hideSplash();
 
   $<HTMLButtonElement>("langBtn").onclick = () => {
@@ -28,7 +37,7 @@ async function boot(): Promise<void> {
     setLang(next);
     getRoot().lang = next;
     scheduleSave();
-    $("status").textContent = t("statusSaved");
+    updateStatus();
   };
 }
 

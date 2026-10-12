@@ -1,29 +1,37 @@
 import { app } from "electron";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { networkInterfaces } from "node:os";
+import { hostname, networkInterfaces } from "node:os";
 import { join } from "node:path";
 import QRCode from "qrcode";
 import { getOnlineTile, getPyramidTile } from "../protocols";
 import { loadStore, saveStore, storeEvents } from "../store";
 import { readHeights } from "../tiles/heights";
 import { createLanServer, type LanServer } from "./server";
+import { ensureCa, issueServerCert, type CaMaterial } from "./tls";
 
 export interface LanInfo {
   enabled: boolean;
   port: number;
   /** Повні посилання з токеном — за ними телефон заходить у планшет. */
   urls: string[];
+  /** HTTPS-порт і посилання для офлайн-режиму телефона (service worker потребує HTTPS). */
+  httpsPort: number;
+  httpsUrls: string[];
+  /** Посилання на профіль довіри (.mobileconfig) для одноразового встановлення на iPhone. */
+  caUrl: string | null;
   error: string | null;
 }
 
 interface LanSettings {
   enabled: boolean;
   port: number;
+  httpsPort: number;
   token: string;
 }
 
 const DEFAULT_PORT = 8765;
+const DEFAULT_HTTPS_PORT = 8766;
 const SETTINGS_FILE = "lan.json";
 
 // Віртуальні адаптери (Docker/WSL/VPN/VirtualBox…) не досяжні з телефона — ховаємо їх у списку.
@@ -32,6 +40,7 @@ const VIRTUAL_IFACE = /vethernet|virtualbox|vmware|vmnet|docker|wsl|hyper-v|loop
 let settings: LanSettings | null = null;
 let server: LanServer | null = null;
 let lastError: string | null = null;
+let httpsRunning = false;
 
 function settingsPath(): string {
   return join(app.getPath("userData"), SETTINGS_FILE);
@@ -43,12 +52,14 @@ function newToken(): string {
 
 async function loadSettings(): Promise<LanSettings> {
   if (settings) return settings;
-  let s: LanSettings = { enabled: false, port: DEFAULT_PORT, token: newToken() };
+  let s: LanSettings = { enabled: false, port: DEFAULT_PORT, httpsPort: DEFAULT_HTTPS_PORT, token: newToken() };
   try {
     const raw = JSON.parse(await readFile(settingsPath(), "utf8")) as Partial<LanSettings>;
     s = {
       enabled: raw.enabled === true,
       port: Number.isInteger(raw.port) && raw.port! > 1023 && raw.port! < 65536 ? raw.port! : DEFAULT_PORT,
+      httpsPort:
+        Number.isInteger(raw.httpsPort) && raw.httpsPort! > 1023 && raw.httpsPort! < 65536 ? raw.httpsPort! : DEFAULT_HTTPS_PORT,
       token: typeof raw.token === "string" && raw.token.length >= 16 ? raw.token : s.token
     };
   } catch {
@@ -87,6 +98,12 @@ export function lanAddresses(): string[] {
 
 async function startServer(s: LanSettings): Promise<void> {
   const isDev = !app.isPackaged;
+  let ca: CaMaterial | null = null;
+  try {
+    ca = await ensureCa(app.getPath("userData"));
+  } catch {
+    ca = null; // без CA лишається звичайний HTTP
+  }
   const srv = createLanServer(
     {
       staticDir: join(app.getAppPath(), "out/renderer"),
@@ -95,14 +112,28 @@ async function startServer(s: LanSettings): Promise<void> {
       saveStore,
       readHeights: (id) => readHeights(id),
       onlineTile: getOnlineTile,
-      pyramidTile: getPyramidTile
+      pyramidTile: getPyramidTile,
+      caCertDer: ca?.certDer ?? null
     },
     s.token
   );
+  httpsRunning = false;
   try {
     await srv.listen(s.port);
     server = srv;
     lastError = null;
+    if (ca) {
+      try {
+        // Сертифікат на всі поточні IP-адреси ПК та ім'я комп'ютера; перевидається при кожному старті.
+        const names = [...lanAddresses(), `${hostname()}.local`, hostname()];
+        const cert = issueServerCert(ca, names);
+        await srv.listenHttps(s.httpsPort, { key: cert.keyPem, cert: cert.certPem });
+        httpsRunning = true;
+      } catch (err) {
+        const code = (err as NodeJS.ErrnoException).code;
+        lastError = code === "EADDRINUSE" ? `HTTPS-порт ${s.httpsPort} зайнятий (офлайн-режим недоступний).` : String((err as Error).message ?? err);
+      }
+    }
   } catch (err) {
     server = null;
     const code = (err as NodeJS.ErrnoException).code;
@@ -119,10 +150,14 @@ async function stopServer(): Promise<void> {
 export async function getLanInfo(): Promise<LanInfo> {
   const s = await loadSettings();
   const running = server !== null;
+  const ips = running ? lanAddresses() : [];
   return {
     enabled: s.enabled && running,
     port: s.port,
-    urls: running ? lanAddresses().map((ip) => `http://${ip}:${s.port}/?k=${s.token}`) : [],
+    urls: ips.map((ip) => `http://${ip}:${s.port}/?k=${s.token}`),
+    httpsPort: s.httpsPort,
+    httpsUrls: httpsRunning ? ips.map((ip) => `https://${ip}:${s.httpsPort}/?k=${s.token}`) : [],
+    caUrl: httpsRunning && ips.length ? `http://${ips[0]}:${s.port}/ca/mortar-tablet-ca.mobileconfig?k=${s.token}` : null,
     error: lastError
   };
 }

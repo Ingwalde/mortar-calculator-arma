@@ -41,6 +41,18 @@ export function tileWorldBounds(tx: number, ty: number, lod: number): { x0: numb
   };
 }
 
+/** Усі тайли терену від найгрубшого LOD (maxLod) до minLod включно — для заздалегідного збереження. */
+export function onlineTileList(sizeX: number, sizeZ: number, maxLod: number, minLod: number): { lod: number; x: number; y: number }[] {
+  const out: { lod: number; x: number; y: number }[] = [];
+  for (let lod = maxLod; lod >= Math.max(0, minLod); lod--) {
+    const span = tileSpan(lod);
+    const nx = Math.ceil((sizeX + EDGE_OFFSET) / span);
+    const ny = Math.ceil((sizeZ + EDGE_OFFSET) / span);
+    for (let x = 0; x < nx; x++) for (let y = 0; y < ny; y++) out.push({ lod, x, y });
+  }
+  return out;
+}
+
 export function tileUrl(base: string, lod: number, tx: number, ty: number): string {
   return `${base}${lod}/${tx}/${ty}/tile.jpg`;
 }
