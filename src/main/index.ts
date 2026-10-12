@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { registerPrivilegedSchemes, registerProtocolHandlers } from "./protocols";
 import { registerIpcHandlers } from "./ipc";
 import { initLan, shutdownLan } from "./lan";
+import { registerUpdater } from "./updater";
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
@@ -52,6 +53,7 @@ function createWindow(): void {
 void app.whenReady().then(() => {
   registerProtocolHandlers();
   registerIpcHandlers(() => mainWindow);
+  registerUpdater(() => mainWindow);
   void initLan();
   createWindow();
 

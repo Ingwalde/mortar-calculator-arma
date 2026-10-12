@@ -20,7 +20,7 @@ export interface LanDeps {
   devProxyUrl: string | null;
   loadStore(): Promise<unknown>;
   /** true — після злиття клієнту треба перечитати стан. */
-  saveStore(data: unknown, sourceId: string): Promise<boolean>;
+  saveStore(data: unknown, sourceId: string, opts?: { partial?: boolean }): Promise<boolean>;
   readHeights(terrainId: string): Promise<Uint8Array | null>;
   onlineTile(terrainId: string, lod: number, x: number, y: number): Promise<Buffer | null>;
   pyramidTile(terrainId: string, z: string, row: string, col: string): Promise<Buffer | null>;
@@ -228,7 +228,8 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
         } catch {
           return send(res, 400, "bad json");
         }
-        const merged = await deps.saveStore(data, clientId);
+        // x-partial: 1 — клієнт надіслав лише змінені терени (дельта)
+        const merged = await deps.saveStore(data, clientId, { partial: req.headers["x-partial"] === "1" });
         return send(res, 200, "ok", { "x-rev": String(rev), "x-merged": merged ? "1" : "0" });
       }
       return send(res, 405, "method not allowed");

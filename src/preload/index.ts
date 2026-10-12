@@ -66,6 +66,18 @@ const api = {
       return () => ipcRenderer.removeListener("mapImport:progress", listener);
     }
   },
+  updater: {
+    status: (): Promise<{ state: string; version?: string; percent?: number; message?: string }> =>
+      ipcRenderer.invoke("updater:status"),
+    check: (): Promise<{ state: string; version?: string; percent?: number; message?: string }> =>
+      ipcRenderer.invoke("updater:check"),
+    install: (): Promise<void> => ipcRenderer.invoke("updater:install"),
+    onStatus: (cb: (s: { state: string; version?: string; percent?: number; message?: string }) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, s: { state: string; version?: string; percent?: number; message?: string }) => cb(s);
+      ipcRenderer.on("updater:status", listener);
+      return () => ipcRenderer.removeListener("updater:status", listener);
+    }
+  },
   tiles: {
     prefetch: (
       terrainId: string,

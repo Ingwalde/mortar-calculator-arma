@@ -123,3 +123,20 @@ describe("mergeRoots", () => {
     expect(d.map).toEqual({ kind: "none" });
   });
 });
+
+describe("mergeRoots: дельта (partial)", () => {
+  const terr = (n: number) => ({ map: null, markers: [{ id: "m" + n, u: 1 }], fireLog: [], deleted: {} });
+  it("терен, якого нема в дельті, береться з бази й не вважається чужою правкою", () => {
+    const base = { data: { a: terr(1), b: terr(2) } };
+    const delta = { data: { a: terr(1) } };
+    const r = mergeRoots(base, delta, Date.now(), { partial: true });
+    const d = (r.state as { data: Record<string, unknown> }).data;
+    expect(Object.keys(d).sort()).toEqual(["a", "b"]);
+    expect(r.changed).toBe(false);
+  });
+  it("без partial відсутній терен означає, що клієнт про нього не знає (потрібно перечитати)", () => {
+    const base = { data: { a: terr(1), b: terr(2) } };
+    const r = mergeRoots(base, { data: { a: terr(1) } });
+    expect(r.changed).toBe(true);
+  });
+});
