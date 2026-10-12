@@ -179,7 +179,24 @@ export function requestDraw(): void {
 interface CacheEntry {
   img?: HTMLImageElement;
   failedAt?: number;
+  /** Коли тайл завантажився: від цього рахується плавна поява. */
+  loadedAt?: number;
 }
+const TILE_FADE_MS = 220;
+let inflight = 0;
+function setLoading(on: boolean): void {
+  document.getElementById("mapWrap")?.classList.toggle("loading", on);
+}
+/** Прозорість тайла: щойно завантажений з'являється плавно. */
+function tileAlpha(url: string): number {
+  const e = tileCache.get(url);
+  if (!e?.loadedAt) return 1;
+  const a = (performance.now() - e.loadedAt) / TILE_FADE_MS;
+  if (a >= 1) return 1;
+  fading = true;
+  return Math.max(0.05, a);
+}
+let fading = false;
 /** Невдалий тайл (мережевий збій, перерваний запит під час HMR тощо) не блокується назавжди —
  * через цей інтервал наступний draw() пробує завантажити його ще раз. */
 const TILE_RETRY_MS = 4000;
@@ -200,12 +217,21 @@ function loadTile(url: string, fetchIt = true): HTMLImageElement | null {
   tileCache.set(url, e);
   const im = new Image();
   im.decoding = "async";
+  inflight++;
+  setLoading(true);
+  const done = (): void => {
+    inflight = Math.max(0, inflight - 1);
+    if (inflight === 0) setLoading(false);
+  };
   im.onload = () => {
     e!.img = im;
+    e!.loadedAt = performance.now();
+    done();
     requestDraw();
   };
   im.onerror = () => {
     e!.failedAt = Date.now();
+    done();
     setTimeout(requestDraw, TILE_RETRY_MS + 50);
   };
   im.src = url;
@@ -249,7 +275,10 @@ function drawOnlineLod(lod: number, fetchIt: boolean): void {
       if (!im) continue;
       const a = scrFromWorld(tx * span - 50, (ty + 1) * span - 50);
       const b = scrFromWorld((tx + 1) * span - 50, ty * span - 50);
+      const prevA = ctx.globalAlpha;
+      ctx.globalAlpha = prevA * tileAlpha(url);
       ctx.drawImage(im, a.sx, a.sy, b.sx - a.sx + 0.6, b.sy - a.sy + 0.6);
+      ctx.globalAlpha = prevA;
     }
   }
 }
@@ -286,8 +315,12 @@ function drawPyramidLevel(z: number, fetchIt: boolean): boolean {
       // різниці не видно, тому бага не проявлялась на Everon/Kolguyev — лише на непрямокутних.
       const url = pyramidTileSrc(meta.id, z, row, col);
       const im = loadTile(url, fetchIt);
-      if (im) ctx.drawImage(im, 0, 0, tileSrcW, tileSrcH, a.sx, a.sy, w + 0.6, h + 0.6);
-      else all = false;
+      if (im) {
+        const prevA = ctx.globalAlpha;
+        ctx.globalAlpha = prevA * tileAlpha(url);
+        ctx.drawImage(im, 0, 0, tileSrcW, tileSrcH, a.sx, a.sy, w + 0.6, h + 0.6);
+        ctx.globalAlpha = prevA;
+      } else all = false;
     }
   }
   return all;
@@ -315,6 +348,7 @@ export function setDrawCallbacks(cb: Partial<DrawCallbacks>): void {
 
 function draw(): void {
   needsDraw = false;
+  fading = false;
   if (!W) return;
   const c = {
     grid: css("--grid"),
@@ -346,6 +380,8 @@ function draw(): void {
   drawPlaces(c);
   drawMarkers(c);
   updateReadout();
+  // тайли ще з'являються плавно — домалювати наступний кадр
+  if (fading) requestDraw();
 }
 
 function drawGrid(c: Record<string, string>): void {

@@ -29,7 +29,6 @@
 #splash.done{opacity:0;pointer-events:none}
 html.no-splash #splash{display:none}
 </style>
-<script>if(window.api)document.documentElement.classList.add("no-splash")</script>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -38,6 +37,7 @@ html.no-splash #splash{display:none}
   <div class="map" id="mapWrap">
     <canvas id="cv" data-i18n-aria-label="canvasAriaLabel" aria-label="Карта. Перетягуйте, щоб рухати; колесо — масштаб; клік — навести приціл."></canvas>
     <div class="cross" aria-hidden="true"><span class="dot"></span></div>
+    <div class="maploading" id="mapLoading" aria-hidden="true"></div>
     <div class="mapbtns">
       <button class="btn icon" id="zin" data-i18n-aria-label="zoomInAria" aria-label="Наблизити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
       <button class="btn icon" id="zout" data-i18n-aria-label="zoomOutAria" aria-label="Віддалити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
@@ -125,7 +125,7 @@ html.no-splash #splash{display:none}
       </section>
 
       <section class="pane" id="pane-setup" hidden>
-        <h2 data-i18n="mapImageHeading">Зображення карти</h2>
+        <details class="card" data-card="map" open><summary><span data-i18n="mapImageHeading">Зображення карти</span></summary><div class="card-body">
         <p class="hint" data-i18n="mapImageHint">Завантажте скріншот або супутникову карту терену. Без зображення працює порожня сітка — мітки можна ставити за координатами.</p>
         <div class="row">
           <input type="file" id="file" accept="image/*" hidden>
@@ -136,13 +136,16 @@ html.no-splash #splash{display:none}
         <p class="hint" id="importProg" hidden style="color:var(--ink);font-weight:600"></p>
         <p class="hint" id="mapInfo" hidden></p>
 
-        <label class="row" style="margin-top:10px;gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
-        <p class="hint" style="font-size:12px" id="placesHint"></p>
         <div class="row" style="margin-top:8px" id="customRow" hidden>
           <button class="btn small danger" id="delTerrain" data-i18n="delTerrainBtn">Видалити цей терен зі списку</button>
         </div>
+</div></details>
+        <details class="card" data-card="places"><summary><span data-i18n="placesHeading">Назви пунктів</span></summary><div class="card-body">
+        <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
+        <p class="hint" style="font-size:12px" id="placesHint"></p>
 
-        <h2 data-i18n="coordBindingHeading">Прив'язка координат</h2>
+        </div></details>
+        <details class="card" data-card="calib"><summary><span data-i18n="coordBindingHeading">Прив'язка координат</span><span class="card-sum" id="calibSummary"></span></summary><div class="card-body">
         <div class="seg" role="group" data-i18n-aria-label="coordBindingAria" aria-label="Спосіб прив'язки">
           <button id="modeSize" aria-pressed="true" data-i18n="modeSizeBtn">Уся карта</button>
           <button id="modePts" aria-pressed="false" data-i18n="modePtsBtn">Дві точки</button>
@@ -161,8 +164,8 @@ html.no-splash #splash{display:none}
           <div class="calibbox" id="boxB"></div>
         </div>
 
-        <div id="lanBox">
-          <h2 data-i18n="lanHeading">Перегляд з телефона</h2>
+        </div></details>
+        <details class="card" id="lanBox" data-card="lan"><summary><span data-i18n="lanHeading">Перегляд з телефона</span><span class="card-sum" id="lanSummary"></span></summary><div class="card-body">
           <p class="hint" data-i18n="lanHint"></p>
           <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="lanToggle"> <span data-i18n="lanToggleLabel">Доступ з локальної мережі</span></label>
           <div id="lanDetails" hidden>
@@ -176,9 +179,9 @@ html.no-splash #splash{display:none}
           <p class="hint" style="font-size:12px" id="lanOfflineHint" hidden></p>
           <p class="warn" id="lanWarn" hidden></p>
           <p class="hint" style="font-size:12px" data-i18n="lanSecurity"></p>
-        </div>
+        </div></details>
 
-        <h2 data-i18n="backupHeading">Резервна копія</h2>
+        <details class="card" data-card="backup"><summary><span data-i18n="backupHeading">Резервна копія</span></summary><div class="card-body">
         <p class="hint" data-i18n="backupHint">Мітки зберігаються автоматично. Тут можна скопіювати їх як текст або вставити раніше скопійовані.</p>
         <textarea id="json" rows="4" data-i18n-placeholder="jsonPlaceholder" placeholder="Вставте JSON, щоб імпортувати"></textarea>
         <div class="row" style="margin-top:8px">
@@ -186,6 +189,7 @@ html.no-splash #splash{display:none}
           <button class="btn" id="importJson" data-i18n="importBtn">Імпортувати</button>
           <button class="btn danger" id="wipe" data-i18n="wipeBtn">Видалити всі мітки</button>
         </div>
+        </div></details>
       </section>
 
   </div>

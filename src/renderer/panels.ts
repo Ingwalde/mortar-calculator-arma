@@ -772,6 +772,8 @@ function renderSetup(): void {
   $("modeSize").setAttribute("aria-pressed", String(S.calib.mode === "size"));
   $("modePts").setAttribute("aria-pressed", String(S.calib.mode === "points"));
   $("sizeBox").hidden = S.calib.mode !== "size";
+  $("calibSummary").textContent =
+    S.calib.mode === "size" ? t("calibSummarySize", { x: S.calib.size, z: S.calib.sizeZ }) : t("calibSummaryPts");
   $("ptsBox").hidden = S.calib.mode !== "points";
   $<HTMLInputElement>("size").value = String(S.calib.size);
   $<HTMLInputElement>("sizeZ").value = String(S.calib.sizeZ);
@@ -1170,7 +1172,31 @@ function initAboutDialog(): void {
   });
 }
 
+/** Розгорнуті/згорнуті картки вкладки «Карта» запам'ятовуються на пристрої. */
+function initCards(): void {
+  const KEY = "mortar.cards.v1";
+  let saved: Record<string, boolean> = {};
+  try {
+    saved = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<string, boolean>;
+  } catch {
+    saved = {};
+  }
+  document.querySelectorAll<HTMLDetailsElement>("details.card[data-card]").forEach((el) => {
+    const id = el.dataset.card!;
+    if (id in saved) el.open = saved[id];
+    el.addEventListener("toggle", () => {
+      saved[id] = el.open;
+      try {
+        localStorage.setItem(KEY, JSON.stringify(saved));
+      } catch {
+        // сховище недоступне — картки просто не запам'ятаються
+      }
+    });
+  });
+}
+
 export function initPanels(): void {
+  initCards();
   setShowPlaces(getRoot().showPlaces);
   applyPlacesStyle();
   initOffline();

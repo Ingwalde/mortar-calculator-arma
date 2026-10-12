@@ -230,3 +230,36 @@ html.ios-short{--safe-b:0px}
 .offline-state[data-ok="1"]{background:color-mix(in srgb,var(--accent) 18%,transparent)}
 #offlineDlg{max-width:min(92vw,460px)}
 .placespop select{background:var(--raised);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font:inherit}
+
+/* ---------- картки вкладки «Карта» ---------- */
+details.card{border:1px solid var(--glass-border);border-radius:16px;margin:12px 0;background:color-mix(in srgb,var(--ink) 4%,transparent);overflow:hidden}
+details.card>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:1fr auto;column-gap:10px;align-items:center;padding:13px 14px;font-weight:600;font-size:15px;user-select:none}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:"";grid-column:2;grid-row:1/span 2;align-self:center;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .22s ease}
+details.card[open]>summary::after{transform:rotate(-135deg)}
+details.card>summary:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.card-sum{grid-column:1;grid-row:2;font-weight:400;color:var(--muted);font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-body{padding:2px 14px 14px}
+details.card[open]>.card-body{animation:cardIn .22s ease both}
+@keyframes cardIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* ---------- плавні переходи й завантаження ---------- */
+.maploading{position:absolute;left:0;right:0;top:0;height:3px;z-index:30;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .25s ease}
+.map.loading .maploading{opacity:1}
+.maploading::before{content:"";position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:mapSlide 1.1s ease-in-out infinite}
+@keyframes mapSlide{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+.pane:not([hidden]){animation:paneIn .2s ease both}
+@keyframes paneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+dialog[open]{animation:dlgIn .2s ease both}
+dialog[open]::backdrop{animation:fadeIn .2s ease both}
+@keyframes dlgIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+progress{appearance:none;-webkit-appearance:none;height:8px;border:0;border-radius:999px;background:color-mix(in srgb,var(--ink) 12%,transparent);overflow:hidden}
+progress::-webkit-progress-bar{background:transparent}
+progress::-webkit-progress-value{background:var(--accent);border-radius:999px;transition:width .25s ease}
+progress::-moz-progress-bar{background:var(--accent);border-radius:999px}
+#splash img{animation:splashPulse 1.6s ease-in-out infinite}
+@keyframes splashPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
