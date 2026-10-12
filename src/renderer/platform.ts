@@ -29,6 +29,19 @@ function lsSet(key: string, value: string | null): void {
   }
 }
 
+// Дельта-синхронізація: на ПК шлемо лише терени, що змінились відносно останнього відомого серверу стану.
+const sentTerrains = new Map<string, string>();
+function terrainsOf(data: unknown): Record<string, unknown> | null {
+  const d = (data as { data?: unknown } | null)?.data;
+  return d && typeof d === "object" ? (d as Record<string, unknown>) : null;
+}
+function rememberTerrains(data: unknown): void {
+  const terrains = terrainsOf(data);
+  if (!terrains) return;
+  sentTerrains.clear();
+  for (const [id, v] of Object.entries(terrains)) sentTerrains.set(id, JSON.stringify(v));
+}
+
 let online = true;
 let retryTimer: ReturnType<typeof setInterval> | undefined;
 const changedCallbacks = new Set<() => void>();
@@ -91,6 +104,7 @@ function createWebApi(): MortarApi {
           }
           if (!res.ok) throw new Error(`Не вдалося завантажити стан: ${res.status}`);
           const data = (await res.json()) as unknown;
+          rememberTerrains(data);
           lsSet(LS_STATE, JSON.stringify(data));
           setOnline(true);
           return data;
@@ -112,14 +126,35 @@ function createWebApi(): MortarApi {
       async save(data) {
         lsSet(LS_STATE, JSON.stringify(data));
         lsSet(LS_DIRTY, "1");
+        // Повний стан лишається в локальній копії; на ПК йдуть лише змінені терени.
+        const terrains = terrainsOf(data);
+        const snapshot = new Map<string, string>();
+        let body: unknown = data;
+        let partial = false;
+        if (terrains && sentTerrains.size > 0) {
+          const changed: Record<string, unknown> = {};
+          for (const [id, v] of Object.entries(terrains)) {
+            const str = JSON.stringify(v);
+            snapshot.set(id, str);
+            if (sentTerrains.get(id) !== str) changed[id] = v;
+          }
+          body = { ...(data as Record<string, unknown>), data: changed };
+          partial = true;
+        }
         try {
           const res = await fetch("/api/store", {
             method: "PUT",
-            headers: { "content-type": "application/json", "x-client-id": clientId },
-            body: JSON.stringify(data)
+            headers: {
+              "content-type": "application/json",
+              "x-client-id": clientId,
+              ...(partial ? { "x-partial": "1" } : {})
+            },
+            body: JSON.stringify(body)
           });
           if (!res.ok) throw new Error(`Не вдалося зберегти стан: ${res.status}`);
           lastRev = Number(res.headers.get("x-rev")) || lastRev;
+          for (const [id, str] of snapshot) sentTerrains.set(id, str);
+          if (!partial) rememberTerrains(data);
           lsSet(LS_DIRTY, null);
           // setOnline(true) після скидання прапора: інакше «зв'язок повернувся» знову запустить відправку
           setOnline(true);
@@ -162,6 +197,12 @@ function createWebApi(): MortarApi {
       cancel: async () => undefined,
       remove: async () => undefined,
       onProgress: () => () => undefined
+    },
+    updater: {
+      status: async () => ({ state: "unsupported" }),
+      check: async () => ({ state: "unsupported" }),
+      install: async () => undefined,
+      onStatus: () => () => undefined
     },
     tiles: {
       prefetch: async () => ({ ok: false, done: 0, missing: 0, failed: 0, total: 0 }),

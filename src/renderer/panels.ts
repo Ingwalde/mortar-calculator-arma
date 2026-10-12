@@ -42,6 +42,7 @@ import { initImmersive, initSheet } from "./sheet";
 import { initWakeLock } from "./wakeLock";
 import { isRemote } from "./platform";
 import { initOffline } from "./offline";
+import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
@@ -1002,6 +1003,7 @@ function renderAbout(): void {
   const el = document.querySelector("#aboutDlg .about");
   if (!el) return;
   el.innerHTML = t("aboutHtml");
+  mountUpdateBox(el);
   if (isRemote) {
     // Діагностика розкладки на телефоні: якщо щось «пливе», ці числа підкажуть, у чому справа.
     const nav = navigator as Navigator & { standalone?: boolean };
@@ -1200,6 +1202,7 @@ export function initPanels(): void {
   setShowPlaces(getRoot().showPlaces);
   applyPlacesStyle();
   initOffline();
+  initUpdater();
   fillTerrainSelect();
   renderStaticHints();
   setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });

@@ -17,7 +17,9 @@ import { isRemote, onlineTileSrc, pyramidTileSrc } from "./platform";
 import { heightAt, onHeightsLoaded } from "./terrainHeight";
 
 const cv = $<HTMLCanvasElement>("cv");
-const ctx = cv.getContext("2d")!;
+const mainCtx = cv.getContext("2d")!;
+/** Поточний контекст малювання: основна канва або буфер базового шару (тайли + сітка). */
+let ctx: CanvasRenderingContext2D = mainCtx;
 
 let dpr = 1;
 let W = 0;
@@ -219,6 +221,25 @@ let inflight = 0;
 function setLoading(on: boolean): void {
   document.getElementById("mapWrap")?.classList.toggle("loading", on);
 }
+/** Зміна набору тайлів (завантажено/скасовано) — базовий шар треба перемалювати. */
+let tileGen = 0;
+/** Тайли, потрібні в поточному кадрі; запити на решту (вже не видимі) скасовуються. */
+let wantedThisFrame = new Set<string>();
+const pending = new Map<string, { img: HTMLImageElement; quiet: boolean; entry: CacheEntry }>();
+function cancelStale(): void {
+  for (const [url, p] of pending) {
+    if (wantedThisFrame.has(url)) continue;
+    p.img.onload = null;
+    p.img.onerror = null;
+    p.img.src = "";
+    pending.delete(url);
+    tileCache.delete(url);
+    if (!p.quiet) {
+      inflight = Math.max(0, inflight - 1);
+      if (inflight === 0) setLoading(false);
+    }
+  }
+}
 /** Прозорість тайла: щойно завантажений з'являється плавно. */
 function tileAlpha(url: string): number {
   const e = tileCache.get(url);
@@ -233,7 +254,8 @@ let fading = false;
  * через цей інтервал наступний draw() пробує завантажити його ще раз. */
 const TILE_RETRY_MS = 4000;
 const tileCache = new Map<string, CacheEntry>();
-function loadTile(url: string, fetchIt = true): HTMLImageElement | null {
+function loadTile(url: string, fetchIt = true, quiet = false): HTMLImageElement | null {
+  if (fetchIt) wantedThisFrame.add(url);
   let e = tileCache.get(url);
   if (e) {
     if (e.failedAt !== undefined) {
@@ -249,15 +271,22 @@ function loadTile(url: string, fetchIt = true): HTMLImageElement | null {
   tileCache.set(url, e);
   const im = new Image();
   im.decoding = "async";
-  inflight++;
-  setLoading(true);
+  // Тихе (попереднє) завантаження не показує індикатор на карті.
+  if (!quiet) {
+    inflight++;
+    setLoading(true);
+  }
+  pending.set(url, { img: im, quiet, entry: e });
   const done = (): void => {
+    pending.delete(url);
+    if (quiet) return;
     inflight = Math.max(0, inflight - 1);
     if (inflight === 0) setLoading(false);
   };
   im.onload = () => {
     e!.img = im;
     e!.loadedAt = performance.now();
+    tileGen++;
     done();
     requestDraw();
   };
@@ -287,10 +316,10 @@ function drawOnlineTiles(): void {
   // (без запиту), і нарешті цільова деталізація зверху — так само, як у прототипі.
   drawOnlineLod(maxLod, true);
   if (lod + 1 < maxLod) drawOnlineLod(lod + 1, false);
-  if (lod < maxLod) drawOnlineLod(lod, true);
+  if (lod < maxLod) drawOnlineLod(lod, true, true);
 }
 
-function drawOnlineLod(lod: number, fetchIt: boolean): void {
+function drawOnlineLod(lod: number, fetchIt: boolean, prefetch = false): void {
   const meta = currentMeta();
   const span = tileSpan(lod);
   const w0 = worldFromScr(0, 0);
@@ -302,6 +331,17 @@ function drawOnlineLod(lod: number, fetchIt: boolean): void {
   const ty0 = Math.max(0, min.y);
   const ty1 = Math.min(Math.ceil(meta.sizeZ / span), max.y);
   if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) > 400) return;
+  if (prefetch && fetchIt) {
+    // кільце в один тайл навколо видимого: при русі карти вони вже будуть у кеші
+    const maxX = Math.ceil(meta.sizeX / span);
+    const maxY = Math.ceil(meta.sizeZ / span);
+    for (let tx = Math.max(0, tx0 - 1); tx <= Math.min(maxX, tx1 + 1); tx++) {
+      for (let ty = Math.max(0, ty0 - 1); ty <= Math.min(maxY, ty1 + 1); ty++) {
+        if (tx >= tx0 && tx <= tx1 && ty >= ty0 && ty <= ty1) continue;
+        loadTile(onlineTileSrc(meta.id, lod, tx, ty), true, true);
+      }
+    }
+  }
   for (let tx = tx0; tx <= tx1; tx++) {
     for (let ty = ty0; ty <= ty1; ty++) {
       const url = onlineTileSrc(meta.id, lod, tx, ty);
@@ -323,7 +363,7 @@ function pickPyramidLevel(plan: PyramidPlan): number {
   return plan.maxLevel;
 }
 
-function drawPyramidLevel(z: number, fetchIt: boolean): boolean {
+function drawPyramidLevel(z: number, fetchIt: boolean, prefetch = false): boolean {
   if (!pyramidPlan) return false;
   const level = pyramidPlan.levels[z];
   const fx = imgW / level.width;
@@ -343,7 +383,13 @@ function drawPyramidLevel(z: number, fetchIt: boolean): boolean {
       const tileSrcH = Math.min(PYRAMID_TILE_SIZE, level.height - row * PYRAMID_TILE_SIZE);
       const w = tileSrcW * fx * view.k;
       const h = tileSrcH * fy * view.k;
-      if (a.sx > W || a.sy > H || a.sx + w < 0 || a.sy + h < 0) continue;
+      if (a.sx > W || a.sy > H || a.sx + w < 0 || a.sy + h < 0) {
+        // поза екраном, але впритул — завантажуємо наперед (без малювання й без індикатора)
+        if (prefetch && fetchIt && a.sx < W + w && a.sy < H + h && a.sx + w > -w && a.sy + h > -h) {
+          loadTile(pyramidTileSrc(meta.id, z, row, col), true, true);
+        }
+        continue;
+      }
       // sharp().tile({layout:"google"}) записує файли як {z}/{рядок}/{колонка}.jpg — не
       // {z}/{колонка}/{рядок}, як інтуїтивно очікувалось. Для квадратних зображень (rows===cols)
       // різниці не видно, тому бага не проявлялась на Everon/Kolguyev — лише на непрямокутних.
@@ -367,7 +413,7 @@ function drawPyramid(): void {
   // поки вантажаться тайли потрібної деталізації.
   drawPyramidLevel(0, true);
   if (z >= 2) drawPyramidLevel(z - 1, false);
-  if (z > 0) drawPyramidLevel(z, true);
+  if (z > 0) drawPyramidLevel(z, true, true);
 }
 
 // ---------- main draw ----------
@@ -380,25 +426,66 @@ export function setDrawCallbacks(cb: Partial<DrawCallbacks>): void {
   callbacks = { ...callbacks, ...cb };
 }
 
+/** Буфер базового шару (тайли + сітка): перемальовується лише коли змінився вид, тайли чи тема. */
+const baseCanvas = document.createElement("canvas");
+const baseCtx = baseCanvas.getContext("2d")!;
+let baseKey = "";
+
 function draw(): void {
   needsDraw = false;
   fading = false;
+  wantedThisFrame = new Set<string>();
   if (!W) return;
   const c = mapColors();
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = c.blank;
-  ctx.fillRect(0, 0, W, H);
-
   const S = getCurrent();
-  if (S.map?.kind === "pyramid") drawPyramid();
-  else if (usesOnlineTiles()) drawOnlineTiles();
 
-  drawGrid(c);
+  const key = [
+    cv.width,
+    cv.height,
+    dpr,
+    view.k.toFixed(6),
+    view.ox.toFixed(2),
+    view.oy.toFixed(2),
+    tileGen,
+    S.map ? JSON.stringify(S.map) : "",
+    JSON.stringify(S.calib),
+    currentMeta().id,
+    c.blank,
+    c.grid,
+    c.fine
+  ].join("|");
+
+  let renderedBase = false;
+  if (key !== baseKey) {
+    renderedBase = true;
+    if (baseCanvas.width !== cv.width || baseCanvas.height !== cv.height) {
+      baseCanvas.width = cv.width;
+      baseCanvas.height = cv.height;
+    }
+    ctx = baseCtx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = c.blank;
+    ctx.fillRect(0, 0, W, H);
+    if (S.map?.kind === "pyramid") drawPyramid();
+    else if (usesOnlineTiles()) drawOnlineTiles();
+    drawGrid(c);
+    ctx = mainCtx;
+    // Поки тайли з'являються плавно, шар не вважаємо готовим — наступний кадр його перемалює.
+    baseKey = fading ? "" : key;
+  }
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(baseCanvas, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
   drawFiringLine(c);
   drawCalibPoints(c);
   drawPlaces(c);
   drawMarkers(c);
   updateReadout();
+  // запити скасовуємо лише коли набір потрібних тайлів перераховано в цьому кадрі
+  if (renderedBase) cancelStale();
   // тайли ще з'являються плавно — домалювати наступний кадр
   if (fading) requestDraw();
 }
@@ -510,35 +597,70 @@ function drawCalibPoints(c: Record<string, string>): void {
   }
 }
 
+interface PlaceSprite {
+  canvas: HTMLCanvasElement;
+  w: number;
+  h: number;
+  /** Центр крапки прив'язки всередині спрайта (CSS-пікселі). */
+  ax: number;
+  ay: number;
+}
+const spriteCache = new Map<string, PlaceSprite>();
+const measureCtx = document.createElement("canvas").getContext("2d")!;
+
+/** Підпис із крапкою й м'яким свіченням — малюється один раз і потім лише виводиться як картинка. */
+function placeSprite(name: string, tier: PlaceTier, px: number, col: string, surface: string, glow: number, dotR: number): PlaceSprite {
+  const key = [name, tier, px.toFixed(1), col, surface, glow.toFixed(1), dotR.toFixed(1), dpr].join("|");
+  const hit = spriteCache.get(key);
+  if (hit) return hit;
+  if (spriteCache.size > 700) spriteCache.clear();
+  const font = `${tier === 1 ? 600 : 500} ${px.toFixed(1)}px "IBM Plex Sans Condensed",sans-serif`;
+  measureCtx.font = font;
+  const tw = measureCtx.measureText(name).width;
+  const pad = Math.ceil(glow * 2 + 2);
+  const w = Math.ceil(pad * 2 + dotR * 2 + 4 + tw);
+  const h = Math.ceil(pad * 2 + px * 1.4);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(w * dpr);
+  canvas.height = Math.ceil(h * dpr);
+  const g = canvas.getContext("2d")!;
+  g.scale(dpr, dpr);
+  g.font = font;
+  g.textBaseline = "middle";
+  g.shadowColor = surface;
+  g.shadowBlur = glow;
+  g.fillStyle = col;
+  const ax = pad + dotR;
+  const ay = h / 2;
+  g.beginPath();
+  g.arc(ax, ay, dotR, 0, Math.PI * 2);
+  g.fill();
+  g.fillText(name, ax + dotR + 4, ay + 0.5);
+  g.fillText(name, ax + dotR + 4, ay + 0.5); // другий прохід підсилює свічення
+  const sprite = { canvas, w, h, ax, ay };
+  spriteCache.set(key, sprite);
+  return sprite;
+}
+
 function drawPlaces(c: Record<string, string>): void {
   const preset = currentMeta().preset;
   if (!getShowPlaces() || !preset?.places) return;
-  ctx.textBaseline = "middle";
   // Головні пункти (тир 1) пишемо найбільшим і жирним шрифтом, другорядні (тир 3) — дрібніше.
   // Важливіші малюємо останніми, щоб їхні підписи лишались зверху при перекритті.
   for (const tier of [3, 2, 1] as const) {
     if (tier > placesLevel) continue;
     const px = 11.5 * placesScale * TIER_SCALE[tier];
-    ctx.font = `${tier === 1 ? 600 : 500} ${px.toFixed(1)}px "IBM Plex Sans Condensed",sans-serif`;
+    const dotR = (tier === 1 ? 3.6 : 3) * Math.max(0.85, placesScale);
+    const glow = 4 * Math.max(1, placesScale);
     for (const p of preset.places) {
       if (p.tier !== tier) continue;
       const s = scrFromWorld(p.x, p.z);
       if (s.sx < -80 || s.sy < -20 || s.sx > W + 20 || s.sy > H + 20) continue;
       const col = c["pl-" + p.kind] || c.ink;
-      const dotR = (tier === 1 ? 3.6 : 3) * Math.max(0.85, placesScale);
-      // без рамок: м'яке свічення кольором панелей застосунку, лише щоб текст читався на будь-якому знімку
-      ctx.shadowColor = c.surface;
-      ctx.shadowBlur = 4 * Math.max(1, placesScale);
-      ctx.fillStyle = col;
-      ctx.beginPath();
-      ctx.arc(s.sx, s.sy, dotR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillText(p.name, s.sx + dotR + 4, s.sy + 0.5);
-      ctx.fillText(p.name, s.sx + dotR + 4, s.sy + 0.5); // другий прохід підсилює свічення
+      const sp = placeSprite(p.name, tier, px, col, c.surface, glow, dotR);
+      ctx.drawImage(sp.canvas, s.sx - sp.ax, s.sy - sp.ay, sp.w, sp.h);
     }
   }
-  ctx.shadowBlur = 0;
-  ctx.shadowColor = "transparent";
 }
 
 let showPlaces = true;

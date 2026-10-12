@@ -99,7 +99,15 @@ export interface MergeResult {
  * @param base стан, що зараз лежить на диску
  * @param incoming стан, який зберігає клієнт
  */
-export function mergeRoots(base: unknown, incoming: unknown, now: number = Date.now()): MergeResult {
+export interface MergeOptions {
+  /**
+   * Клієнт надіслав лише змінені терени (дельта): відсутність тереню в incoming.data — це «не змінювався»,
+   * а не «клієнт про нього не знає», тому такий терен береться з бази й не вважається злиттям чужих правок.
+   */
+  partial?: boolean;
+}
+
+export function mergeRoots(base: unknown, incoming: unknown, now: number = Date.now(), opts: MergeOptions = {}): MergeResult {
   if (!isObj(incoming)) return { state: isObj(base) ? base : incoming, changed: isObj(base) };
   if (!isObj(base)) return { state: incoming, changed: false };
 
@@ -160,7 +168,7 @@ export function mergeRoots(base: unknown, incoming: unknown, now: number = Date.
   for (const [terrainId, tb] of Object.entries(dataBase)) {
     if (terrainId in data || terrainId in dataInc || deletedTerrains[terrainId] !== undefined) continue;
     data[terrainId] = tb;
-    changed = true;
+    if (!opts.partial) changed = true;
   }
   out.data = data;
 
