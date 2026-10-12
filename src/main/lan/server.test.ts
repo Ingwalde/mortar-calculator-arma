@@ -222,3 +222,33 @@ describe("LAN server: HTTPS і довірчий сертифікат", () => {
     }
   });
 });
+
+describe("LAN server: оцінка розміру тайлів", () => {
+  it("віддає середній розмір тайла піраміди", async () => {
+    const staticDir = mkdtempSync(join(tmpdir(), "lan-stat-"));
+    const srv = createLanServer(
+      {
+        staticDir,
+        devProxyUrl: null,
+        loadStore: async () => null,
+        saveStore: async () => false,
+        readHeights: async () => null,
+        onlineTile: async () => null,
+        pyramidTile: async () => null,
+        pyramidAvgBytes: async (id) => (id === "mog" ? 5321 : null)
+      },
+      "stat-token-1234567890"
+    );
+    const port = 41000 + Math.floor(Math.random() * 900);
+    await srv.listen(port);
+    try {
+      const h = { cookie: "mk=stat-token-1234567890" };
+      const a = await fetch(`http://127.0.0.1:${port}/api/tilestat/mog`, { headers: h }).then((r) => r.json());
+      const b = await fetch(`http://127.0.0.1:${port}/api/tilestat/none`, { headers: h }).then((r) => r.json());
+      expect(a).toEqual({ avgBytes: 5321 });
+      expect(b).toEqual({ avgBytes: null });
+    } finally {
+      await srv.close();
+    }
+  });
+});

@@ -25,6 +25,19 @@ export interface OfflineOption {
 }
 
 /** Рівні деталізації для поточного терену: кожен наступний варіант включає всі попередні. */
+/** Середній розмір тайла піраміди з ПК (кеш у пам'яті сторінки); null — невідомо. */
+const avgBytesCache = new Map<string, number | null>();
+async function loadAvgBytes(id: string): Promise<void> {
+  if (avgBytesCache.has(id)) return;
+  try {
+    const res = await fetch(`/api/tilestat/${encodeURIComponent(id)}`);
+    const j = (await res.json()) as { avgBytes: number | null };
+    avgBytesCache.set(id, typeof j.avgBytes === "number" ? j.avgBytes : null);
+  } catch {
+    // ПК недосяжний — лишається типова оцінка
+  }
+}
+
 export function offlineOptions(): OfflineOption[] {
   const meta = currentMeta();
   const S = getCurrent();
@@ -48,7 +61,8 @@ export function offlineOptions(): OfflineOption[] {
     const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
     picks.forEach((z, i) => {
       const urls = urlsUpTo(z);
-      opts.push({ key: `p${z}`, label: names[names.length - picks.length + i] ?? names[i], urls: [...urls, ...extra], bytes: urls.length * PYRAMID_TILE_BYTES });
+      const avg = avgBytesCache.get(meta.id) ?? PYRAMID_TILE_BYTES;
+      opts.push({ key: `p${z}`, label: names[names.length - picks.length + i] ?? names[i], urls: [...urls, ...extra], bytes: urls.length * avg });
     });
     return opts;
   }
@@ -228,6 +242,7 @@ async function refresh(): Promise<void> {
   }
   const meta = currentMeta();
   $("offlineIntro").hidden = false;
+  await loadAvgBytes(meta.id);
   const secure = window.isSecureContext;
   const controlled = "serviceWorker" in navigator && !!navigator.serviceWorker.controller;
   const state = $("offlineState");
