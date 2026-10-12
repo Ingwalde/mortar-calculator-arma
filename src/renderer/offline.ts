@@ -193,10 +193,9 @@ async function refresh(): Promise<void> {
 
 export function initOffline(): void {
   const btn = $<HTMLButtonElement>("offlineBtn");
-  if (!isRemote) {
-    btn.hidden = true;
-    return;
-  }
+  // У HTML кнопка схована за замовчуванням; показуємо лише в веб-версії для телефона.
+  btn.hidden = !isRemote;
+  if (!isRemote) return;
   const dlg = $<HTMLDialogElement>("offlineDlg");
   btn.onclick = () => {
     dlg.showModal();
