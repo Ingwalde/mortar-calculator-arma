@@ -292,6 +292,9 @@ export function setMergedHook(hook: () => void): void {
   mergedHook = hook;
 }
 
+// Після повернення зв'язку відправляємо те, що змінили без ПК (платформа шле mortar:flush).
+if (typeof window !== "undefined") window.addEventListener("mortar:flush", () => scheduleSave());
+
 export function scheduleSave(): void {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {

@@ -226,4 +226,7 @@ html.ios-short{--safe-b:0px}
 .app.immersive .ic-shrink{display:block}
 
 @media (prefers-reduced-motion:reduce){.toast,.btn,.tabs button,.seg button{transition:none}}
+.offline-state{margin:8px 0;padding:8px 12px;border-radius:12px;font-size:13.5px;background:color-mix(in srgb,var(--target) 14%,transparent)}
+.offline-state[data-ok="1"]{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+#offlineDlg{max-width:min(92vw,460px)}
 .placespop select{background:var(--raised);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font:inherit}

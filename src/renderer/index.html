@@ -74,6 +74,7 @@ html.no-splash #splash{display:none}
       <h1 data-i18n="appTitle">Планшет мінометника</h1>
       <select id="terrainSel" data-i18n-aria-label="terrainAriaLabel" aria-label="Терен"></select>
       <button class="btn small" id="langBtn" type="button" data-i18n="langToggle">EN</button>
+      <button class="btn small icon-only" id="offlineBtn" type="button" hidden data-i18n-aria-label="offlineBtnAria" aria-label="Офлайн-режим"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18"/><path d="M12 12v7M9 16l3 3 3-3"/></svg></button>
       <button class="btn small icon-only" id="aboutBtn" type="button" data-i18n-aria-label="aboutAria" aria-label="Про програму"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button>
     </div>
     <div id="status" data-i18n="statusSaved">Завантаження…</div>
@@ -137,6 +138,17 @@ html.no-splash #splash{display:none}
 
         <label class="row" style="margin-top:10px;gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
         <p class="hint" style="font-size:12px" id="placesHint"></p>
+        <div id="prefetchBox" hidden style="margin-top:14px">
+          <h2 data-i18n="prefetchHeading">Карта без інтернету</h2>
+          <p class="hint" data-i18n="prefetchHint"></p>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <select id="prefetchLevel" data-i18n-aria-label="offlineLevelAria" aria-label="Деталізація"></select>
+            <button class="btn" id="prefetchGo" data-i18n="prefetchGoBtn">Зберегти на диск</button>
+            <button class="btn" id="prefetchStop" hidden data-i18n="offlineStopBtn">Зупинити</button>
+          </div>
+          <progress id="prefetchProg" hidden style="width:100%;margin-top:8px"></progress>
+          <p class="hint" id="prefetchText" hidden></p>
+        </div>
         <div class="row" style="margin-top:8px" id="customRow" hidden>
           <button class="btn small danger" id="delTerrain" data-i18n="delTerrainBtn">Видалити цей терен зі списку</button>
         </div>
@@ -172,6 +184,7 @@ html.no-splash #splash{display:none}
               <button class="btn" id="lanRegen" data-i18n="lanRegenBtn">Новий ключ</button>
             </div>
           </div>
+          <p class="hint" style="font-size:12px" id="lanOfflineHint" hidden></p>
           <p class="warn" id="lanWarn" hidden></p>
           <p class="hint" style="font-size:12px" data-i18n="lanSecurity"></p>
         </div>
@@ -217,6 +230,26 @@ html.no-splash #splash{display:none}
       </span>
     </div>
   </form>
+</dialog>
+<dialog id="offlineDlg">
+  <h3 data-i18n="offlineTitle">Офлайн-режим</h3>
+  <p class="hint" data-i18n="offlineIntro"></p>
+  <p class="offline-state" id="offlineState"></p>
+  <div class="field"><label><span data-i18n="offlineTerrainLabel">Терен</span>: <b id="offlineTerrain"></b></label></div>
+  <p class="hint" id="offlineNoMap" hidden data-i18n="offlineNoMap"></p>
+  <div class="field" style="margin-top:8px"><select id="offlineLevel" data-i18n-aria-label="offlineLevelAria" aria-label="Деталізація"></select></div>
+  <progress id="offlineProg" hidden style="width:100%;margin-top:10px"></progress>
+  <p class="hint" id="offlineProgText" hidden></p>
+  <p class="hint" id="offlineSaved"></p>
+  <p class="hint" id="offlineUsage"></p>
+  <div class="dlg-actions" style="justify-content:space-between;flex-wrap:wrap">
+    <button type="button" class="btn danger" id="offlineClear" data-i18n="offlineClearBtn">Видалити збережене</button>
+    <span style="display:flex;gap:8px">
+      <button type="button" class="btn" id="offlineStop" hidden data-i18n="offlineStopBtn">Зупинити</button>
+      <button type="button" class="btn primary" id="offlineSave" data-i18n="offlineSaveBtn">Зберегти карту</button>
+      <button type="button" class="btn" id="offlineClose" data-i18n="closeBtn">Закрити</button>
+    </span>
+  </div>
 </dialog>
 <dialog id="aboutDlg">
   <div class="about"></div>

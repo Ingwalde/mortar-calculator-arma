@@ -43,12 +43,26 @@ function render(next: LanInfo): void {
   const sel = $<HTMLSelectElement>("lanUrlSel");
   const previous = sel.value;
   sel.textContent = "";
+  const all: string[] = [];
+  const strip = (url: string): string => url.replace(/\?k=.*$/, "").replace(/^https?:\/\//, "");
   for (const url of next.urls) {
     // Токен у видимому підписі не показуємо — лише адреса й порт; повне посилання лежить у value.
-    sel.appendChild(new Option(url.replace(/\?k=.*$/, "").replace(/^http:\/\//, ""), url));
+    sel.appendChild(new Option(strip(url), url));
+    all.push(url);
   }
-  if (next.urls.includes(previous)) sel.value = previous;
-  sel.hidden = next.urls.length < 2;
+  for (const url of next.httpsUrls) {
+    sel.appendChild(new Option(`${strip(url)} — ${t("lanOptOffline")}`, url));
+    all.push(url);
+  }
+  if (next.caUrl) {
+    sel.appendChild(new Option(t("lanOptCert"), next.caUrl));
+    all.push(next.caUrl);
+  }
+  if (all.includes(previous)) sel.value = previous;
+  sel.hidden = all.length < 2;
+  const offHint = $("lanOfflineHint");
+  offHint.hidden = !next.caUrl;
+  offHint.textContent = next.caUrl ? t("lanOfflineHint", { https: next.httpsPort }) : "";
   void drawQr();
 }
 

@@ -7,6 +7,8 @@
  * жодного доступу до файлової системи чи імпорту карт.
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { createServer as createHttpsServer } from "node:https";
+import { mobileconfig } from "./tls";
 import { timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join, normalize, resolve, sep, extname } from "node:path";
@@ -22,10 +24,19 @@ export interface LanDeps {
   readHeights(terrainId: string): Promise<Uint8Array | null>;
   onlineTile(terrainId: string, lod: number, x: number, y: number): Promise<Buffer | null>;
   pyramidTile(terrainId: string, z: string, row: string, col: string): Promise<Buffer | null>;
+  /** Кореневий сертифікат локального CA (DER) для встановлення на телефон; null — HTTPS не налаштовано. */
+  caCertDer?: Buffer | null;
+}
+
+export interface TlsOptions {
+  key: string;
+  cert: string;
 }
 
 export interface LanServer {
   listen(port: number): Promise<void>;
+  /** Додатковий HTTPS-слухач (потрібен service worker-у для офлайн-режиму). */
+  listenHttps(port: number, tls: TlsOptions): Promise<void>;
   close(): Promise<void>;
   /** Повідомити підключених клієнтів, що стан змінився (крім того, хто його записав). */
   notifyChanged(sourceId: string): void;
@@ -104,6 +115,7 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
   let rev = 1;
   const sse = new Map<string, Set<ServerResponse>>();
   let server: Server | null = null;
+  let httpsServer: Server | null = null;
   let keepAlive: ReturnType<typeof setInterval> | undefined;
 
   function authorized(req: IncomingMessage, url: URL): { ok: boolean; viaQuery: boolean } {
@@ -160,7 +172,23 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
     if (auth.viaQuery) {
       // Токен з посилання → cookie. Адресу з ?k= лишаємо як є: саме її iOS запам’ятовує для іконки
       // на головному екрані (там cookie Safari недоступні), тож запуск з іконки знову поставить cookie.
-      res.setHeader("set-cookie", `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000`);
+      const secure = (req.socket as { encrypted?: boolean }).encrypted ? "; Secure" : "";
+      res.setHeader("set-cookie", `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000${secure}`);
+    }
+
+    // Кореневий сертифікат для довіри на телефоні (потрібне посилання з токеном, як і для всього іншого).
+    if (url.pathname === "/ca/mortar-tablet-ca.mobileconfig" || url.pathname === "/ca/mortar-tablet-ca.crt") {
+      if (!deps.caCertDer) return send(res, 404, "Not found");
+      if (url.pathname.endsWith(".crt")) {
+        return send(res, 200, deps.caCertDer, {
+          "content-type": "application/x-x509-ca-cert",
+          "content-disposition": 'attachment; filename="mortar-tablet-ca.crt"'
+        });
+      }
+      return send(res, 200, mobileconfig(deps.caCertDer), {
+        "content-type": "application/x-apple-aspen-config; charset=utf-8",
+        "content-disposition": 'attachment; filename="mortar-tablet-ca.mobileconfig"'
+      });
     }
 
     if (url.pathname === "/manifest.webmanifest") {
@@ -249,6 +277,13 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
     return serveStatic(req, url, res);
   }
 
+  const requestHandler = (req: IncomingMessage, res: ServerResponse): void => {
+    handle(req, res).catch(() => {
+      if (!res.headersSent) send(res, 500, "Internal error");
+      else res.end();
+    });
+  };
+
   return {
     get rev() {
       return rev;
@@ -263,19 +298,27 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
     },
     listen(port) {
       return new Promise((resolveListen, rejectListen) => {
-        const s = createServer((req, res) => {
-          handle(req, res).catch(() => {
-            if (!res.headersSent) send(res, 500, "Internal error");
-            else res.end();
-          });
-        });
+        const s = createServer(requestHandler);
         s.once("error", rejectListen);
         s.listen(port, "0.0.0.0", () => {
           s.off("error", rejectListen);
           server = s;
-          keepAlive = setInterval(() => {
-            for (const set of sse.values()) for (const res of set) res.write(": ping\n\n");
-          }, 20000);
+          if (!keepAlive) {
+            keepAlive = setInterval(() => {
+              for (const set of sse.values()) for (const res of set) res.write(": ping\n\n");
+            }, 20000);
+          }
+          resolveListen();
+        });
+      });
+    },
+    listenHttps(port, tls) {
+      return new Promise((resolveListen, rejectListen) => {
+        const s = createHttpsServer({ key: tls.key, cert: tls.cert }, requestHandler);
+        s.once("error", rejectListen);
+        s.listen(port, "0.0.0.0", () => {
+          s.off("error", rejectListen);
+          httpsServer = s;
           resolveListen();
         });
       });
@@ -285,11 +328,17 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
         if (keepAlive) clearInterval(keepAlive);
         for (const set of sse.values()) for (const res of set) res.end();
         sse.clear();
-        if (!server) return resolveClose();
-        const s = server;
+        const list = [server, httpsServer].filter((x): x is Server => x !== null);
         server = null;
-        s.close(() => resolveClose());
-        s.closeAllConnections?.();
+        httpsServer = null;
+        if (!list.length) return resolveClose();
+        let left = list.length;
+        for (const s of list) {
+          s.close(() => {
+            if (--left === 0) resolveClose();
+          });
+          s.closeAllConnections?.();
+        }
       });
     }
   };

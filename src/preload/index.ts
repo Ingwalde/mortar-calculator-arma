@@ -19,6 +19,9 @@ export interface LanInfo {
   enabled: boolean;
   port: number;
   urls: string[];
+  httpsPort: number;
+  httpsUrls: string[];
+  caUrl: string | null;
   error: string | null;
 }
 
@@ -61,6 +64,16 @@ const api = {
       const listener = (_e: Electron.IpcRendererEvent, p: MapImportProgress) => cb(p);
       ipcRenderer.on("mapImport:progress", listener);
       return () => ipcRenderer.removeListener("mapImport:progress", listener);
+    }
+  },
+  tiles: {
+    prefetch: (terrainId: string, minLod: number): Promise<{ ok: boolean; cancelled?: boolean; done: number; failed: number; total: number }> =>
+      ipcRenderer.invoke("tiles:prefetch", terrainId, minLod),
+    cancelPrefetch: (): Promise<void> => ipcRenderer.invoke("tiles:prefetchCancel"),
+    onPrefetchProgress: (cb: (p: { done: number; total: number }) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, p: { done: number; total: number }) => cb(p);
+      ipcRenderer.on("tiles:prefetchProgress", listener);
+      return () => ipcRenderer.removeListener("tiles:prefetchProgress", listener);
     }
   },
   heights: {

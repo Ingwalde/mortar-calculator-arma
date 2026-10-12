@@ -167,3 +167,58 @@ describe("LAN server", () => {
     b.close();
   });
 });
+
+describe("LAN server: HTTPS і довірчий сертифікат", () => {
+  const TOKEN = "https-token-1234567890";
+  it("віддає сторінку по HTTPS і профіль CA лише з токеном", async () => {
+    const { mkdtemp, rm } = await import("node:fs/promises");
+    const { request } = await import("node:https");
+    const { ensureCa, issueServerCert } = await import("./tls");
+    const dir = await mkdtemp(join(tmpdir(), "lan-https-"));
+    const staticDir = mkdtempSync(join(tmpdir(), "lan-https-static-"));
+    writeFileSync(join(staticDir, "index.html"), "<html>https</html>");
+    const ca = await ensureCa(dir);
+    const cert = issueServerCert(ca, ["127.0.0.1"]);
+    const srv = createLanServer(
+      {
+        staticDir,
+        devProxyUrl: null,
+        loadStore: async () => null,
+        saveStore: async () => false,
+        readHeights: async () => null,
+        onlineTile: async () => null,
+        pyramidTile: async () => null,
+        caCertDer: ca.certDer
+      },
+      TOKEN
+    );
+    const port = 40000 + Math.floor(Math.random() * 900);
+    await srv.listenHttps(port, { key: cert.keyPem, cert: cert.certPem });
+    const get = (path: string, headers: Record<string, string> = {}) =>
+      new Promise<{ status: number; body: Buffer; headers: Record<string, string | string[] | undefined> }>((resolve, reject) => {
+        const req = request({ host: "127.0.0.1", port, ca: ca.certPem, path, headers }, (res) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (c) => chunks.push(c as Buffer));
+          res.on("end", () => resolve({ status: res.statusCode ?? 0, body: Buffer.concat(chunks), headers: res.headers }));
+        });
+        req.on("error", reject);
+        req.end();
+      });
+    try {
+      const page = await get(`/?k=${TOKEN}`);
+      expect(page.status).toBe(200);
+      expect(page.body.toString()).toContain("https");
+      expect(String(page.headers["set-cookie"])).toContain("Secure");
+      expect((await get("/ca/mortar-tablet-ca.mobileconfig")).status).toBe(401);
+      const prof = await get(`/ca/mortar-tablet-ca.mobileconfig?k=${TOKEN}`);
+      expect(prof.status).toBe(200);
+      expect(prof.body.toString()).toContain("com.apple.security.root");
+      const crt = await get(`/ca/mortar-tablet-ca.crt?k=${TOKEN}`);
+      expect(crt.status).toBe(200);
+      expect(crt.body.equals(ca.certDer)).toBe(true);
+    } finally {
+      await srv.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
