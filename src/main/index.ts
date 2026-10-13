@@ -1,4 +1,5 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, session, shell } from "electron";
+import { isAllowedExternalUrl } from "./security";
 import { join } from "node:path";
 import { registerPrivilegedSchemes, registerProtocolHandlers } from "./protocols";
 import { registerIpcHandlers } from "./ipc";
@@ -21,10 +22,13 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
-      preload: join(app.getAppPath(), "out/preload/index.mjs"),
+      preload: join(app.getAppPath(), "out/preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      // Пісочниця рендерера: preload збирається як CommonJS і користується лише contextBridge/ipcRenderer.
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false
     }
   });
 
@@ -38,10 +42,20 @@ function createWindow(): void {
     });
   }
 
+  // Нові вікна не відкриваємо; у браузер системи йдуть лише http(s)-посилання.
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    void shell.openExternal(details.url);
+    if (isAllowedExternalUrl(details.url)) void shell.openExternal(details.url);
     return { action: "deny" };
   });
+  // Жодних переходів поза застосунком: сторінка планшета не повинна вести кудись інде.
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    const here = mainWindow?.webContents.getURL() ?? "";
+    if (url !== here && !url.startsWith("file://") && !url.startsWith(process.env.ELECTRON_RENDERER_URL ?? "\u0000")) {
+      event.preventDefault();
+      if (isAllowedExternalUrl(url)) void shell.openExternal(url);
+    }
+  });
+  mainWindow.webContents.on("will-attach-webview", (event) => event.preventDefault());
 
   if (isDev && process.env.ELECTRON_RENDERER_URL) {
     void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
@@ -51,6 +65,11 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
+  // Дозволи сторінки: лише запис у буфер обміну (кнопки «Копіювати»); камера, геолокація тощо не потрібні.
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
+    callback(permission === "clipboard-sanitized-write");
+  });
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === "clipboard-sanitized-write");
   registerProtocolHandlers();
   registerIpcHandlers(() => mainWindow);
   registerUpdater(() => mainWindow);

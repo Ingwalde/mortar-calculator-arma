@@ -81,3 +81,52 @@ describe("ensureServerCert (кеш на диску)", () => {
     expect(d.names).toContain("10.0.0.5");
   });
 });
+
+describe("обмеження імен CA", () => {
+  it("новий CA має NameConstraints, серверний сертифікат — ні", async () => {
+    const { caIsConstrained } = await import("./tls");
+    const ca = await ensureCa(dir);
+    expect(caIsConstrained(ca.certPem)).toBe(true);
+    const leaf = issueServerCert(ca, ["192.168.1.7"]);
+    expect(caIsConstrained(leaf.certPem)).toBe(false);
+  });
+
+  it("відкидає в сертифікаті публічні адреси й голе ім'я комп'ютера", async () => {
+    const ca = await ensureCa(dir);
+    const s = issueServerCert(ca, ["192.168.1.7", "8.8.8.8", "26.227.175.91", "DESKTOP-ABC", "pc.local", "example.com"]);
+    expect(s.names).toEqual(expect.arrayContaining(["192.168.1.7", "pc.local", "localhost", "127.0.0.1"]));
+    expect(s.names).not.toContain("8.8.8.8");
+    expect(s.names).not.toContain("26.227.175.91");
+    expect(s.names).not.toContain("DESKTOP-ABC");
+    expect(s.names).not.toContain("example.com");
+  });
+
+  it("OpenSSL відхиляє сертифікат із публічною адресою, підписаний цим CA", async () => {
+    const ca = await ensureCa(dir);
+    // навмисно без фільтра: у SAN є 8.8.8.8, поза обмеженнями CA
+    const bad = issueServerCert(ca, ["127.0.0.1", "8.8.8.8"], { filter: false });
+    const srv = createServer({ key: bad.keyPem, cert: bad.certPem }, (_req, res) => res.end("ok"));
+    await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
+    const port = (srv.address() as { port: number }).port;
+    const err = await new Promise<string>((resolve) => {
+      const req = request({ host: "127.0.0.1", port, ca: ca.certPem, path: "/" }, (res) => {
+        res.resume();
+        resolve("connected");
+      });
+      req.on("error", (e) => resolve(String(e)));
+      req.end();
+    });
+    srv.close();
+    expect(err).not.toBe("connected");
+  });
+
+  it("regenerateCa видає інший CA й чистить кеш серверного сертифіката", async () => {
+    const { regenerateCa, ensureServerCert } = await import("./tls");
+    const before = await ensureCa(dir);
+    await ensureServerCert(dir, before, ["192.168.1.7"]);
+    const after = await regenerateCa(dir);
+    expect(after.certPem).not.toBe(before.certPem);
+    const leaf = await ensureServerCert(dir, after, ["192.168.1.7"]);
+    expect(leaf.certPem).toBeTruthy();
+  });
+});

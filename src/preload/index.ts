@@ -22,6 +22,7 @@ export interface LanInfo {
   httpsPort: number;
   httpsUrls: string[];
   caUrl: string | null;
+  caConstrained: boolean;
   error: string | null;
 }
 
@@ -43,6 +44,7 @@ const api = {
     info: (): Promise<LanInfo> => ipcRenderer.invoke("lan:info"),
     setEnabled: (enabled: boolean): Promise<LanInfo> => ipcRenderer.invoke("lan:setEnabled", enabled),
     regenerate: (): Promise<LanInfo> => ipcRenderer.invoke("lan:regenerate"),
+    regenerateCa: (): Promise<LanInfo> => ipcRenderer.invoke("lan:regenerateCa"),
     qr: (url: string): Promise<string> => ipcRenderer.invoke("lan:qr", url)
   },
   dialogs: {

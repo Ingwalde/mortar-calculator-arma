@@ -17,12 +17,38 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, "src/preload/index.ts") }
+        input: { index: resolve(__dirname, "src/preload/index.ts") },
+        // sandbox: true вимагає CommonJS-preload
+        output: { format: "cjs", entryFileNames: "[name].cjs" }
       }
     }
   },
   renderer: {
     root: "src/renderer",
+    plugins: [
+      {
+        // Політика вмісту лише для зібраної версії (у dev Vite потребує inline-скриптів для HMR).
+        name: "mortar-csp",
+        apply: "build",
+        transformIndexHtml(html: string) {
+          const csp = [
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: blob: tile: localtile:",
+            "font-src 'self'",
+            "connect-src 'self' tile: localtile:",
+            "media-src 'self' blob: data:",
+            "worker-src 'self'",
+            "manifest-src 'self'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'none'"
+          ].join("; ");
+          return html.replace("<head>", `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">`);
+        }
+      }
+    ],
     define: { __APP_VERSION__: JSON.stringify(pkg.version) },
     build: {
       rollupOptions: {

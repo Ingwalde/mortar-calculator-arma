@@ -8,7 +8,7 @@ import { getOnlineTile, getPyramidTile, pyramidAvgBytes } from "../protocols";
 import { loadStore, saveStore, storeEvents } from "../store";
 import { readHeights } from "../tiles/heights";
 import { createLanServer, type LanServer } from "./server";
-import { ensureCa, ensureServerCert, type CaMaterial } from "./tls";
+import { caIsConstrained, ensureCa, ensureServerCert, regenerateCa, type CaMaterial } from "./tls";
 
 export interface LanInfo {
   enabled: boolean;
@@ -20,6 +20,8 @@ export interface LanInfo {
   httpsUrls: string[];
   /** Посилання на профіль довіри (.mobileconfig) для одноразового встановлення на iPhone. */
   caUrl: string | null;
+  /** CA має обмеження імен (лише приватна мережа); false — старий CA, варто перевипустити. */
+  caConstrained: boolean;
   error: string | null;
 }
 
@@ -41,6 +43,7 @@ let settings: LanSettings | null = null;
 let server: LanServer | null = null;
 let lastError: string | null = null;
 let httpsRunning = false;
+let caConstrained = true;
 
 function settingsPath(): string {
   return join(app.getPath("userData"), SETTINGS_FILE);
@@ -101,6 +104,7 @@ async function startServer(s: LanSettings): Promise<void> {
   let ca: CaMaterial | null = null;
   try {
     ca = await ensureCa(app.getPath("userData"));
+    caConstrained = caIsConstrained(ca.certPem);
   } catch {
     ca = null; // без CA лишається звичайний HTTP
   }
@@ -126,7 +130,8 @@ async function startServer(s: LanSettings): Promise<void> {
     if (ca) {
       try {
         // Сертифікат на всі поточні IP-адреси ПК та ім'я комп'ютера; перевидається при кожному старті.
-        const names = [...lanAddresses(), `${hostname()}.local`, hostname()];
+        // лише приватні адреси й *.local (CA обмежений саме ними)
+        const names = [...lanAddresses(), `${hostname()}.local`];
         const cert = await ensureServerCert(app.getPath("userData"), ca, names);
         await srv.listenHttps(s.httpsPort, { key: cert.keyPem, cert: cert.certPem });
         httpsRunning = true;
@@ -159,6 +164,7 @@ export async function getLanInfo(): Promise<LanInfo> {
     httpsPort: s.httpsPort,
     httpsUrls: httpsRunning ? ips.map((ip) => `https://${ip}:${s.httpsPort}/?k=${s.token}`) : [],
     caUrl: httpsRunning && ips.length ? `http://${ips[0]}:${s.port}/ca/mortar-tablet-ca.mobileconfig?k=${s.token}` : null,
+    caConstrained,
     error: lastError
   };
 }
@@ -170,6 +176,17 @@ export async function setLanEnabled(enabled: boolean): Promise<LanInfo> {
   await stopServer();
   lastError = null;
   if (enabled) await startServer(s);
+  return getLanInfo();
+}
+
+/** Перевипускає кореневий сертифікат (з обмеженнями) і перезапускає сервер; телефони треба довірити заново. */
+export async function regenerateLanCa(): Promise<LanInfo> {
+  const s = await loadSettings();
+  await regenerateCa(app.getPath("userData"));
+  if (s.enabled) {
+    await stopServer();
+    await startServer(s);
+  }
   return getLanInfo();
 }
 

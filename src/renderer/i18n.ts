@@ -302,6 +302,18 @@ const DICT: Dict = {
   lanToggleLabel: { uk: "Доступ з локальної мережі", en: "Local network access" },
   lanQrAria: { uk: "QR-код посилання", en: "Link QR code" },
   lanUrlAria: { uk: "Посилання для телефона", en: "Link for the phone" },
+  lanCaWarnText: {
+    uk: "Сертифікат довіри створено старою версією й не обмежений приватною мережею. Перевипустіть його: новий дозволяє підписувати лише адреси локальної мережі й *.local. Після цього профіль потрібно встановити на телефоні заново.",
+    en: "The trust certificate was created by an older version and is not limited to the private network. Re-issue it: the new one can only sign local-network addresses and *.local. Then install the profile on the phone again."
+  },
+  lanCaRegenBtn: { uk: "Перевипустити сертифікат", en: "Re-issue certificate" },
+  lanCaRegenTitle: { uk: "Перевипустити сертифікат?", en: "Re-issue the certificate?" },
+  lanCaRegenText: {
+    uk: "Старий профіль на телефонах перестане діяти для офлайн-режиму. Встановіть новий профіль («Сертифікат довіри») і знову увімкніть довіру в налаштуваннях iPhone.",
+    en: "The old profile on phones will stop working for offline mode. Install the new profile (“Trust certificate”) and enable trust again in the iPhone settings."
+  },
+  lanCaRegenConfirm: { uk: "Перевипустити", en: "Re-issue" },
+  lanCaRegenDone: { uk: "Сертифікат перевипущено", en: "Certificate re-issued" },
   lanOptOffline: { uk: "офлайн (HTTPS)", en: "offline (HTTPS)" },
   lanOptCert: { uk: "Сертифікат довіри (одноразово)", en: "Trust certificate (one time)" },
   lanOfflineHint: {
