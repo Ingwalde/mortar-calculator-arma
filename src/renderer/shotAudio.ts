@@ -163,14 +163,11 @@ function whistle(c: AudioContext, at: number, len: number): void {
 function scheduleFlight(c: AudioContext, launchPerfMs: number, flightSec: number, includeLaunch: boolean): void {
   const impactPerf = launchPerfMs + Math.max(0.5, flightSec) * 1000;
   const latency = (c as AudioContext & { outputLatency?: number }).outputLatency ?? c.baseLatency ?? 0;
-  // відображення годинника сторінки на годинник аудіо
-  let audioNow = c.currentTime;
-  let perfNow = performance.now();
-  const ts = c.getOutputTimestamp?.();
-  if (ts && ts.performanceTime && ts.contextTime !== undefined && ts.performanceTime > 0) {
-    audioNow = ts.contextTime;
-    perfNow = ts.performanceTime;
-  }
+  // Годинник аудіо й годинник сторінки знімаємо в один момент і міряємо від «зараз». Пара з
+  // getOutputTimestamp тут не годиться: після призупинення (згортання) вона застаріла, бо годинник
+  // аудіо стояв, а сторінки йшов — влучання виходило б із запізненням на весь час згортання.
+  const audioNow = c.currentTime;
+  const perfNow = performance.now();
   const impactAt = audioNow + (impactPerf - perfNow) / 1000 - latency;
   const launchAt = audioNow + (launchPerfMs - perfNow) / 1000 - latency;
   const t0 = Math.max(c.currentTime + 0.01, launchAt);
@@ -201,6 +198,11 @@ export async function playShot(flightSec: number, launchPerfMs: number = perform
   if (c.state !== "running") {
     await Promise.race([c.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 500))]);
   }
+  // завершені постріли з реєстру прибираємо
+  const now = performance.now();
+  for (let i = flights.length - 1; i >= 0; i--) {
+    if (flights[i].launchPerf + Math.max(0.5, flights[i].flightSec) * 1000 <= now) flights.splice(i, 1);
+  }
   flights.push({ launchPerf: launchPerfMs, flightSec });
   scheduleFlight(c, launchPerfMs, flightSec, true);
 }
@@ -211,20 +213,24 @@ export async function playShot(flightSec: number, launchPerfMs: number = perform
 function onHidden(): void {
   stopAll();
 }
-function onVisible(): void {
+async function onVisible(): Promise<void> {
+  // Подія «згорнуто» могла не дійти (сторінку заморозили раніше) — глушимо старе й при поверненні.
+  stopAll();
+  const c = ctx;
+  if (!c || muted) return;
+  if (c.state !== "running") {
+    await Promise.race([c.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 500))]);
+  }
+  // залишок рахуємо вже після запуску контексту: так час, поки він стояв, не потрапляє в розклад
   const now = performance.now();
   for (let i = flights.length - 1; i >= 0; i--) {
     if (flights[i].launchPerf + Math.max(0.5, flights[i].flightSec) * 1000 <= now) flights.splice(i, 1);
   }
-  const c = ctx;
-  if (!c || muted || !flights.length) return;
-  const go = (): void => {
-    for (const f of flights) scheduleFlight(c, f.launchPerf, f.flightSec, false);
-  };
-  if (c.state === "running") go();
-  else void c.resume().then(go, () => undefined);
+  for (const f of flights) scheduleFlight(c, f.launchPerf, f.flightSec, false);
 }
 if (typeof document !== "undefined") {
-  document.addEventListener("visibilitychange", () => (document.hidden ? onHidden() : onVisible()));
+  document.addEventListener("visibilitychange", () => (document.hidden ? onHidden() : void onVisible()));
   window.addEventListener("pagehide", onHidden);
+  // iOS інколи повертає застосунок подією pageshow, а не visibilitychange
+  window.addEventListener("pageshow", () => void onVisible());
 }
