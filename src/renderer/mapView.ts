@@ -451,9 +451,11 @@ const IMPACT_MS = 1100;
 let animating = false;
 
 /** Запускає анімацію міни від міномета до цілі за час польоту; label — підпис у лічильнику. */
-export function launchShot(from: { x: number; z: number }, to: { x: number; z: number }, durationSec: number, label: string): void {
-  shots.push({ from, to, dur: Math.max(0.5, durationSec), t0: performance.now(), label });
+export function launchShot(from: { x: number; z: number }, to: { x: number; z: number }, durationSec: number, label: string): number {
+  const t0 = performance.now();
+  shots.push({ from, to, dur: Math.max(0.5, durationSec), t0, label });
   requestDraw();
+  return t0;
 }
 
 export function activeShots(): number {
@@ -468,13 +470,25 @@ function updateShotChip(now: number): void {
     return;
   }
   chip.hidden = false;
-  const lines = shots.slice(0, 3).map((s) => {
+  // рядки будуємо через DOM (підписи — назви міток користувача, без innerHTML)
+  chip.textContent = "";
+  for (const s of shots.slice(0, 3)) {
     const remain = s.dur - (now - s.t0) / 1000;
-    return remain > 0
-      ? `${s.label} · ${t("shotInFlight")} ${remain.toFixed(1)} ${t("shotSecUnit")}`
-      : `${s.label} · ${t("shotImpact")}`;
-  });
-  chip.textContent = lines.join("\n");
+    const row = document.createElement("div");
+    row.className = remain > 0 ? "shotrow" : "shotrow hit";
+    const big = document.createElement("b");
+    big.textContent = remain > 0 ? remain.toFixed(1) : t("shotImpact");
+    row.appendChild(big);
+    if (remain > 0) {
+      const unit = document.createElement("i");
+      unit.textContent = t("shotSecUnit");
+      row.appendChild(unit);
+    }
+    const label = document.createElement("span");
+    label.textContent = s.label;
+    row.appendChild(label);
+    chip.appendChild(row);
+  }
 }
 
 /** Іконка мінометної міни: загострена голівка, корпус із пояском і хвостове оперення. Ніс — уздовж +X. */

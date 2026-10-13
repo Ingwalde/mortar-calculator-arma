@@ -46,7 +46,7 @@ import { initWakeLock } from "./wakeLock";
 import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
-import { playShot } from "./shotAudio";
+import { playShot, setShotMuted } from "./shotAudio";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
@@ -591,8 +591,9 @@ export function renderFire(): void {
     shotBtn.onclick = () => {
       // Час польоту з таблиці (з поправкою на висоту); якщо його нема — оцінка за дальністю.
       const tof = sols[0].timeOfFlight ?? Math.max(3, dist * 0.025);
-      launchShot({ x: p.m.x, z: p.m.z }, { x: p.t.x, z: p.t.z }, tof, `${p.m.name} → ${p.t.name}`);
-      if (getRoot().soundShots) playShot(tof);
+      const t0 = launchShot({ x: p.m.x, z: p.m.z }, { x: p.t.x, z: p.t.z }, tof, `${p.m.name} → ${p.t.name}`);
+      // звук прив'язано до моменту запуску анімації — влучання збігається з візуальним прильотом
+      if (getRoot().soundShots) void playShot(tof, t0);
       navigator.vibrate?.(30);
     };
     box.appendChild(shotBtn);
@@ -1001,16 +1002,20 @@ function applyShotSettings(): void {
   const r = getRoot();
   setRingsVisible(r.showRings);
   ($("ringsToggle") as HTMLInputElement).checked = r.showRings;
-  ($("soundToggle") as HTMLInputElement).checked = r.soundShots;
+  $("soundBtn").setAttribute("aria-pressed", String(r.soundShots));
+  setShotMuted(!r.soundShots);
 }
 $<HTMLInputElement>("ringsToggle").onchange = (e) => {
   getRoot().showRings = (e.target as HTMLInputElement).checked;
   applyShotSettings();
   scheduleSave();
 };
-$<HTMLInputElement>("soundToggle").onchange = (e) => {
-  getRoot().soundShots = (e.target as HTMLInputElement).checked;
+$<HTMLButtonElement>("soundBtn").onclick = () => {
+  const r = getRoot();
+  r.soundShots = !r.soundShots;
+  applyShotSettings();
   scheduleSave();
+  toast(t(r.soundShots ? "soundOn" : "soundOff"));
 };
 
 function applyPlacesStyle(): void {
