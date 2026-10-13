@@ -14,9 +14,18 @@ function hideSplash(): void {
 }
 
 let offline = false;
+let pending = 0;
 function updateStatus(): void {
-  $("status").textContent = t(offline ? "statusOffline" : "statusSaved");
+  $("status").textContent = offline
+    ? pending > 0
+      ? t("statusOfflinePending", { n: pending })
+      : t("statusOffline")
+    : t("statusSaved");
 }
+window.addEventListener("mortar:pending", (e) => {
+  pending = (e as CustomEvent<{ count: number }>).detail.count;
+  updateStatus();
+});
 window.addEventListener("mortar:connectivity", (e) => {
   offline = !(e as CustomEvent<{ online: boolean }>).detail.online;
   updateStatus();

@@ -1,16 +1,17 @@
 import { app } from "electron";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { gunzipSync } from "node:zlib";
 import { encodeHeightGrid, parseHeightJson } from "../../core/heightGrid";
 // Висоти, яких нема в каталозі GeNeFRAG, але які зібрано з файлів модів і поставляються разом із застосунком
 // (scripts/extract-badorb-heights.mjs). Імпорт ?asset копіює файл у out/main і дає шлях до нього.
-import badorbBundled from "../../../resources/heights/badorb.bin?asset";
-import bystranyBundled from "../../../resources/heights/bystrany.bin?asset";
-import repulseBundled from "../../../resources/heights/operationrepulse.bin?asset";
-import ironholdBundled from "../../../resources/heights/ironholdcastle.bin?asset";
-import kirovogradBundled from "../../../resources/heights/kirovograd.bin?asset";
-import mogadishuBundled from "../../../resources/heights/mogadishu.bin?asset";
-import novyinovkaBundled from "../../../resources/heights/novyinovka.bin?asset";
+import badorbBundled from "../../../resources/heights/badorb.bin.gz?asset";
+import bystranyBundled from "../../../resources/heights/bystrany.bin.gz?asset";
+import repulseBundled from "../../../resources/heights/operationrepulse.bin.gz?asset";
+import ironholdBundled from "../../../resources/heights/ironholdcastle.bin.gz?asset";
+import kirovogradBundled from "../../../resources/heights/kirovograd.bin.gz?asset";
+import mogadishuBundled from "../../../resources/heights/mogadishu.bin.gz?asset";
+import novyinovkaBundled from "../../../resources/heights/novyinovka.bin.gz?asset";
 
 const BUNDLED: Record<string, string> = {
   badorb: badorbBundled,
@@ -47,7 +48,8 @@ export async function readHeights(terrainId: string): Promise<Uint8Array | null>
     const bundled = BUNDLED[terrainId];
     if (!bundled) return null;
     try {
-      return await readFile(bundled);
+      // вбудовані сітки зберігаються стиснутими (scripts/compress-heights.mjs)
+      return new Uint8Array(gunzipSync(await readFile(bundled)));
     } catch {
       return null;
     }

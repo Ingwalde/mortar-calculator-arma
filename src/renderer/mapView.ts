@@ -417,11 +417,213 @@ function drawPyramid(): void {
 }
 
 // ---------- main draw ----------
+/** Кільця дальності вибраного міномета: усі заряди вибраного снаряда. */
+export interface RingSpec {
+  x: number;
+  z: number;
+  rings: { level: number; min: number; max: number; active: boolean }[];
+}
+
 export interface DrawCallbacks {
   selectedId: string | null;
   firePair: () => { m: { x: number; z: number }; t: { x: number; z: number } } | null;
+  rings: () => RingSpec | null;
 }
-let callbacks: DrawCallbacks = { selectedId: null, firePair: () => null };
+let callbacks: DrawCallbacks = { selectedId: null, firePair: () => null, rings: () => null };
+
+let ringsVisible = true;
+export function setRingsVisible(v: boolean): void {
+  ringsVisible = v;
+  requestDraw();
+}
+
+// ---------- політ міни ----------
+interface Shot {
+  from: { x: number; z: number };
+  to: { x: number; z: number };
+  /** Тривалість польоту, с. */
+  dur: number;
+  t0: number;
+  label: string;
+}
+const shots: Shot[] = [];
+const IMPACT_MS = 1100;
+let animating = false;
+
+/** Запускає анімацію міни від міномета до цілі за час польоту; label — підпис у лічильнику. */
+export function launchShot(from: { x: number; z: number }, to: { x: number; z: number }, durationSec: number, label: string): void {
+  shots.push({ from, to, dur: Math.max(0.5, durationSec), t0: performance.now(), label });
+  requestDraw();
+}
+
+export function activeShots(): number {
+  return shots.length;
+}
+
+function updateShotChip(now: number): void {
+  const chip = document.getElementById("shotChip");
+  if (!chip) return;
+  if (!shots.length) {
+    chip.hidden = true;
+    return;
+  }
+  chip.hidden = false;
+  const lines = shots.slice(0, 3).map((s) => {
+    const remain = s.dur - (now - s.t0) / 1000;
+    return remain > 0
+      ? `${s.label} · ${t("shotInFlight")} ${remain.toFixed(1)} ${t("shotSecUnit")}`
+      : `${s.label} · ${t("shotImpact")}`;
+  });
+  chip.textContent = lines.join("\n");
+}
+
+function drawShots(c: Record<string, string>): void {
+  animating = false;
+  if (!shots.length) {
+    updateShotChip(performance.now());
+    return;
+  }
+  const now = performance.now();
+  for (let i = shots.length - 1; i >= 0; i--) {
+    const s = shots[i];
+    const u = (now - s.t0) / 1000 / s.dur;
+    const a = scrFromWorld(s.from.x, s.from.z);
+    const b = scrFromWorld(s.to.x, s.to.z);
+    const dist = Math.hypot(b.sx - a.sx, b.sy - a.sy);
+    const arcH = Math.min(150, Math.max(26, dist * 0.2));
+    const at = (k: number): { x: number; y: number; ground: { x: number; y: number } } => {
+      const gx = a.sx + (b.sx - a.sx) * k;
+      const gy = a.sy + (b.sy - a.sy) * k;
+      return { x: gx, y: gy - 4 * arcH * k * (1 - k), ground: { x: gx, y: gy } };
+    };
+    animating = true;
+    if (u >= 1) {
+      // влучання: кільце, що розходиться, і спалах
+      const k = (now - (s.t0 + s.dur * 1000)) / IMPACT_MS;
+      if (k >= 1) {
+        shots.splice(i, 1);
+        continue;
+      }
+      const r = 8 + k * 46;
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.9;
+      ctx.strokeStyle = c.target;
+      ctx.lineWidth = 3 * (1 - k) + 1;
+      ctx.beginPath();
+      ctx.arc(b.sx, b.sy, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = (1 - k) * 0.5;
+      ctx.fillStyle = c.target;
+      ctx.beginPath();
+      ctx.arc(b.sx, b.sy, 5 + (1 - k) * 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      continue;
+    }
+    ctx.save();
+    // траєкторія — тонка пунктирна дуга
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = c.ink;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 5]);
+    ctx.beginPath();
+    for (let k = 0; k <= 1.001; k += 0.04) {
+      const p = at(Math.min(1, k));
+      if (k === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // слід за міною, що меркне
+    for (let j = 10; j >= 1; j--) {
+      const kk = Math.max(0, u - j * 0.012);
+      const p = at(kk);
+      ctx.globalAlpha = (1 - j / 11) * 0.5;
+      ctx.fillStyle = c.target;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.6 * (1 - j / 14), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // тінь на землі й сама міна (трохи більша на вершині дуги)
+    const p = at(u);
+    const alt = 4 * u * (1 - u);
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = c.ink;
+    ctx.beginPath();
+    ctx.ellipse(p.ground.x, p.ground.y, 5 - alt * 2, 2.6 - alt, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = c.target;
+    ctx.strokeStyle = c.surface;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4.4 + alt * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+  updateShotChip(now);
+}
+
+/** Кільця дальності: зовнішнє — максимум заряду, внутрішнє пунктиром — мінімум; активний заряд яскравіший. */
+function drawRangeRings(c: Record<string, string>): void {
+  if (!ringsVisible) return;
+  const spec = callbacks.rings();
+  if (!spec || !spec.rings.length) return;
+  const center = scrFromWorld(spec.x, spec.z);
+  const pxPerM = Math.abs(scrFromWorld(100, 0).sx - scrFromWorld(0, 0).sx) / 100;
+  ctx.save();
+  ctx.lineJoin = "round";
+  for (const r of spec.rings) {
+    const outer = r.max * pxPerM;
+    const inner = r.min * pxPerM;
+    if (outer < 3 || outer > 40000) continue;
+    if (r.active) {
+      // заливка між мінімумом і максимумом — зона, де заряд діє
+      ctx.globalAlpha = 0.07;
+      ctx.fillStyle = c.mortar;
+      ctx.beginPath();
+      ctx.arc(center.sx, center.sy, outer, 0, Math.PI * 2);
+      ctx.arc(center.sx, center.sy, inner, 0, Math.PI * 2, true);
+      ctx.fill("evenodd");
+    }
+    ctx.globalAlpha = r.active ? 0.95 : 0.3;
+    ctx.strokeStyle = c.mortar;
+    ctx.lineWidth = r.active ? 2 : 1;
+    ctx.setLineDash(r.active ? [] : [5, 5]);
+    ctx.beginPath();
+    ctx.arc(center.sx, center.sy, outer, 0, Math.PI * 2);
+    ctx.stroke();
+    if (r.active && inner > 3) {
+      ctx.setLineDash([7, 5]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(center.sx, center.sy, inner, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+  // підписи лише активного кільця, над ним (на півночі)
+  const active = spec.rings.find((r) => r.active);
+  if (active) {
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.font = '600 11.5px "IBM Plex Sans Condensed",sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.shadowColor = c.surface;
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = c.mortar;
+    const outer = active.max * pxPerM;
+    if (outer > 24) {
+      ctx.fillText(t("ringLabelCharge", { c: active.level, max: active.max }), center.sx, center.sy - outer - 4);
+    }
+    const inner = active.min * pxPerM;
+    if (inner > 24) ctx.fillText(t("ringLabelMin", { min: active.min }), center.sx, center.sy - inner - 4);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = "left";
+  }
+  ctx.restore();
+}
 export function setDrawCallbacks(cb: Partial<DrawCallbacks>): void {
   callbacks = { ...callbacks, ...cb };
 }
@@ -479,15 +681,17 @@ function draw(): void {
   ctx.drawImage(baseCanvas, 0, 0);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+  drawRangeRings(c);
   drawFiringLine(c);
   drawCalibPoints(c);
   drawPlaces(c);
   drawMarkers(c);
+  drawShots(c);
   updateReadout();
   // запити скасовуємо лише коли набір потрібних тайлів перераховано в цьому кадрі
   if (renderedBase) cancelStale();
-  // тайли ще з'являються плавно — домалювати наступний кадр
-  if (fading) requestDraw();
+  // тайли ще з'являються плавно або міна в польоті — домалювати наступний кадр
+  if (fading || animating) requestDraw();
 }
 
 function drawGrid(c: Record<string, string>): void {

@@ -7,12 +7,12 @@ export function $<T extends HTMLElement = HTMLElement>(id: string): T {
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
-export function toast(text: string): void {
+export function toast(text: string, ms = 2200): void {
   const el = $("toast");
   el.textContent = text;
   el.classList.add("on");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("on"), 2200);
+  toastTimer = setTimeout(() => el.classList.remove("on"), ms);
 }
 
 export interface AskField {

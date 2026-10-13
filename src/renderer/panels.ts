@@ -7,6 +7,7 @@ import {
   addFireLogEntry,
   ALL_FOLDERS,
   applyExternalState,
+  takeExternalSummary,
   currentMeta,
   getCurrent,
   getFolderNames,
@@ -29,6 +30,8 @@ import {
   requestDraw,
   resetView,
   setDrawCallbacks,
+  launchShot,
+  setRingsVisible,
   setShowPlaces,
   setPlacesStyle,
   setTapHandlers,
@@ -43,6 +46,7 @@ import { initWakeLock } from "./wakeLock";
 import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
+import { playShot } from "./shotAudio";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
@@ -354,6 +358,24 @@ function firePair(): { m: Marker; t: FirePairPoint } | null {
 }
 setDrawCallbacks({ firePair });
 
+/** Кільця дальності: вибраний міномет (або перший у папці), снаряд і заряди з таблиць. */
+function ringSpec(): { x: number; z: number; rings: { level: number; min: number; max: number; active: boolean }[] } | null {
+  const S = getCurrent();
+  const mortars = markersInFolder(S.sel.mortarFolder).filter((x) => x.type === "mortar");
+  const m = mortars.find((x) => x.id === S.sel.m) ?? mortars[0];
+  if (!m) return null;
+  const weapon = TABLES[m.w];
+  const shell = weapon?.shells[S.sel.shell] ?? weapon?.shells["HE"];
+  if (!shell) return null;
+  const activeLevel = shell.charges.some((c) => c.level === S.sel.charge) ? S.sel.charge : shell.charges[0].level;
+  return {
+    x: m.x,
+    z: m.z,
+    rings: shell.charges.map((c) => ({ level: c.level, min: c.minRange, max: c.maxRange, active: c.level === activeLevel }))
+  };
+}
+setDrawCallbacks({ rings: ringSpec });
+
 /** Папки, у яких є хоча б одна мітка потрібного виду, плюс "усі папки". */
 function fillFolderOptions(sel: HTMLSelectElement, current: string, wantMortar: boolean): string {
   sel.textContent = "";
@@ -562,9 +584,22 @@ export function renderFire(): void {
     box.appendChild(note);
     if (S.sel.charge === null || !sols.some((o) => o.charge === S.sel.charge)) S.sel.charge = sols[0].charge;
 
+    const shotBtn = document.createElement("button");
+    shotBtn.className = "btn fire-shot";
+    shotBtn.style.marginTop = "18px";
+    shotBtn.textContent = t("fireShotBtn");
+    shotBtn.onclick = () => {
+      // Час польоту з таблиці (з поправкою на висоту); якщо його нема — оцінка за дальністю.
+      const tof = sols[0].timeOfFlight ?? Math.max(3, dist * 0.025);
+      launchShot({ x: p.m.x, z: p.m.z }, { x: p.t.x, z: p.t.z }, tof, `${p.m.name} → ${p.t.name}`);
+      if (getRoot().soundShots) playShot(tof);
+      navigator.vibrate?.(30);
+    };
+    box.appendChild(shotBtn);
+
     const saveBtn = document.createElement("button");
     saveBtn.className = "btn primary save-log";
-    saveBtn.style.marginTop = "24px";
+    saveBtn.style.marginTop = "12px";
     saveBtn.textContent = t("saveToLogBtn");
     saveBtn.onclick = () => {
       const best = sols[0];
@@ -597,6 +632,7 @@ export function renderFire(): void {
     (dh === null ? t("noHeightNote") : "");
   box.appendChild(note2);
   renderTable(dist);
+  requestDraw();
 }
 
 function renderTable(dist: number | null): void {
@@ -961,6 +997,22 @@ $<HTMLButtonElement>("wipe").onclick = async () => {
     renderAll();
   }
 };
+function applyShotSettings(): void {
+  const r = getRoot();
+  setRingsVisible(r.showRings);
+  ($("ringsToggle") as HTMLInputElement).checked = r.showRings;
+  ($("soundToggle") as HTMLInputElement).checked = r.soundShots;
+}
+$<HTMLInputElement>("ringsToggle").onchange = (e) => {
+  getRoot().showRings = (e.target as HTMLInputElement).checked;
+  applyShotSettings();
+  scheduleSave();
+};
+$<HTMLInputElement>("soundToggle").onchange = (e) => {
+  getRoot().soundShots = (e.target as HTMLInputElement).checked;
+  scheduleSave();
+};
+
 function applyPlacesStyle(): void {
   const r = getRoot();
   setPlacesStyle(r.placesScale, r.placesLevel);
@@ -1140,6 +1192,26 @@ export async function reloadFromStore(): Promise<void> {
   if (mapKey() !== before) resetView();
   else syncImageSize();
   renderAll();
+  announceExternal(takeExternalSummary());
+}
+
+function listNames(names: string[]): string {
+  const shown = names.slice(0, 2).map((n) => `«${n}»`).join(", ");
+  return names.length > 2 ? shown + t("extMore", { n: names.length - 2 }) : shown;
+}
+
+/** Показує, що змінилось на іншому пристрої (ПК ↔ телефон) без перезавантаження. */
+function announceExternal(sum: ReturnType<typeof takeExternalSummary>): void {
+  if (!sum) return;
+  const parts: string[] = [];
+  if (sum.added.length) parts.push(t("extAdded", { list: listNames(sum.added) }));
+  if (sum.changed.length) parts.push(t("extChanged", { list: listNames(sum.changed) }));
+  if (sum.removed.length) parts.push(t("extRemoved", { list: listNames(sum.removed) }));
+  if (sum.logAdded) parts.push(t("extLog", { n: sum.logAdded }));
+  if (!parts.length) return;
+  const src = t(isRemote ? "extFromPc" : "extFromPhone");
+  toast(`${src}: ${parts.join("; ")}`, 4500);
+  navigator.vibrate?.(40);
 }
 
 export function renderAll(): void {
@@ -1201,6 +1273,7 @@ export function initPanels(): void {
   initCards();
   setShowPlaces(getRoot().showPlaces);
   applyPlacesStyle();
+  applyShotSettings();
   initOffline();
   initUpdater();
   fillTerrainSelect();

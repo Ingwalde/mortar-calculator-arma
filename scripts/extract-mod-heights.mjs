@@ -4,7 +4,7 @@
 // метри = raw * 0.03125 + зсув з Terrain.HEAD; рядок плитки = Z (на північ), стовпець = X (на схід);
 // сусідні плитки діляться крайніми вершинами (перевіряємо збіг країв).
 import { openSync, readSync, statSync, writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
-import { inflateSync, inflateRawSync } from "node:zlib";
+import { inflateSync, inflateRawSync, gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
@@ -107,9 +107,9 @@ for (let row = 0; row < dim; row++) {
     out.writeInt16LE(m, 8 + (row * dim + col) * 2);
   }
 }
-const OUT = process.env.OUT || fileURLToPath(new URL(`../resources/heights/${id}.bin`, import.meta.url));
+const OUT = process.env.OUT || fileURLToPath(new URL(`../resources/heights/${id}.bin.gz`, import.meta.url));
 mkdirSync(dirname(OUT), { recursive: true });
-writeFileSync(OUT, out);
+writeFileSync(OUT, OUT.endsWith(".gz") ? gzipSync(out, { level: 9 }) : out);
 console.log(`${id}: ${dim}x${dim} (крок ${step * cfg.cell} м), терен ${N * cfg.cell} м, висоти ${min}..${max} м, ${(out.length / 1048576).toFixed(1)} МБ`);
 
 // перевірка за висотами підписів із шарів мода (якщо є файл labels)
