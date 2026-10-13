@@ -38,7 +38,7 @@ await pipeline
 
 console.log(`готово за ${((Date.now() - t0) / 1000).toFixed(1)} с`);
 
-// огляд структури виводу: {OUT}/{z}/{x}/{y}.jpg
+// огляд структури виводу: {OUT}/{z}/{x}/{y}.webp
 const levels = readdirSync(OUT).filter((d) => /^\d+$/.test(d)).map(Number).sort((a, b) => a - b);
 console.log("рівні:", levels);
 for (const z of levels) {
@@ -48,5 +48,5 @@ for (const z of levels) {
   console.log(`  z=${z}: ${cols.length} колонок, приклад файлів у колонці ${firstCol}:`, rows.slice(0, 3));
 }
 const top = levels[levels.length - 1];
-const topMeta = await sharp(`${OUT}/${top}/0/0.jpg`).metadata();
+const topMeta = await sharp(`${OUT}/${top}/0/0.webp`).metadata();
 console.log(`тайл верхнього рівня z=${top}: ${topMeta.width}x${topMeta.height}`);

@@ -43,7 +43,7 @@ export function finestLevel(plan: PyramidPlan): PyramidLevel {
   return plan.levels[plan.levels.length - 1];
 }
 
-/** Шлях тайла відносно кореня піраміди терену: {z}/{x}/{y}.jpg (як пише sharp, layout "google"). */
+/** Шлях тайла відносно кореня піраміди терену: {z}/{x}/{y}.webp (як пише sharp, layout "google"). */
 export function pyramidTilePath(z: number, x: number, y: number): string {
-  return `${z}/${x}/${y}.jpg`;
+  return `${z}/${x}/${y}.webp`;
 }
