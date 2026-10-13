@@ -271,14 +271,19 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
     if (m && method === "GET") {
       const buf = await deps.onlineTile(m[1], Number(m[2]), Number(m[3]), Number(m[4]));
       if (!buf) return send(res, 404, "Not found");
-      return send(res, 200, buf, { "content-type": "image/jpeg", "cache-control": "private, max-age=300" });
+      // онлайн-тайли незмінні на сервері-джерелі: тримаємо тиждень
+      return send(res, 200, buf, { "content-type": "image/jpeg", "cache-control": "private, max-age=604800" });
     }
 
     m = /^\/localtile\/([A-Za-z0-9_-]+)\/(\d+)\/(\d+)\/(\d+)$/.exec(path);
     if (m && method === "GET") {
       const buf = await deps.pyramidTile(m[1], m[2], m[3], m[4]);
       if (!buf) return send(res, 404, "Not found");
-      return send(res, 200, buf, { "content-type": "image/jpeg", "cache-control": "private, max-age=300" });
+      // піраміду можна перебудувати, тому година й фонове оновлення
+      return send(res, 200, buf, {
+        "content-type": "image/jpeg",
+        "cache-control": "private, max-age=3600, stale-while-revalidate=86400"
+      });
     }
 
     if (path.startsWith("/api/")) return send(res, 404, "Not found");

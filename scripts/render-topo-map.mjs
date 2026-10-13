@@ -8,13 +8,14 @@
 //         кожні 4 точки — чотирикутник смуги дороги (початковий край, кінцевий край).
 //   BULD: u32 кількість LOD, u32 кількість будівель; LOD 0 = [u32 n][n x (x,z)] на будівлю.
 import { readFileSync, writeFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import sharp from "sharp";
 
 const [id, topoPath, sizeArg, ppmArg, outPath, ...bbox] = process.argv.slice(2);
 const SIZE = Number(sizeArg);
 const PPM = Number(ppmArg);
 // HEIGHTS=<файл> і HEIGHT_SCALE=<n>: детальніша сітка висот (значення = метри * n), див. extract-mod-heights.mjs
-const heightsPath = process.env.HEIGHTS || new URL(`../resources/heights/${id}.bin`, import.meta.url);
+const heightsPath = process.env.HEIGHTS || new URL(`../resources/heights/${id}.bin.gz`, import.meta.url);
 const HEIGHT_SCALE = Number(process.env.HEIGHT_SCALE) || 1;
 // "-" замість .topo: лише рельєф і море (для модів без топографічних даних)
 const b = topoPath === "-" ? Buffer.alloc(0) : readFileSync(topoPath);
@@ -161,7 +162,8 @@ const roads = parseRoads();
 const buildings = parseBuildings();
 
 // ---- висоти -> базовий растр (колір рельєфу) і маска моря
-const hb = readFileSync(heightsPath);
+const hbRaw = readFileSync(heightsPath);
+const hb = String(heightsPath).endsWith(".gz") ? gunzipSync(hbRaw) : hbRaw;
 const rows = hb.readInt32LE(0), cols = hb.readInt32LE(4);
 const Hraw = new Int16Array(rows * cols);
 for (let i = 0; i < rows * cols; i++) Hraw[i] = hb.readInt16LE(8 + i * 2);

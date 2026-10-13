@@ -36,10 +36,40 @@ function terrainsOf(data: unknown): Record<string, unknown> | null {
   return d && typeof d === "object" ? (d as Record<string, unknown>) : null;
 }
 function rememberTerrains(data: unknown): void {
+  rememberEntities(data);
   const terrains = terrainsOf(data);
   if (!terrains) return;
   sentTerrains.clear();
   for (const [id, v] of Object.entries(terrains)) sentTerrains.set(id, JSON.stringify(v));
+}
+
+// Лічильник змін, що чекають відправки: порівнюємо мітки/журнал/видалення з останнім відомим станом ПК.
+const serverEntities = new Map<string, string>();
+function entitiesOf(data: unknown): Map<string, string> {
+  const out = new Map<string, string>();
+  const terrains = terrainsOf(data);
+  if (!terrains) return out;
+  for (const [tid, raw] of Object.entries(terrains)) {
+    const t = raw as { markers?: { id: string }[]; fireLog?: { id: string }[]; deleted?: Record<string, number> };
+    for (const m of t.markers ?? []) out.set(`${tid}:m:${m.id}`, JSON.stringify(m));
+    for (const l of t.fireLog ?? []) out.set(`${tid}:l:${l.id}`, JSON.stringify(l));
+    for (const [id, u] of Object.entries(t.deleted ?? {})) out.set(`${tid}:d:${id}`, String(u));
+  }
+  return out;
+}
+function rememberEntities(data: unknown): void {
+  serverEntities.clear();
+  for (const [k, v] of entitiesOf(data)) serverEntities.set(k, v);
+}
+function pendingCount(data: unknown): number {
+  const cur = entitiesOf(data);
+  let n = 0;
+  for (const [k, v] of cur) if (serverEntities.get(k) !== v) n++;
+  for (const k of serverEntities.keys()) if (!cur.has(k)) n++;
+  return n;
+}
+function reportPending(n: number): void {
+  window.dispatchEvent(new CustomEvent("mortar:pending", { detail: { count: n } }));
 }
 
 let online = true;
@@ -155,13 +185,16 @@ function createWebApi(): MortarApi {
           lastRev = Number(res.headers.get("x-rev")) || lastRev;
           for (const [id, str] of snapshot) sentTerrains.set(id, str);
           if (!partial) rememberTerrains(data);
+          else rememberEntities(data);
           lsSet(LS_DIRTY, null);
+          reportPending(0);
           // setOnline(true) після скидання прапора: інакше «зв'язок повернувся» знову запустить відправку
           setOnline(true);
           return res.headers.get("x-merged") === "1";
         } catch {
           // Без зв'язку зміни лишаються на пристрої (прапор dirty) і підуть на ПК пізніше.
           setOnline(false);
+          reportPending(pendingCount(data));
           return false;
         }
       },

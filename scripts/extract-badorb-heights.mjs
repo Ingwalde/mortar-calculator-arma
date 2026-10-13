@@ -88,4 +88,4 @@ for (let row = 0; row < dim; row++) {
 }
 mkdirSync(dirname(OUT.pathname.replace(/^\/([A-Za-z]:)/, "$1")), { recursive: true });
 writeFileSync(OUT.pathname.replace(/^\/([A-Za-z]:)/, "$1"), out);
-console.log(`записано resources/heights/badorb.bin: ${dim}x${dim} (крок ${step} м), висоти ${min}..${max} м, ${(out.length / 1048576).toFixed(1)} МБ`);
+console.log(`записано resources/heights/badorb.bin (далі: node scripts/compress-heights.mjs): ${dim}x${dim} (крок ${step} м), висоти ${min}..${max} м, ${(out.length / 1048576).toFixed(1)} МБ`);

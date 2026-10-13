@@ -87,6 +87,10 @@ export interface RootState {
   placesScale: number;
   /** Показувати пункти з важливістю не нижче: 1 — лише головні, 2 — головні й звичайні, 3 — усі. */
   placesLevel: PlaceTier;
+  /** Кільця дальності вибраного міномета на карті. */
+  showRings: boolean;
+  /** Звук пострілу й влучання. */
+  soundShots: boolean;
   lang: Lang;
   cur: string;
   customTerrains: CustomTerrainMeta[];
@@ -119,7 +123,7 @@ function allTerrainMetas(root: RootState): Array<{ id: string; sizeX: number; si
 }
 
 export function blankRoot(): RootState {
-  const root: RootState = { v: 1, showPlaces: true, placesScale: 1, placesLevel: 3, lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
+  const root: RootState = { v: 1, showPlaces: true, placesScale: 1, placesLevel: 3, showRings: true, soundShots: true, lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
   for (const p of PRESETS) root.data[p.id] = blankTerrain(p.sizeX, p.sizeZ);
   return root;
 }
@@ -230,6 +234,8 @@ export function normalizeRoot(raw: unknown): RootState {
   root.showPlaces = r.showPlaces !== false;
   root.placesScale = clampPlacesScale(r.placesScale);
   root.placesLevel = normalizePlacesLevel(r.placesLevel);
+  root.showRings = r.showRings !== false;
+  root.soundShots = r.soundShots !== false;
   root.lang = r.lang === "en" ? "en" : "uk";
   root.cur = allTerrainMetas(root).some((m) => m.id === r.cur) ? (r.cur as string) : DEFAULT_TERRAIN_ID;
   return root;
@@ -315,6 +321,42 @@ export function markDeleted(id: string): void {
 
 export type ExternalApply = "skipped" | "applied" | "terrain-changed";
 
+/** Що змінилось у спільному стані після чужої правки (мітки й журнал) — для сповіщення. */
+export interface ExternalSummary {
+  added: string[];
+  changed: string[];
+  removed: string[];
+  logAdded: number;
+}
+let lastSummary: ExternalSummary | null = null;
+
+/** Забирає зведення останньої зовнішньої зміни (одноразово). */
+export function takeExternalSummary(): ExternalSummary | null {
+  const s = lastSummary;
+  lastSummary = null;
+  return s;
+}
+
+function summarizeChanges(prev: RootState, next: RootState): ExternalSummary | null {
+  const out: ExternalSummary = { added: [], changed: [], removed: [], logAdded: 0 };
+  for (const [tid, nt] of Object.entries(next.data)) {
+    const pt = prev.data[tid];
+    if (!pt) continue;
+    const before = new Map(pt.markers.map((m) => [m.id, m]));
+    const after = new Map(nt.markers.map((m) => [m.id, m]));
+    for (const [id, m] of after) {
+      const old = before.get(id);
+      const label = m.name || m.type;
+      if (!old) out.added.push(label);
+      else if (JSON.stringify(old) !== JSON.stringify(m)) out.changed.push(label);
+    }
+    for (const [id, m] of before) if (!after.has(id)) out.removed.push(m.name || m.type);
+    const oldLog = new Set(pt.fireLog.map((l) => l.id));
+    out.logAdded += nt.fireLog.filter((l) => !oldLog.has(l.id)).length;
+  }
+  return out.added.length || out.changed.length || out.removed.length || out.logAdded ? out : null;
+}
+
 /**
  * Підхоплює стан, збережений іншим клієнтом (телефон <-> ПК). Мова, поточний терен і вибір
  * (міномет/ціль/снаряд/папка) лишаються локальними — кожен екран рахує своє, а мітки й журнал спільні.
@@ -328,6 +370,9 @@ export function applyExternalState(raw: unknown): ExternalApply {
   // розмір і рівень назв — налаштування екрана (телефон і ПК мають різні)
   next.placesScale = prev.placesScale;
   next.placesLevel = prev.placesLevel;
+  next.showRings = prev.showRings;
+  next.soundShots = prev.soundShots;
+  lastSummary = summarizeChanges(prev, next);
   for (const id of Object.keys(next.data)) {
     if (prev.data[id]) next.data[id].sel = prev.data[id].sel;
   }
