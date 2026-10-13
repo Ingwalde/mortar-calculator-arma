@@ -130,6 +130,46 @@ export function issueServerCert(ca: CaMaterial, names: string[]): ServerCert {
   return { keyPem, certPem: forge.pki.certificateToPem(cert), names: uniq };
 }
 
+const LEAF_FILE = "lan-leaf.json";
+
+/**
+ * Серверний сертифікат із кешем на диску: перевидаємо лише коли змінився набір адрес/імен або лишилось
+ * менше 30 днів. Це прибирає ~150 мс блокувального RSA-генерування при кожному старті.
+ */
+export async function ensureServerCert(dir: string, ca: CaMaterial, names: string[]): Promise<ServerCert> {
+  const wanted = [...new Set(names.filter((n) => n.length > 0))].sort();
+  const path = join(dir, LEAF_FILE);
+  try {
+    const raw = JSON.parse(await readFile(path, "utf8")) as { names?: string[]; certPem?: string; keyPem?: string; caFingerprint?: string };
+    if (raw.certPem && raw.keyPem && Array.isArray(raw.names)) {
+      const cert = forge.pki.certificateFromPem(raw.certPem);
+      const have = [...raw.names].sort();
+      const sameNames = wanted.every((n) => have.includes(n));
+      const caSame = raw.caFingerprint === forge.md.sha256.create().update(ca.certDer.toString("binary")).digest().toHex();
+      if (sameNames && caSame && cert.validity.notAfter.getTime() > Date.now() + 30 * DAY) {
+        return { keyPem: raw.keyPem, certPem: raw.certPem, names: raw.names };
+      }
+    }
+  } catch {
+    // нема файлу або пошкоджений — видаємо новий
+  }
+  const fresh = issueServerCert(ca, names);
+  await mkdir(dir, { recursive: true });
+  const tmp = `${path}.tmp`;
+  await writeFile(
+    tmp,
+    JSON.stringify({
+      names: fresh.names,
+      certPem: fresh.certPem,
+      keyPem: fresh.keyPem,
+      caFingerprint: forge.md.sha256.create().update(ca.certDer.toString("binary")).digest().toHex()
+    }),
+    "utf8"
+  );
+  await rename(tmp, path);
+  return fresh;
+}
+
 /**
  * Профіль конфігурації iOS (.mobileconfig) із кореневим сертифікатом: після встановлення й ввімкнення
  * довіри (Налаштування → Загальні → Про пристрій → Довіра сертифікатам) телефон довіряє серверу.

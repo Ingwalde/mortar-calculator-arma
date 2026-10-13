@@ -97,6 +97,8 @@ html.no-splash #splash{display:none}
         <ul class="list" id="list"></ul>
         <div class="row" style="margin-top:12px">
           <button class="btn" id="addManual" data-i18n="addManualBtn">Додати за координатами</button>
+          <button class="btn" id="exportFolderBtn" data-i18n="exportBtn">Експорт…</button>
+          <button class="btn" id="importFolderBtn" data-i18n="importFolderBtn">Імпорт…</button>
         </div>
       </section>
 
@@ -252,6 +254,39 @@ html.no-splash #splash{display:none}
   <div class="about"></div>
   <div class="dlg-actions" style="justify-content:flex-end">
     <button type="button" class="btn primary" id="aboutClose" data-i18n="closeBtn">Закрити</button>
+  </div>
+</dialog>
+<dialog id="exportDlg">
+  <h3 data-i18n="exportTitle">Експорт міток</h3>
+  <div class="field"><label for="exFolder" data-i18n="folderLabel">Папка / місія</label><select id="exFolder"></select></div>
+  <div class="row" style="margin:10px 0 4px;gap:14px">
+    <label class="row" style="gap:6px;cursor:pointer"><input type="checkbox" id="exTarget" checked> <span data-i18n="exTargets">Цілі</span></label>
+    <label class="row" style="gap:6px;cursor:pointer"><input type="checkbox" id="exPoint" checked> <span data-i18n="exPoints">Точки</span></label>
+    <label class="row" style="gap:6px;cursor:pointer"><input type="checkbox" id="exMortar"> <span data-i18n="exMortars">Міномети</span></label>
+  </div>
+  <p class="hint" id="exCount"></p>
+  <textarea id="exText" rows="6" readonly></textarea>
+  <div class="dlg-actions" style="flex-wrap:wrap">
+    <button type="button" class="btn" id="exCopy" data-i18n="copyBtn">Копіювати</button>
+    <button type="button" class="btn" id="exShare" hidden data-i18n="exShare">Поділитись</button>
+    <button type="button" class="btn" id="exFile" data-i18n="exFile">Зберегти файл</button>
+    <button type="button" class="btn primary" id="exClose" data-i18n="closeBtn">Закрити</button>
+  </div>
+</dialog>
+<dialog id="importDlg">
+  <h3 data-i18n="importTitle">Імпорт міток</h3>
+  <p class="hint" data-i18n="imIntro">Вставте текст, отриманий через «Експорт», або виберіть файл. Повторний імпорт нічого не дублює.</p>
+  <textarea id="imText" rows="6" data-i18n-placeholder="imPlaceholder" placeholder="Вставте текст обміну"></textarea>
+  <div class="row" style="margin-top:8px">
+    <input type="file" id="imFile" accept=".json,.txt,application/json,text/plain" hidden>
+    <button type="button" class="btn" id="imPick" data-i18n="imPick">Вибрати файл…</button>
+  </div>
+  <p class="hint" id="imInfo" data-state=""></p>
+  <div class="field"><label for="imFolder" data-i18n="imDest">Папка призначення</label><select id="imFolder"></select></div>
+  <div class="field" id="imNewRow" hidden style="margin-top:8px"><label for="imNewName" data-i18n="imNewName">Назва нової папки</label><input id="imNewName" maxlength="40"></div>
+  <div class="dlg-actions">
+    <button type="button" class="btn" id="imClose" data-i18n="closeBtn">Закрити</button>
+    <button type="button" class="btn primary" id="imGo" data-i18n="imGo">Імпортувати</button>
   </div>
 </dialog>
 <dialog id="ask">

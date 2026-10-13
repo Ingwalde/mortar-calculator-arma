@@ -253,3 +253,71 @@ describe("LAN server: оцінка розміру тайлів", () => {
     }
   });
 });
+
+describe("LAN server: стиснення", () => {
+  it("pickEncoding віддає brotli, інакше gzip, і поважає q=0", async () => {
+    const { pickEncoding } = await import("./server");
+    expect(pickEncoding("gzip, deflate, br")).toBe("br");
+    expect(pickEncoding("gzip")).toBe("gzip");
+    expect(pickEncoding("br;q=0, gzip;q=0.5")).toBe("gzip");
+    expect(pickEncoding("identity")).toBeNull();
+    expect(pickEncoding(undefined)).toBeNull();
+  });
+
+  it("стискає великий JS/CSS і не чіпає картинки та малі файли", async () => {
+    const { gunzipSync, brotliDecompressSync } = await import("node:zlib");
+    const staticDir = mkdtempSync(join(tmpdir(), "lan-gz-"));
+    const big = "const x = 1;\n".repeat(2000);
+    writeFileSync(join(staticDir, "index.html"), "<html>" + "a".repeat(3000) + "</html>");
+    mkdirSync(join(staticDir, "assets"));
+    writeFileSync(join(staticDir, "assets", "app.js"), big);
+    writeFileSync(join(staticDir, "assets", "small.js"), "x=1");
+    writeFileSync(join(staticDir, "assets", "pic.png"), Buffer.alloc(5000, 7));
+    const srv = createLanServer(
+      {
+        staticDir,
+        devProxyUrl: null,
+        loadStore: async () => ({ v: 1, pad: "z".repeat(3000) }),
+        saveStore: async () => false,
+        readHeights: async () => null,
+        onlineTile: async () => null,
+        pyramidTile: async () => null
+      },
+      "gz-token-1234567890123"
+    );
+    const port = 42000 + Math.floor(Math.random() * 900);
+    await srv.listen(port);
+    const base = `http://127.0.0.1:${port}`;
+    const h = { cookie: "mk=gz-token-1234567890123" };
+    try {
+      // fetch сам розпаковує, тому беремо сирі заголовки через node:http
+      const { request } = await import("node:http");
+      const raw = (path: string, enc: string) =>
+        new Promise<{ headers: Record<string, string | string[] | undefined>; body: Buffer }>((resolve, reject) => {
+          const req = request(base + path, { headers: { ...h, "accept-encoding": enc } }, (res) => {
+            const chunks: Buffer[] = [];
+            res.on("data", (c) => chunks.push(c as Buffer));
+            res.on("end", () => resolve({ headers: res.headers, body: Buffer.concat(chunks) }));
+          });
+          req.on("error", reject);
+          req.end();
+        });
+      const js = await raw("/assets/app.js", "gzip");
+      expect(js.headers["content-encoding"]).toBe("gzip");
+      expect(js.body.length).toBeLessThan(big.length / 5);
+      expect(gunzipSync(js.body).toString()).toBe(big);
+      const br = await raw("/assets/app.js", "br, gzip");
+      expect(br.headers["content-encoding"]).toBe("br");
+      expect(brotliDecompressSync(br.body).toString()).toBe(big);
+      expect(br.headers.vary).toMatch(/Accept-Encoding/i);
+      expect((await raw("/assets/small.js", "gzip")).headers["content-encoding"]).toBeUndefined();
+      expect((await raw("/assets/pic.png", "gzip")).headers["content-encoding"]).toBeUndefined();
+      expect((await raw("/assets/app.js", "identity")).headers["content-encoding"]).toBeUndefined();
+      const store = await raw("/api/store", "gzip");
+      expect(store.headers["content-encoding"]).toBe("gzip");
+      expect(JSON.parse(gunzipSync(store.body).toString()).v).toBe(1);
+    } finally {
+      await srv.close();
+    }
+  });
+});

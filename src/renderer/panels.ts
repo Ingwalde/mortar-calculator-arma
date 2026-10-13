@@ -48,6 +48,7 @@ import { initWakeLock } from "./wakeLock";
 import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
+import { initExchange } from "./exchange";
 import { playShot, setShotMuted } from "./shotAudio";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
@@ -1295,6 +1296,7 @@ export function initPanels(): void {
   applyShotSettings();
   initOffline();
   initUpdater();
+  initExchange({ renderAll });
   fillTerrainSelect();
   renderStaticHints();
   setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });

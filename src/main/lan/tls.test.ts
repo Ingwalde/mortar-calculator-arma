@@ -63,3 +63,21 @@ describe("tls", () => {
     expect(p.replace(/\s+/g, "")).toContain(ca.certDer.toString("base64").slice(0, 40));
   });
 });
+
+describe("ensureServerCert (кеш на диску)", () => {
+  it("повторно віддає той самий сертифікат і перевидає при зміні адрес", async () => {
+    const { ensureServerCert } = await import("./tls");
+    const ca = await ensureCa(dir);
+    const a = await ensureServerCert(dir, ca, ["192.168.1.7", "pc.local"]);
+    const b = await ensureServerCert(dir, ca, ["192.168.1.7", "pc.local"]);
+    expect(b.certPem).toBe(a.certPem);
+    expect(b.keyPem).toBe(a.keyPem);
+    // підмножина адрес — кеш лишається чинним
+    const c = await ensureServerCert(dir, ca, ["192.168.1.7"]);
+    expect(c.certPem).toBe(a.certPem);
+    // з'явилась нова адреса — перевидаємо
+    const d = await ensureServerCert(dir, ca, ["192.168.1.7", "10.0.0.5"]);
+    expect(d.certPem).not.toBe(a.certPem);
+    expect(d.names).toContain("10.0.0.5");
+  });
+});

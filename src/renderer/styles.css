@@ -285,3 +285,36 @@ progress::-moz-progress-bar{background:var(--accent);border-radius:999px}
 }
 /* Панель «Aa» на телефоні: поверх нижньої панелі й з прокруткою, щоб усі перемикачі були досяжні */
 @media (max-width:820px){.placespop{z-index:17;max-height:calc(100dvh - 150px - var(--safe-t));overflow:auto}}
+
+/* Імпорт міток: підсвічування стану розбору */
+#imInfo[data-state="error"]{color:var(--target)}
+#imInfo[data-state="warn"]{color:#b8860b}
+#imInfo[data-state="ok"]{color:var(--accent)}
+#exportDlg,#importDlg{max-width:min(92vw,480px)}
+#exportDlg textarea,#importDlg textarea{width:100%;font:12px/1.35 ui-monospace,Consolas,monospace}
+
+/* ---------- смуги прокрутки та повзунки в стилі застосунку ---------- */
+:root{color-scheme:light;--sb-thumb:color-mix(in srgb,var(--ink) 24%,transparent);--sb-thumb-hover:color-mix(in srgb,var(--ink) 44%,transparent)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark}}
+:root[data-theme="dark"]{color-scheme:dark}
+/* Chromium/Electron/Safari: тонка заокруглена смуга без стрілок і без білої доріжки */
+::-webkit-scrollbar{width:10px;height:10px;background:transparent}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--sb-thumb);border:3px solid transparent;background-clip:padding-box;border-radius:999px;min-height:36px;min-width:36px}
+::-webkit-scrollbar-thumb:hover{background:var(--sb-thumb-hover);background-clip:padding-box}
+::-webkit-scrollbar-thumb:active{background:var(--accent);background-clip:padding-box}
+::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+/* Firefox та інші, де нема ::-webkit-scrollbar */
+@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent}}
+
+/* Горизонтальні повзунки (<input type=range>): акцентний колір, тонка доріжка, зручний «ковзун» */
+input[type=range]{-webkit-appearance:none;appearance:none;height:28px;background:transparent;cursor:pointer;accent-color:var(--accent)}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:color-mix(in srgb,var(--ink) 18%,transparent)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;
+  background:var(--accent);border:3px solid var(--raised);box-shadow:0 1px 5px rgba(0,0,0,.35)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range]::-moz-range-track{height:6px;border-radius:999px;background:color-mix(in srgb,var(--ink) 18%,transparent)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);border:3px solid var(--raised)}
+input[type=range]:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:999px}
+input[type=checkbox],input[type=radio],progress{accent-color:var(--accent)}

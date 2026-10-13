@@ -6,6 +6,8 @@ directories:
 electronLanguages:
   - uk
   - en-US
+# sharp ставиться готовими бінарниками (@img/*): перекомпіляція нативних модулів при пакуванні не потрібна
+npmRebuild: false
 compression: maximum
 files:
   - out/**/*
