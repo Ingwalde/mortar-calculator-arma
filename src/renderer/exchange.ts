@@ -1,0 +1,230 @@
+/**
+ * Імпорт/експорт міток за папкою (місією): діалоги «Експорт…» і «Імпорт…» на вкладці «Мітки».
+ * Формат і злиття — у core/markerExchange.ts. Працює на ПК і на телефоні (текст, файл, «Поділитись»).
+ */
+import {
+  buildExport,
+  exchangeFileName,
+  mergeImported,
+  parseExchange,
+  serializeExport,
+  type ParseResult,
+  type XMarker,
+  type XMarkerType
+} from "@core/markerExchange";
+import { $, ask, toast } from "./dom";
+import { t } from "./i18n";
+import { ALL_FOLDERS, currentMeta, getCurrent, getFolderNames, scheduleSave, uid, type Marker } from "./state";
+
+const KEEP = "__keep";
+const NEW = "__new";
+
+interface Hooks {
+  /** Перемалювати списки й карту після зміни міток. */
+  renderAll: () => void;
+}
+
+function pickedTypes(): Set<XMarkerType> {
+  const s = new Set<XMarkerType>();
+  if ($<HTMLInputElement>("exTarget").checked) s.add("target");
+  if ($<HTMLInputElement>("exPoint").checked) s.add("point");
+  if ($<HTMLInputElement>("exMortar").checked) s.add("mortar");
+  return s;
+}
+
+function exportFolderValue(): string | null {
+  const v = $<HTMLSelectElement>("exFolder").value;
+  return v === ALL_FOLDERS ? null : v;
+}
+
+function buildText(): { text: string; count: number; fileName: string } {
+  const meta = currentMeta();
+  const folder = exportFolderValue();
+  const now = Date.now();
+  const doc = buildExport(getCurrent().markers as XMarker[], {
+    terrain: meta.id,
+    terrainName: meta.name,
+    folder,
+    types: pickedTypes(),
+    now
+  });
+  return { text: serializeExport(doc), count: doc.markers.length, fileName: exchangeFileName(meta.id, folder, now) };
+}
+
+function refreshExport(): void {
+  const { text, count } = buildText();
+  $<HTMLTextAreaElement>("exText").value = count ? text : "";
+  $("exCount").textContent = count ? t("exCount", { n: count }) : t("exEmpty");
+  for (const id of ["exCopy", "exShare", "exFile"]) $<HTMLButtonElement>(id).disabled = count === 0;
+}
+
+function fillFolders(sel: HTMLSelectElement, opts: { all?: string; keep?: boolean; extra?: boolean }): void {
+  sel.textContent = "";
+  if (opts.all) sel.add(new Option(opts.all, ALL_FOLDERS));
+  if (opts.keep) sel.add(new Option(t("imKeep"), KEEP));
+  for (const f of getFolderNames()) sel.add(new Option(f || t("noFolder"), f));
+  if (opts.extra) sel.add(new Option(t("imNewFolder"), NEW));
+}
+
+async function copyToClipboard(text: string, area: HTMLTextAreaElement): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(t("copied"));
+  } catch {
+    area.focus();
+    area.select();
+    try {
+      document.execCommand("copy");
+      toast(t("copied"));
+    } catch {
+      toast(t("copyFromField"));
+    }
+  }
+}
+
+function downloadFile(name: string, text: string): void {
+  const blob = new Blob([text], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ---- імпорт
+
+let parsed: ParseResult | null = null;
+
+function reasonText(r: ParseResult & { ok: false }): string {
+  return t(r.reason === "empty" ? "imHint" : r.reason === "json" ? "imBadJson" : r.reason === "shape" ? "imBadShape" : "imNone");
+}
+
+function refreshImport(): void {
+  const text = $<HTMLTextAreaElement>("imText").value;
+  const info = $("imInfo");
+  const go = $<HTMLButtonElement>("imGo");
+  parsed = text.trim() ? parseExchange(text) : null;
+  if (!parsed) {
+    info.textContent = t("imHint");
+    info.dataset.state = "";
+    go.disabled = true;
+    return;
+  }
+  if (!parsed.ok) {
+    info.textContent = reasonText(parsed);
+    info.dataset.state = "error";
+    go.disabled = true;
+    return;
+  }
+  const counts = { target: 0, point: 0, mortar: 0 };
+  for (const m of parsed.markers) counts[m.type]++;
+  const cur = currentMeta();
+  const parts = [
+    parsed.folder !== null ? t("imFolderInfo", { f: parsed.folder || t("noFolder") }) : "",
+    t("imCounts", { t: counts.target, p: counts.point, m: counts.mortar }),
+    parsed.skipped ? t("imSkipped", { n: parsed.skipped }) : ""
+  ].filter(Boolean);
+  let warn = "";
+  if (parsed.terrain && parsed.terrain !== cur.id) {
+    warn = " " + t("imTerrainMismatch", { from: parsed.terrainName ?? parsed.terrain, to: cur.name });
+  }
+  info.textContent = parts.join(" · ") + warn;
+  info.dataset.state = warn ? "warn" : "ok";
+  go.disabled = false;
+}
+
+async function doImport(hooks: Hooks): Promise<void> {
+  if (!parsed || !parsed.ok) return;
+  const cur = currentMeta();
+  if (parsed.terrain && parsed.terrain !== cur.id) {
+    const ok = await ask(
+      t("imMismatchTitle"),
+      t("imTerrainMismatch", { from: parsed.terrainName ?? parsed.terrain, to: cur.name }),
+      t("imAnyway")
+    );
+    if (!ok) return;
+  }
+  const dest = $<HTMLSelectElement>("imFolder").value;
+  let folder: string | null = null;
+  if (dest === NEW) folder = $<HTMLInputElement>("imNewName").value.trim().slice(0, 40);
+  else if (dest !== KEEP) folder = dest;
+  const S = getCurrent();
+  const res = mergeImported(S.markers as XMarker[], parsed.markers, { folder, now: Date.now(), newId: uid });
+  S.markers = res.markers as Marker[];
+  // імпорт «воскрешає» мітки, видалені раніше: прибираємо надгробки, щоб синхронізація їх не стерла
+  for (const id of res.revived) delete S.deleted[id];
+  scheduleSave();
+  hooks.renderAll();
+  toast(t("imDone", { a: res.added, u: res.updated, s: res.unchanged }), 4000);
+  $<HTMLDialogElement>("importDlg").close();
+}
+
+export function initExchange(hooks: Hooks): void {
+  const exDlg = $<HTMLDialogElement>("exportDlg");
+  const imDlg = $<HTMLDialogElement>("importDlg");
+  const closeOnBackdrop = (d: HTMLDialogElement): void => {
+    d.addEventListener("click", (e) => {
+      if (e.target === d) d.close();
+    });
+  };
+  closeOnBackdrop(exDlg);
+  closeOnBackdrop(imDlg);
+
+  // ---- експорт
+  $<HTMLButtonElement>("exportFolderBtn").onclick = () => {
+    fillFolders($<HTMLSelectElement>("exFolder"), { all: t("allFolders") });
+    const cur = getCurrent().sel.folder;
+    const sel = $<HTMLSelectElement>("exFolder");
+    sel.value = [...sel.options].some((o) => o.value === cur) ? cur : ALL_FOLDERS;
+    $<HTMLButtonElement>("exShare").hidden = typeof navigator.share !== "function";
+    refreshExport();
+    exDlg.showModal();
+  };
+  $<HTMLSelectElement>("exFolder").onchange = refreshExport;
+  for (const id of ["exTarget", "exPoint", "exMortar"]) $<HTMLInputElement>(id).onchange = refreshExport;
+  $<HTMLButtonElement>("exCopy").onclick = () => void copyToClipboard($<HTMLTextAreaElement>("exText").value, $<HTMLTextAreaElement>("exText"));
+  $<HTMLButtonElement>("exFile").onclick = () => {
+    const { text, fileName } = buildText();
+    downloadFile(fileName, text);
+    toast(t("exSaved", { f: fileName }));
+  };
+  $<HTMLButtonElement>("exShare").onclick = async () => {
+    const { text, fileName } = buildText();
+    try {
+      const file = new File([text], fileName, { type: "application/json" });
+      if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title: fileName });
+      else await navigator.share({ title: fileName, text });
+    } catch {
+      // користувач скасував «Поділитись»
+    }
+  };
+  $<HTMLButtonElement>("exClose").onclick = () => exDlg.close();
+
+  // ---- імпорт
+  $<HTMLButtonElement>("importFolderBtn").onclick = () => {
+    $<HTMLTextAreaElement>("imText").value = "";
+    fillFolders($<HTMLSelectElement>("imFolder"), { keep: true, extra: true });
+    $<HTMLSelectElement>("imFolder").value = KEEP;
+    $<HTMLInputElement>("imNewName").value = "";
+    $("imNewRow").hidden = true;
+    refreshImport();
+    imDlg.showModal();
+  };
+  $<HTMLTextAreaElement>("imText").oninput = refreshImport;
+  $<HTMLSelectElement>("imFolder").onchange = () => {
+    $("imNewRow").hidden = $<HTMLSelectElement>("imFolder").value !== NEW;
+  };
+  $<HTMLButtonElement>("imPick").onclick = () => $<HTMLInputElement>("imFile").click();
+  $<HTMLInputElement>("imFile").onchange = async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    $<HTMLTextAreaElement>("imText").value = await file.text();
+    (e.target as HTMLInputElement).value = "";
+    refreshImport();
+  };
+  $<HTMLButtonElement>("imGo").onclick = () => void doImport(hooks);
+  $<HTMLButtonElement>("imClose").onclick = () => imDlg.close();
+}

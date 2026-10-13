@@ -10,7 +10,8 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { createServer as createHttpsServer } from "node:https";
 import { mobileconfig } from "./tls";
 import { timingSafeEqual } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
+import { brotliCompressSync, constants as zc, gzipSync } from "node:zlib";
 import { join, normalize, resolve, sep, extname } from "node:path";
 
 export interface LanDeps {
@@ -103,6 +104,56 @@ function send(res: ServerResponse, status: number, body: string | Buffer | Uint8
   res.end(body);
 }
 
+// ---- стиснення текстових відповідей (JS/CSS/HTML/JSON): на Wi-Fi телефона це в 3-4 рази менше трафіку
+const COMPRESSIBLE = /^(text\/|application\/(json|javascript|manifest\+json)|image\/svg)/;
+const MIN_COMPRESS = 1024;
+
+export type Encoding = "br" | "gzip" | null;
+
+/** Вибір кодування за Accept-Encoding клієнта: brotli, інакше gzip. */
+export function pickEncoding(header: string | string[] | undefined): Encoding {
+  const raw = Array.isArray(header) ? header.join(",") : header ?? "";
+  const q: Record<string, number> = {};
+  for (const part of raw.toLowerCase().split(",")) {
+    const [name, ...params] = part.trim().split(";");
+    if (!name) continue;
+    let weight = 1;
+    for (const p of params) {
+      const m = p.trim().match(/^q=([0-9.]+)$/);
+      if (m) weight = Number(m[1]);
+    }
+    q[name.trim()] = weight;
+  }
+  if ((q["br"] ?? 0) > 0) return "br";
+  if ((q["gzip"] ?? 0) > 0) return "gzip";
+  return null;
+}
+
+export function compressBuffer(buf: Buffer, enc: "br" | "gzip"): Buffer {
+  return enc === "br"
+    ? brotliCompressSync(buf, { params: { [zc.BROTLI_PARAM_QUALITY]: 5, [zc.BROTLI_PARAM_SIZE_HINT]: buf.length } })
+    : gzipSync(buf, { level: 6 });
+}
+
+/** Відповідь із стисненням, якщо тип текстовий, розмір достатній і клієнт підтримує кодування. */
+function sendMaybeCompressed(
+  req: IncomingMessage,
+  res: ServerResponse,
+  status: number,
+  body: Buffer,
+  headers: Record<string, string>,
+  cached?: (enc: "br" | "gzip") => Buffer
+): void {
+  const type = headers["content-type"] ?? "";
+  const enc = COMPRESSIBLE.test(type) && body.length >= MIN_COMPRESS ? pickEncoding(req.headers["accept-encoding"]) : null;
+  if (!enc) return send(res, status, body, headers);
+  const packed = cached ? cached(enc) : compressBuffer(body, enc);
+  send(res, status, packed, { ...headers, "content-encoding": enc, vary: "Accept-Encoding" });
+}
+
+/** Кеш стиснених статичних файлів: ключ — файл, mtime і кодування. */
+const packedCache = new Map<string, Buffer>();
+
 async function readBody(req: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = [];
   let size = 0;
@@ -154,7 +205,17 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
     if (!file) return send(res, 400, "Bad path");
     try {
       const buf = await readFile(file);
-      send(res, 200, buf, { "content-type": MIME[extname(file).toLowerCase()] ?? "application/octet-stream" });
+      const mtime = (await stat(file)).mtimeMs;
+      sendMaybeCompressed(req, res, 200, buf, { "content-type": MIME[extname(file).toLowerCase()] ?? "application/octet-stream" }, (enc) => {
+        const key = `${file}|${mtime}|${enc}`;
+        let hit = packedCache.get(key);
+        if (!hit) {
+          hit = compressBuffer(buf, enc);
+          if (packedCache.size > 64) packedCache.clear();
+          packedCache.set(key, hit);
+        }
+        return hit;
+      });
     } catch {
       send(res, 404, "Not found");
     }
@@ -218,7 +279,10 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
       if (method === "GET") {
         const data = await deps.loadStore();
         if (data === null) return send(res, 404, "null", { "content-type": "application/json", "x-rev": String(rev) });
-        return send(res, 200, JSON.stringify(data), { "content-type": "application/json", "x-rev": String(rev) });
+        return sendMaybeCompressed(req, res, 200, Buffer.from(JSON.stringify(data)), {
+          "content-type": "application/json",
+          "x-rev": String(rev)
+        });
       }
       if (method === "PUT") {
         const clientId = String(req.headers["x-client-id"] ?? "");

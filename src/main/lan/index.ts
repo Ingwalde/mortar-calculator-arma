@@ -8,7 +8,7 @@ import { getOnlineTile, getPyramidTile, pyramidAvgBytes } from "../protocols";
 import { loadStore, saveStore, storeEvents } from "../store";
 import { readHeights } from "../tiles/heights";
 import { createLanServer, type LanServer } from "./server";
-import { ensureCa, issueServerCert, type CaMaterial } from "./tls";
+import { ensureCa, ensureServerCert, type CaMaterial } from "./tls";
 
 export interface LanInfo {
   enabled: boolean;
@@ -127,7 +127,7 @@ async function startServer(s: LanSettings): Promise<void> {
       try {
         // Сертифікат на всі поточні IP-адреси ПК та ім'я комп'ютера; перевидається при кожному старті.
         const names = [...lanAddresses(), `${hostname()}.local`, hostname()];
-        const cert = issueServerCert(ca, names);
+        const cert = await ensureServerCert(app.getPath("userData"), ca, names);
         await srv.listenHttps(s.httpsPort, { key: cert.keyPem, cert: cert.certPem });
         httpsRunning = true;
       } catch (err) {

@@ -1,6 +1,6 @@
 {
   "name": "mortar-tablet",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Планшет мінометника — настільний застосунок для Arma Reforger",
   "author": "gdimas0603@gmail.com",
   "license": "MIT",
@@ -16,6 +16,9 @@
     "check-places": "tsx scripts/check-places.ts",
     "dist:win": "electron-vite build && electron-builder --win",
     "smoke": "node scripts/smoke-packaged.mjs",
+    "pack": "electron-vite build && electron-builder --win --dir",
+    "check": "npm run typecheck && vitest run && npm run pack && npm run smoke",
+    "dist:setup": "electron-vite build && electron-builder --win nsis",
     "dist:mac": "electron-vite build && electron-builder --mac",
     "dist:linux": "electron-vite build && electron-builder --linux"
   },
