@@ -477,6 +477,53 @@ function updateShotChip(now: number): void {
   chip.textContent = lines.join("\n");
 }
 
+/** Іконка мінометної міни: загострена голівка, корпус із пояском і хвостове оперення. Ніс — уздовж +X. */
+function drawShellIcon(g: CanvasRenderingContext2D, x: number, y: number, angle: number, scale: number, c: Record<string, string>): void {
+  const L = 22; // довжина, px
+  const r = 4; // радіус корпусу
+  g.save();
+  g.translate(x, y);
+  g.rotate(angle);
+  g.scale(scale, scale);
+  g.globalAlpha = 1;
+  g.lineJoin = "round";
+  // оперення
+  g.fillStyle = c.target;
+  g.strokeStyle = c.surface;
+  g.lineWidth = 1.2;
+  for (const sgn of [-1, 1]) {
+    g.beginPath();
+    g.moveTo(-L / 2 + 5, sgn * r * 0.6);
+    g.lineTo(-L / 2 - 2, sgn * (r + 4.2));
+    g.lineTo(-L / 2 + 1, sgn * r * 0.6);
+    g.closePath();
+    g.fill();
+    g.stroke();
+  }
+  // корпус: хвіст — циліндр, голівка — оживальна
+  g.fillStyle = c.ink;
+  g.beginPath();
+  g.moveTo(-L / 2, -r * 0.7);
+  g.lineTo(L * 0.08, -r);
+  g.quadraticCurveTo(L * 0.36, -r, L / 2, 0);
+  g.quadraticCurveTo(L * 0.36, r, L * 0.08, r);
+  g.lineTo(-L / 2, r * 0.7);
+  g.closePath();
+  g.fill();
+  g.stroke();
+  // кольорова смужка (як маркування) і яскрава голівка
+  g.fillStyle = c.target;
+  g.fillRect(-L * 0.12, -r, L * 0.1, r * 2);
+  g.fillStyle = c.surface;
+  g.beginPath();
+  g.moveTo(L * 0.3, -r * 0.55);
+  g.quadraticCurveTo(L * 0.42, -r * 0.35, L / 2 - 1, 0);
+  g.quadraticCurveTo(L * 0.42, r * 0.35, L * 0.3, r * 0.55);
+  g.closePath();
+  g.fill();
+  g.restore();
+}
+
 function drawShots(c: Record<string, string>): void {
   animating = false;
   if (!shots.length) {
@@ -544,22 +591,18 @@ function drawShots(c: Record<string, string>): void {
       ctx.arc(p.x, p.y, 2.6 * (1 - j / 14), 0, Math.PI * 2);
       ctx.fill();
     }
-    // тінь на землі й сама міна (трохи більша на вершині дуги)
+    // тінь на землі й сама міна: вузький корпус зі стабілізатором, носом уздовж руху
     const p = at(u);
     const alt = 4 * u * (1 - u);
     ctx.globalAlpha = 0.35;
     ctx.fillStyle = c.ink;
     ctx.beginPath();
-    ctx.ellipse(p.ground.x, p.ground.y, 5 - alt * 2, 2.6 - alt, 0, 0, Math.PI * 2);
+    ctx.ellipse(p.ground.x, p.ground.y, 7 - alt * 2.5, 2.6 - alt, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = c.target;
-    ctx.strokeStyle = c.surface;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 4.4 + alt * 2.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    // напрям руху: похідна дуги (по екрану) — міна «дивиться» вперед і на вершині перекидається вниз
+    const vx = b.sx - a.sx;
+    const vy = b.sy - a.sy - 4 * arcH * (1 - 2 * u);
+    drawShellIcon(ctx, p.x, p.y, Math.atan2(vy, vx), 1 + alt * 0.28, c);
     ctx.restore();
   }
   updateShotChip(now);
