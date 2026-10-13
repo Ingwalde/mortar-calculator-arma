@@ -32,6 +32,8 @@ import {
   setDrawCallbacks,
   launchShot,
   setRingsVisible,
+  setLightMode,
+  isLightMode,
   setShowPlaces,
   setPlacesStyle,
   setTapHandlers,
@@ -1002,9 +1004,21 @@ function applyShotSettings(): void {
   const r = getRoot();
   setRingsVisible(r.showRings);
   ($("ringsToggle") as HTMLInputElement).checked = r.showRings;
+  ($("lightToggle") as HTMLInputElement).checked = isLightMode();
   $("soundBtn").setAttribute("aria-pressed", String(r.soundShots));
   setShotMuted(!r.soundShots);
 }
+// Автоматичне вмикання економного режиму (кадри просіли): оновлюємо перемикач і кажемо про це.
+window.addEventListener("mortar:light", (e) => {
+  const d = (e as CustomEvent<{ on: boolean; manual: boolean }>).detail;
+  ($("lightToggle") as HTMLInputElement).checked = d.on;
+  if (!d.manual && d.on) toast(t("lightAuto"), 4000);
+});
+$<HTMLInputElement>("lightToggle").onchange = (e) => {
+  setLightMode((e.target as HTMLInputElement).checked, true);
+  toast(t(isLightMode() ? "lightOn" : "lightOff"));
+  requestDraw();
+};
 $<HTMLInputElement>("ringsToggle").onchange = (e) => {
   getRoot().showRings = (e.target as HTMLInputElement).checked;
   applyShotSettings();
