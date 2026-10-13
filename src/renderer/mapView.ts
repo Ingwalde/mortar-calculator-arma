@@ -470,6 +470,7 @@ function updateShotChip(now: number): void {
     return;
   }
   chip.hidden = false;
+  chip.classList.toggle("multi", shots.length > 1);
   // рядки будуємо через DOM (підписи — назви міток користувача, без innerHTML)
   chip.textContent = "";
   for (const s of shots.slice(0, 3)) {
