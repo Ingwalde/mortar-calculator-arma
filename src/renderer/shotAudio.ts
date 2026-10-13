@@ -8,6 +8,14 @@
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let reverbSend: GainNode | null = null;
+let muted = false;
+const MASTER_GAIN = 0.55;
+
+/** Вимкнення звуку посеред польоту глушить і вже заплановане влучання. */
+export function setShotMuted(m: boolean): void {
+  muted = m;
+  if (ctx && master) master.gain.setTargetAtTime(m ? 0 : MASTER_GAIN, ctx.currentTime, 0.03);
+}
 
 function context(): AudioContext | null {
   try {
@@ -20,7 +28,7 @@ function context(): AudioContext | null {
       comp.threshold.value = -22;
       comp.ratio.value = 5;
       master = ctx.createGain();
-      master.gain.value = 0.55;
+      master.gain.value = muted ? 0 : MASTER_GAIN;
       master.connect(comp).connect(ctx.destination);
 
       const verb = ctx.createConvolver();
@@ -128,19 +136,39 @@ function whistle(c: AudioContext, at: number, len: number): void {
   src.stop(at + len + 0.1);
 }
 
-/** Постріл зараз і влучання через `flightSec` секунд. */
-export function playShot(flightSec: number): void {
+/**
+ * Постріл і влучання. `launchPerfMs` — момент запуску анімації (performance.now()): влучання
+ * прив'язується саме до візуального прильоту, з поправкою на затримку виходу звуку (Bluetooth тощо),
+ * а не до «зараз + політ» — інакше затримка запуску AudioContext зсувала б звук відносно картинки.
+ */
+export async function playShot(flightSec: number, launchPerfMs: number = performance.now()): Promise<void> {
   const c = context();
   if (!c) return;
-  const t0 = c.currentTime + 0.02;
+  // Поки контекст призупинений, його годинник стоїть: чекаємо запуску, інакше звук відстав би від картинки.
+  if (c.state !== "running") {
+    await Promise.race([c.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 500))]);
+  }
+  const impactPerf = launchPerfMs + Math.max(0.5, flightSec) * 1000;
+  const latency = (c as AudioContext & { outputLatency?: number }).outputLatency ?? c.baseLatency ?? 0;
+  // відображення годинника сторінки на годинник аудіо
+  let audioNow = c.currentTime;
+  let perfNow = performance.now();
+  const ts = c.getOutputTimestamp?.();
+  if (ts && ts.performanceTime && ts.contextTime !== undefined && ts.performanceTime > 0) {
+    audioNow = ts.contextTime;
+    perfNow = ts.performanceTime;
+  }
+  const impactAt = audioNow + (impactPerf - perfNow) / 1000 - latency;
+  const launchAt = audioNow + (launchPerfMs - perfNow) / 1000 - latency;
+  const t0 = Math.max(c.currentTime + 0.01, launchAt);
   // постріл: глухий «тунк» + короткий низький «видих»
   thump(c, t0, 120, 38, 0.32, 0.7);
   burst(c, t0, 0.28, 0.45, { type: "lowpass", f0: 1400, f1: 180, q: 0.6 }, 0.6);
   // політ
-  const fly = Math.max(0.6, flightSec - 0.6);
-  if (flightSec > 2) whistle(c, t0 + 0.5, fly);
+  const hit = Math.max(t0 + 0.5, impactAt);
+  const fly = Math.max(0.6, hit - t0 - 0.6);
+  if (hit - t0 > 2) whistle(c, t0 + 0.5, fly);
   // влучання: гуркіт, тріск і довгий затухаючий хвіст
-  const hit = t0 + Math.max(0.5, flightSec);
   thump(c, hit, 78, 24, 1.1, 0.95);
   burst(c, hit, 1.5, 0.75, { type: "lowpass", f0: 900, f1: 70, q: 0.5 }, 0.8);
   burst(c, hit, 0.07, 0.3, { type: "highpass", f0: 2400, f1: 1800, q: 0.7 }, 0.2);

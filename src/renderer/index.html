@@ -44,6 +44,7 @@ html.no-splash #splash{display:none}
       <button class="btn icon" id="zout" data-i18n-aria-label="zoomOutAria" aria-label="Віддалити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
       <button class="btn icon" id="immersiveBtn" aria-pressed="false" data-i18n-aria-label="immersiveAria" aria-label="Карта на весь екран"><svg class="ic-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="ic-shrink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
       <button class="btn icon" id="placesBtn" aria-pressed="false" data-i18n-aria-label="placesBtnAria" aria-label="Назви пунктів: розмір і важливість"><span style="font-weight:700;font-size:14px;line-height:1">Aa</span></button>
+      <button class="btn icon" id="soundBtn" aria-pressed="true" data-i18n-aria-label="soundBtnAria" aria-label="Звук пострілу"><svg class="ic-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.8a7.4 7.4 0 0 1 0 10.4"/></svg><svg class="ic-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
       <button class="btn icon" id="fit" data-i18n-aria-label="fitAria" aria-label="Уся карта"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v6h6M20 10V4h-6M4 20l7-7M20 4l-7 7"/></svg></button>
     </div>
     <div class="placespop" id="placesPop" hidden>
@@ -64,7 +65,6 @@ html.no-splash #splash{display:none}
         <span><i style="background:var(--pl-nature)"></i><b data-i18n="placeKind_nature">Місцевість</b></span>
       </div>
       <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="ringsToggle"> <span data-i18n="ringsLabel">Кільця дальності на карті</span></label>
-      <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="soundToggle"> <span data-i18n="soundLabel">Звук пострілу й влучання</span></label>
       <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle2"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
     </div>
     <div class="readout">
