@@ -23,7 +23,7 @@ export interface LanDeps {
   saveStore(data: unknown, sourceId: string, opts?: { partial?: boolean }): Promise<boolean>;
   readHeights(terrainId: string): Promise<Uint8Array | null>;
   onlineTile(terrainId: string, lod: number, x: number, y: number): Promise<Buffer | null>;
-  pyramidTile(terrainId: string, z: string, row: string, col: string): Promise<Buffer | null>;
+  pyramidTile(terrainId: string, z: string, row: string, col: string): Promise<{ data: Buffer; type: string } | null>;
   /** Середній розмір тайла піраміди терену в байтах (за вибіркою) — для оцінки обсягу; null — нема піраміди. */
   pyramidAvgBytes?(terrainId: string): Promise<number | null>;
   /** Кореневий сертифікат локального CA (DER) для встановлення на телефон; null — HTTPS не налаштовано. */
@@ -59,6 +59,7 @@ const MIME: Record<string, string> = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
   ".woff": "font/woff",
@@ -277,11 +278,11 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
 
     m = /^\/localtile\/([A-Za-z0-9_-]+)\/(\d+)\/(\d+)\/(\d+)$/.exec(path);
     if (m && method === "GET") {
-      const buf = await deps.pyramidTile(m[1], m[2], m[3], m[4]);
-      if (!buf) return send(res, 404, "Not found");
+      const tile = await deps.pyramidTile(m[1], m[2], m[3], m[4]);
+      if (!tile) return send(res, 404, "Not found");
       // піраміду можна перебудувати, тому година й фонове оновлення
-      return send(res, 200, buf, {
-        "content-type": "image/jpeg",
+      return send(res, 200, tile.data, {
+        "content-type": tile.type,
         "cache-control": "private, max-age=3600, stale-while-revalidate=86400"
       });
     }

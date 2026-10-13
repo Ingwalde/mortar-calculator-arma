@@ -69,13 +69,27 @@ export async function ensureOnlineTile(terrainId: string, lod: number, x: number
   return "failed";
 }
 
-/** Тайл імпортованої піраміди (sharp .tile google layout: {z}/{row}/{col}.jpg). */
-export async function getPyramidTile(terrainId: string, z: string, row: string, col: string): Promise<Buffer | null> {
+export interface PyramidTile {
+  data: Buffer;
+  type: string;
+}
+
+/**
+ * Тайл імпортованої піраміди (sharp .tile google layout: {z}/{row}/{col}.webp). Старі піраміди з JPEG
+ * (.jpg) теж читаються — до конвертації scripts/convert-pyramids-webp.mjs.
+ */
+export async function getPyramidTile(terrainId: string, z: string, row: string, col: string): Promise<PyramidTile | null> {
   // terrainId/z/row/col приходять з URL (в т.ч. з LAN) — лише прості сегменти, без виходу з каталогу піраміди.
   for (const seg of [terrainId, z, row, col]) if (!/^[A-Za-z0-9_-]+$/.test(seg)) return null;
-  const filePath = join(pyramidDir(terrainId), z, row, `${col}.jpg`);
-  if (!existsSync(filePath)) return null;
-  return readFile(filePath);
+  const base = join(pyramidDir(terrainId), z, row, col);
+  for (const [ext, type] of [
+    [".webp", "image/webp"],
+    [".jpg", "image/jpeg"]
+  ] as const) {
+    const filePath = base + ext;
+    if (existsSync(filePath)) return { data: await readFile(filePath), type };
+  }
+  return null;
 }
 
 const avgCache = new Map<string, number | null>();
@@ -127,7 +141,7 @@ export function registerProtocolHandlers(): void {
     const url = new URL(request.url);
     const [, z, row, col] = url.pathname.split("/");
     if (!z || !row || !col) return notFound();
-    const buf = await getPyramidTile(url.hostname, z, row, col);
-    return buf ? jpeg(buf) : notFound();
+    const tile = await getPyramidTile(url.hostname, z, row, col);
+    return tile ? new Response(tile.data, { headers: { "content-type": tile.type } }) : notFound();
   });
 }

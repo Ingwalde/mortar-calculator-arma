@@ -33,7 +33,7 @@ describe("planPyramid", () => {
 });
 
 describe("pyramidTilePath", () => {
-  it("formats as z/x/y.jpg", () => {
-    expect(pyramidTilePath(7, 12, 3)).toBe("7/12/3.jpg");
+  it("formats as z/x/y.webp", () => {
+    expect(pyramidTilePath(7, 12, 3)).toBe("7/12/3.webp");
   });
 });

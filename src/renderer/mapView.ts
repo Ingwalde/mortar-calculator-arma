@@ -390,7 +390,7 @@ function drawPyramidLevel(z: number, fetchIt: boolean, prefetch = false): boolea
         }
         continue;
       }
-      // sharp().tile({layout:"google"}) записує файли як {z}/{рядок}/{колонка}.jpg — не
+      // sharp().tile({layout:"google"}) записує файли як {z}/{рядок}/{колонка}.webp — не
       // {z}/{колонка}/{рядок}, як інтуїтивно очікувалось. Для квадратних зображень (rows===cols)
       // різниці не видно, тому бага не проявлялась на Everon/Kolguyev — лише на непрямокутних.
       const url = pyramidTileSrc(meta.id, z, row, col);

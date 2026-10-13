@@ -55,7 +55,8 @@ describe("LAN server", () => {
       },
       readHeights: async (id) => (id === "everon" ? new Uint8Array([1, 2, 3]) : null),
       onlineTile: async (id, lod, x, y) => (id === "everon" && lod === 2 && x === 1 && y === 1 ? Buffer.from("jpg") : null),
-      pyramidTile: async (id, z, row, col) => (id === "mog" ? Buffer.from(`${z}/${row}/${col}`) : null)
+      pyramidTile: async (id, z, row, col) =>
+        id === "mog" ? { data: Buffer.from(`${z}/${row}/${col}`), type: "image/webp" } : null
     };
     srv = createLanServer(deps, TOKEN);
     const port = 39000 + Math.floor(Math.random() * 1000);
