@@ -16,8 +16,10 @@ class FakeNode {
   addEventListener(ev: string, cb: () => void) {
     this.listeners[ev] = cb;
   }
-  start() {
+  startAt: number[] = [];
+  start(at = 0) {
     this.started++;
+    this.startAt.push(at);
   }
   stop() {
     this.stopped++;
@@ -60,8 +62,16 @@ class FakeCtx {
     created.push(n);
     return n;
   }
+  /** Після згортання пара застаріла: годинник аудіо стояв. Код не повинен на неї спиратись. */
+  stalePair = false;
   getOutputTimestamp() {
-    return { contextTime: this.currentTime, performanceTime: performance.now() };
+    return this.stalePair
+      ? { contextTime: 3, performanceTime: performance.now() - 120000 }
+      : { contextTime: this.currentTime, performanceTime: performance.now() };
+  }
+  static last: FakeCtx | null = null;
+  constructor() {
+    FakeCtx.last = this;
   }
   resume() {
     return Promise.resolve();
@@ -74,6 +84,7 @@ describe("shotAudio: згортання застосунку", () => {
   beforeEach(() => {
     vi.resetModules();
     created.length = 0;
+    FakeCtx.last = null;
     handlers = {};
     doc = { hidden: false };
     const target = {
@@ -122,5 +133,26 @@ describe("shotAudio: згортання застосунку", () => {
     await Promise.resolve();
     const after = created.filter((n) => n.started > 0).length;
     expect(after).toBeGreaterThan(before);
+  });
+
+  it("залишок після повернення рахується від «зараз», а не за застарілою парою годинників", async () => {
+    const mod = await import("./shotAudio");
+    // політ 30 с, запущений 10 с тому: лишилось ~20 с
+    await mod.playShot(30, performance.now() - 10000);
+    const c = FakeCtx.last!;
+    doc.hidden = true;
+    handlers.visibilitychange();
+    created.forEach((n) => (n.startAt = []));
+    c.currentTime = 500; // годинник аудіо пішов далі після запуску
+    c.stalePair = true;
+    doc.hidden = false;
+    handlers.visibilitychange();
+    await new Promise((r) => setTimeout(r, 0));
+    const starts = created.flatMap((n) => n.startAt).filter((x) => x > 500);
+    expect(starts.length).toBeGreaterThan(0);
+    const impact = Math.max(...starts);
+    // влучання приблизно через 20 с від поточного часу аудіо (500), а не від застарілих 3
+    expect(impact).toBeGreaterThan(515);
+    expect(impact).toBeLessThan(525);
   });
 });
