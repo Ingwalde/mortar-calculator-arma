@@ -11,6 +11,26 @@ let reverbSend: GainNode | null = null;
 let muted = false;
 const MASTER_GAIN = 0.55;
 
+/** Усі запущені/заплановані джерела: при згортанні застосунку їх треба зупинити. */
+const live = new Set<AudioScheduledSourceNode>();
+function track(node: AudioScheduledSourceNode): void {
+  live.add(node);
+  node.addEventListener("ended", () => live.delete(node));
+}
+function stopAll(): void {
+  for (const n of live) {
+    try {
+      n.stop();
+    } catch {
+      // уже зупинено
+    }
+  }
+  live.clear();
+}
+
+/** Постріли, що ще в польоті: після повернення в застосунок дограємо лише те, що лишилось. */
+const flights: { launchPerf: number; flightSec: number }[] = [];
+
 /** Вимкнення звуку посеред польоту глушить і вже заплановане влучання. */
 export function setShotMuted(m: boolean): void {
   muted = m;
@@ -86,6 +106,7 @@ function thump(c: AudioContext, at: number, f0: number, f1: number, len: number,
   g.gain.exponentialRampToValueAtTime(0.0001, at + len);
   osc.connect(g);
   connectOut(c, g, 0.35);
+  track(osc);
   osc.start(at);
   osc.stop(at + len + 0.05);
 }
@@ -112,6 +133,7 @@ function burst(
   g.gain.exponentialRampToValueAtTime(0.0001, at + len);
   src.connect(f).connect(g);
   connectOut(c, g, wet);
+  track(src);
   src.start(at);
   src.stop(at + len + 0.1);
 }
@@ -132,8 +154,39 @@ function whistle(c: AudioContext, at: number, len: number): void {
   g.gain.linearRampToValueAtTime(0.0001, at + len);
   src.connect(f).connect(g);
   connectOut(c, g, 0.3);
+  track(src);
   src.start(at);
   src.stop(at + len + 0.1);
+}
+
+/** Планує звуки польоту й влучання від моменту `fromPerf` до візуального прильоту. */
+function scheduleFlight(c: AudioContext, launchPerfMs: number, flightSec: number, includeLaunch: boolean): void {
+  const impactPerf = launchPerfMs + Math.max(0.5, flightSec) * 1000;
+  const latency = (c as AudioContext & { outputLatency?: number }).outputLatency ?? c.baseLatency ?? 0;
+  // відображення годинника сторінки на годинник аудіо
+  let audioNow = c.currentTime;
+  let perfNow = performance.now();
+  const ts = c.getOutputTimestamp?.();
+  if (ts && ts.performanceTime && ts.contextTime !== undefined && ts.performanceTime > 0) {
+    audioNow = ts.contextTime;
+    perfNow = ts.performanceTime;
+  }
+  const impactAt = audioNow + (impactPerf - perfNow) / 1000 - latency;
+  const launchAt = audioNow + (launchPerfMs - perfNow) / 1000 - latency;
+  const t0 = Math.max(c.currentTime + 0.01, launchAt);
+  if (includeLaunch) {
+    // постріл: глухий «тунк» + короткий низький «видих»
+    thump(c, t0, 120, 38, 0.32, 0.7);
+    burst(c, t0, 0.28, 0.45, { type: "lowpass", f0: 1400, f1: 180, q: 0.6 }, 0.6);
+  }
+  const hit = Math.max(c.currentTime + 0.05, includeLaunch ? Math.max(t0 + 0.5, impactAt) : impactAt);
+  const flyStart = includeLaunch ? t0 + 0.5 : c.currentTime + 0.02;
+  const fly = hit - flyStart - 0.3;
+  if (fly > 1.5) whistle(c, flyStart, fly);
+  // влучання: гуркіт, тріск і довгий затухаючий хвіст
+  thump(c, hit, 78, 24, 1.1, 0.95);
+  burst(c, hit, 1.5, 0.75, { type: "lowpass", f0: 900, f1: 70, q: 0.5 }, 0.8);
+  burst(c, hit, 0.07, 0.3, { type: "highpass", f0: 2400, f1: 1800, q: 0.7 }, 0.2);
 }
 
 /**
@@ -148,28 +201,30 @@ export async function playShot(flightSec: number, launchPerfMs: number = perform
   if (c.state !== "running") {
     await Promise.race([c.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 500))]);
   }
-  const impactPerf = launchPerfMs + Math.max(0.5, flightSec) * 1000;
-  const latency = (c as AudioContext & { outputLatency?: number }).outputLatency ?? c.baseLatency ?? 0;
-  // відображення годинника сторінки на годинник аудіо
-  let audioNow = c.currentTime;
-  let perfNow = performance.now();
-  const ts = c.getOutputTimestamp?.();
-  if (ts && ts.performanceTime && ts.contextTime !== undefined && ts.performanceTime > 0) {
-    audioNow = ts.contextTime;
-    perfNow = ts.performanceTime;
+  flights.push({ launchPerf: launchPerfMs, flightSec });
+  scheduleFlight(c, launchPerfMs, flightSec, true);
+}
+
+// Згортання застосунку (особливо на iPhone) зупиняє годинник аудіо: заплановане влучання «застрягає» і
+// лунає після повернення, хоча міна вже долетіла. Тому при згортанні глушимо все, а при поверненні
+// дограємо лише ті постріли, що ще справді в польоті.
+function onHidden(): void {
+  stopAll();
+}
+function onVisible(): void {
+  const now = performance.now();
+  for (let i = flights.length - 1; i >= 0; i--) {
+    if (flights[i].launchPerf + Math.max(0.5, flights[i].flightSec) * 1000 <= now) flights.splice(i, 1);
   }
-  const impactAt = audioNow + (impactPerf - perfNow) / 1000 - latency;
-  const launchAt = audioNow + (launchPerfMs - perfNow) / 1000 - latency;
-  const t0 = Math.max(c.currentTime + 0.01, launchAt);
-  // постріл: глухий «тунк» + короткий низький «видих»
-  thump(c, t0, 120, 38, 0.32, 0.7);
-  burst(c, t0, 0.28, 0.45, { type: "lowpass", f0: 1400, f1: 180, q: 0.6 }, 0.6);
-  // політ
-  const hit = Math.max(t0 + 0.5, impactAt);
-  const fly = Math.max(0.6, hit - t0 - 0.6);
-  if (hit - t0 > 2) whistle(c, t0 + 0.5, fly);
-  // влучання: гуркіт, тріск і довгий затухаючий хвіст
-  thump(c, hit, 78, 24, 1.1, 0.95);
-  burst(c, hit, 1.5, 0.75, { type: "lowpass", f0: 900, f1: 70, q: 0.5 }, 0.8);
-  burst(c, hit, 0.07, 0.3, { type: "highpass", f0: 2400, f1: 1800, q: 0.7 }, 0.2);
+  const c = ctx;
+  if (!c || muted || !flights.length) return;
+  const go = (): void => {
+    for (const f of flights) scheduleFlight(c, f.launchPerf, f.flightSec, false);
+  };
+  if (c.state === "running") go();
+  else void c.resume().then(go, () => undefined);
+}
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => (document.hidden ? onHidden() : onVisible()));
+  window.addEventListener("pagehide", onHidden);
 }
