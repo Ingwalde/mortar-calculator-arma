@@ -99,9 +99,65 @@ export function resolveStaticPath(root: string, urlPath: string): string | null 
   return full;
 }
 
+/** Політика вмісту для сторінки планшета (дзеркало політики зібраного index.html, плюс заборона вбудовування). */
+const PAGE_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "media-src 'self' blob: data:",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'none'",
+  "frame-ancestors 'none'"
+].join("; ");
+
+const SECURITY_HEADERS: Record<string, string> = {
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+  "x-frame-options": "DENY",
+  "cross-origin-resource-policy": "same-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+};
+
 function send(res: ServerResponse, status: number, body: string | Buffer | Uint8Array, headers: Record<string, string> = {}): void {
-  res.writeHead(status, { "cache-control": "no-store", ...headers });
+  const isHtml = (headers["content-type"] ?? "").startsWith("text/html");
+  res.writeHead(status, {
+    "cache-control": "no-store",
+    ...SECURITY_HEADERS,
+    ...(isHtml ? { "content-security-policy": PAGE_CSP } : {}),
+    ...headers
+  });
   res.end(body);
+}
+
+/** Обмеження перебору токена: багато невдалих спроб з однієї адреси — тимчасове блокування. */
+const FAIL_LIMIT = 30;
+const FAIL_WINDOW_MS = 60_000;
+const BLOCK_MS = 60_000;
+export class AuthLimiter {
+  private fails = new Map<string, { n: number; first: number; blockedUntil: number }>();
+  blocked(ip: string, now: number = Date.now()): boolean {
+    const e = this.fails.get(ip);
+    return !!e && e.blockedUntil > now;
+  }
+  fail(ip: string, now: number = Date.now()): void {
+    if (this.fails.size > 500) this.fails.clear();
+    let e = this.fails.get(ip);
+    if (!e || now - e.first > FAIL_WINDOW_MS) {
+      e = { n: 0, first: now, blockedUntil: 0 };
+      this.fails.set(ip, e);
+    }
+    e.n++;
+    if (e.n >= FAIL_LIMIT) e.blockedUntil = now + BLOCK_MS;
+  }
+  ok(ip: string): void {
+    this.fails.delete(ip);
+  }
 }
 
 // ---- стиснення текстових відповідей (JS/CSS/HTML/JSON): на Wi-Fi телефона це в 3-4 рази менше трафіку
@@ -172,6 +228,8 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
   let httpsServer: Server | null = null;
   let keepAlive: ReturnType<typeof setInterval> | undefined;
 
+  const limiter = new AuthLimiter();
+
   function authorized(req: IncomingMessage, url: URL): { ok: boolean; viaQuery: boolean } {
     const q = url.searchParams.get("k");
     if (q !== null) return { ok: tokenMatches(q, token), viaQuery: true };
@@ -227,12 +285,16 @@ export function createLanServer(deps: LanDeps, token: string): LanServer {
     // Іконки не секретні, а ОС тягне їх при додаванні на головний екран без наших cookie.
     if (url.pathname.startsWith("/icons/") && (req.method ?? "GET") === "GET") return serveStatic(req, url, res);
 
+    const ip = req.socket.remoteAddress ?? "?";
+    if (limiter.blocked(ip)) return send(res, 429, "Забагато спроб. Зачекайте хвилину.", { "content-type": "text/plain; charset=utf-8", "retry-after": "60" });
     const auth = authorized(req, url);
     if (!auth.ok) {
+      limiter.fail(ip);
       return send(res, 401, "Потрібне посилання з QR-коду застосунку «Планшет мінометника».", {
         "content-type": "text/plain; charset=utf-8"
       });
     }
+    limiter.ok(ip);
     if (auth.viaQuery) {
       // Токен з посилання → cookie. Адресу з ?k= лишаємо як є: саме її iOS запам’ятовує для іконки
       // на головному екрані (там cookie Safari недоступні), тож запуск з іконки знову поставить cookie.

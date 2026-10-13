@@ -3,11 +3,20 @@ import { randomUUID } from "node:crypto";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { loadStore, saveStore, storeEvents, LOCAL_SOURCE } from "./store";
-import { getLanInfo, lanQrSvg, regenerateLanToken, setLanEnabled } from "./lan";
+import { getLanInfo, lanQrSvg, regenerateLanCa, regenerateLanToken, setLanEnabled } from "./lan";
 import { buildTilePyramid, ImportCancelledError, type ImportProgress } from "./tiles/import";
 import { downloadFile } from "./tiles/download";
 import { convertHeightData, heightsPath, readHeights } from "./tiles/heights";
 import { ensureOnlineTile, pyramidDir } from "./protocols";
+import {
+  approveImagePath,
+  consumeApprovedImagePath,
+  expectedHeightsUrl,
+  expectedImageUrl,
+  isApprovedImagePath,
+  isSafeId,
+  isSafeTerrainSize
+} from "./security";
 import { findPreset } from "../core/terrains";
 import { onlineTileList } from "../core/onlineTiles";
 
@@ -67,6 +76,7 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
   ipcMain.handle("lan:info", () => getLanInfo());
   ipcMain.handle("lan:setEnabled", (_e, enabled: boolean) => setLanEnabled(enabled === true));
   ipcMain.handle("lan:regenerate", () => regenerateLanToken());
+  ipcMain.handle("lan:regenerateCa", () => regenerateLanCa());
   ipcMain.handle("lan:qr", (_e, url: string) => lanQrSvg(String(url)));
 
   ipcMain.handle("dialog:pickImageFile", async () => {
@@ -77,18 +87,31 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
       filters: [{ name: "Зображення", extensions: ["png", "jpg", "jpeg", "webp"] }]
     });
     if (res.canceled || !res.filePaths[0]) return null;
+    // лише цей шлях main потім прийме для імпорту (рендерер не може підсунути довільний файл)
+    approveImagePath(res.filePaths[0]);
     return res.filePaths[0];
   });
 
   ipcMain.handle(
     "mapImport:fromFile",
-    async (event, terrainId: string, sourcePath: string, sizeX: number, sizeZ: number) =>
-      runImport(event.sender, terrainId, sourcePath, sizeX, sizeZ)
+    async (event, terrainId: string, sourcePath: string, sizeX: number, sizeZ: number) => {
+      if (!isSafeId(terrainId) || !isSafeTerrainSize(sizeX) || !isSafeTerrainSize(sizeZ)) {
+        throw new Error("Некоректні параметри імпорту");
+      }
+      if (!isApprovedImagePath(sourcePath)) throw new Error("Файл не вибрано через діалог");
+      consumeApprovedImagePath(sourcePath);
+      return runImport(event.sender, terrainId, sourcePath, sizeX, sizeZ);
+    }
   );
 
   ipcMain.handle(
     "mapImport:downloadAndImport",
     async (event, terrainId: string, imageUrl: string, sizeX: number, sizeZ: number) => {
+      if (!isSafeId(terrainId) || !isSafeTerrainSize(sizeX) || !isSafeTerrainSize(sizeZ)) {
+        throw new Error("Некоректні параметри імпорту");
+      }
+      // качаємо лише знімок, вказаний у каталозі для цього терену (не довільний URL із рендерера)
+      if (imageUrl !== expectedImageUrl(terrainId)) throw new Error("URL не збігається з каталогом");
       const ac = new AbortController();
       currentImport = ac;
       const tmpPath = join(app.getPath("temp"), `mortar-import-${randomUUID()}.png`);
@@ -115,14 +138,17 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
   });
 
   ipcMain.handle("mapImport:remove", async (_e, terrainId: string) => {
+    if (!isSafeId(terrainId)) throw new Error("Некоректний терен");
     await rm(pyramidDir(terrainId), { recursive: true, force: true });
     await rm(heightsPath(terrainId), { force: true });
   });
 
-  ipcMain.handle("heights:importFromUrl", (_e, terrainId: string, url: string) =>
-    convertHeightData(terrainId, url)
-  );
-  ipcMain.handle("heights:read", (_e, terrainId: string) => readHeights(terrainId));
+  ipcMain.handle("heights:importFromUrl", (_e, terrainId: string, url: string) => {
+    if (!isSafeId(terrainId)) throw new Error("Некоректний терен");
+    if (url !== expectedHeightsUrl(terrainId)) throw new Error("URL не збігається з каталогом");
+    return convertHeightData(terrainId, url);
+  });
+  ipcMain.handle("heights:read", (_e, terrainId: string) => (isSafeId(terrainId) ? readHeights(terrainId) : null));
 }
 
 async function runImport(

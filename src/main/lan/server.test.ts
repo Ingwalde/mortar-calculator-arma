@@ -321,3 +321,59 @@ describe("LAN server: стиснення", () => {
     }
   });
 });
+
+describe("LAN server: захист", () => {
+  it("додає заголовки безпеки й CSP до сторінки", async () => {
+    const staticDir = mkdtempSync(join(tmpdir(), "lan-sec-"));
+    writeFileSync(join(staticDir, "index.html"), "<html>ok</html>");
+    const srv = createLanServer(
+      { staticDir, devProxyUrl: null, loadStore: async () => null, saveStore: async () => false, readHeights: async () => null, onlineTile: async () => null, pyramidTile: async () => null },
+      "sec-token-1234567890123"
+    );
+    const port = 43000 + Math.floor(Math.random() * 900);
+    await srv.listen(port);
+    try {
+      const r = await fetch(`http://127.0.0.1:${port}/?k=sec-token-1234567890123`);
+      expect(r.status).toBe(200);
+      expect(r.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(r.headers.get("referrer-policy")).toBe("no-referrer");
+      expect(r.headers.get("x-frame-options")).toBe("DENY");
+      expect(r.headers.get("content-security-policy")).toContain("default-src 'self'");
+      expect(r.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    } finally {
+      await srv.close();
+    }
+  });
+
+  it("після багатьох невдалих спроб блокує адресу на хвилину (429)", async () => {
+    const staticDir = mkdtempSync(join(tmpdir(), "lan-rate-"));
+    writeFileSync(join(staticDir, "index.html"), "x");
+    const srv = createLanServer(
+      { staticDir, devProxyUrl: null, loadStore: async () => null, saveStore: async () => false, readHeights: async () => null, onlineTile: async () => null, pyramidTile: async () => null },
+      "rate-token-123456789012"
+    );
+    const port = 44000 + Math.floor(Math.random() * 900);
+    await srv.listen(port);
+    try {
+      let last = 0;
+      for (let i = 0; i < 32; i++) last = (await fetch(`http://127.0.0.1:${port}/?k=wrong${i}`)).status;
+      expect(last).toBe(429);
+      // навіть правильний токен із заблокованої адреси тимчасово не проходить
+      expect((await fetch(`http://127.0.0.1:${port}/?k=rate-token-123456789012`)).status).toBe(429);
+    } finally {
+      await srv.close();
+    }
+  });
+
+  it("AuthLimiter: вікно спливає, успіх скидає лічильник", async () => {
+    const { AuthLimiter } = await import("./server");
+    const l = new AuthLimiter();
+    for (let i = 0; i < 30; i++) l.fail("1.2.3.4", 1000);
+    expect(l.blocked("1.2.3.4", 1500)).toBe(true);
+    expect(l.blocked("1.2.3.4", 1000 + 61_000)).toBe(false);
+    l.fail("5.6.7.8", 1000);
+    l.ok("5.6.7.8");
+    for (let i = 0; i < 29; i++) l.fail("5.6.7.8", 2000);
+    expect(l.blocked("5.6.7.8", 2000)).toBe(false);
+  });
+});

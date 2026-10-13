@@ -140,3 +140,18 @@ describe("mergeRoots: дельта (partial)", () => {
     expect(r.changed).toBe(true);
   });
 });
+
+describe("mergeRoots: чужий JSON із небезпечними ключами", () => {
+  it("ігнорує __proto__/constructor і не чіпає прототипи", () => {
+    const evil = JSON.parse(
+      '{"data":{"__proto__":{"polluted":true},"constructor":{"x":1},"ok":{"markers":[],"fireLog":[],"deleted":{}}},' +
+        '"deletedTerrains":{"__proto__":123456789012345}}'
+    );
+    const r = mergeRoots({ data: {} }, evil, Date.now());
+    const state = r.state as { data: Record<string, unknown>; deletedTerrains: Record<string, number> };
+    expect(Object.keys(state.data)).toEqual(["ok"]);
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect(Object.getPrototypeOf(state.data)).toBe(Object.prototype);
+    expect(Object.keys(state.deletedTerrains)).toEqual([]);
+  });
+});

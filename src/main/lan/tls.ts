@@ -9,7 +9,7 @@
  * Без залежності від Electron: каталог передається аргументом (тестується напряму).
  */
 import { generateKeyPairSync, randomBytes } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import forge from "node-forge";
 
@@ -30,6 +30,7 @@ export interface ServerCert {
 }
 
 const CA_FILE = "lan-ca.json";
+const LEAF_FILE = "lan-leaf.json";
 const CA_YEARS = 10;
 const LEAF_DAYS = 397; // iOS відхиляє серверні сертифікати довші за 398 днів
 const DAY = 24 * 3600 * 1000;
@@ -55,6 +56,65 @@ function derOf(cert: forge.pki.Certificate): Buffer {
   return Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes(), "binary");
 }
 
+const NAME_CONSTRAINTS_OID = "2.5.29.30";
+
+/** Приватні й локальні діапазони IPv4 (адреса, маска), дозволені CA. */
+const PERMITTED_IPV4: [string, string][] = [
+  ["10.0.0.0", "255.0.0.0"],
+  ["172.16.0.0", "255.240.0.0"],
+  ["192.168.0.0", "255.255.0.0"],
+  ["127.0.0.0", "255.0.0.0"],
+  ["169.254.0.0", "255.255.0.0"]
+];
+const PERMITTED_DNS = ["local", "localhost"];
+
+function ipBytes(ip: string): string {
+  return String.fromCharCode(...ip.split(".").map(Number));
+}
+
+/**
+ * Обмеження імен CA (RFC 5280 NameConstraints): навіть якщо ключ CA потрапить до зловмисника, цим
+ * сертифікатом не вдасться підписати ні справжній сайт, ні публічну адресу — лише приватну мережу та *.local.
+ */
+function nameConstraintsDer(): string {
+  const asn1 = forge.asn1;
+  const subtree = (base: forge.asn1.Asn1): forge.asn1.Asn1 => asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [base]);
+  const items: forge.asn1.Asn1[] = [];
+  for (const [ip, mask] of PERMITTED_IPV4) {
+    items.push(subtree(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 7, false, ipBytes(ip) + ipBytes(mask))));
+  }
+  for (const d of PERMITTED_DNS) items.push(subtree(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, false, d)));
+  const permitted = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, items);
+  return asn1.toDer(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [permitted])).getBytes();
+}
+
+/** true — CA має обмеження імен (створений 0.9+); старі CA без обмежень рекомендовано перевипустити. */
+export function caIsConstrained(certPem: string): boolean {
+  try {
+    const cert = forge.pki.certificateFromPem(certPem);
+    return cert.extensions.some((e: { id?: string }) => e.id === NAME_CONSTRAINTS_OID);
+  } catch {
+    return false;
+  }
+}
+
+/** Чи дозволено ім'я в серверному сертифікаті обмеженням CA (приватна IPv4 або *.local/localhost). */
+export function isPermittedName(n: string): boolean {
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(n)) {
+    const b = n.split(".").map(Number);
+    if (b.some((x) => x > 255)) return false;
+    return (
+      b[0] === 10 ||
+      b[0] === 127 ||
+      (b[0] === 172 && b[1] >= 16 && b[1] <= 31) ||
+      (b[0] === 192 && b[1] === 168) ||
+      (b[0] === 169 && b[1] === 254)
+    );
+  }
+  const d = n.toLowerCase();
+  return PERMITTED_DNS.some((p) => d === p || d.endsWith("." + p));
+}
+
 function createCa(): CaMaterial {
   const { keyPem, privateKey, publicKey } = newRsaKey();
   const cert = forge.pki.createCertificate();
@@ -71,8 +131,9 @@ function createCa(): CaMaterial {
   cert.setExtensions([
     { name: "basicConstraints", cA: true, critical: true },
     { name: "keyUsage", keyCertSign: true, cRLSign: true, critical: true },
-    { name: "subjectKeyIdentifier" }
-  ]);
+    { name: "subjectKeyIdentifier" },
+    { id: NAME_CONSTRAINTS_OID, critical: true, value: nameConstraintsDer() }
+  ] as forge.pki.CertificateField[]);
   cert.sign(privateKey, forge.md.sha256.create());
   return { certPem: forge.pki.certificateToPem(cert), certDer: derOf(cert), keyPem };
 }
@@ -99,11 +160,21 @@ export async function ensureCa(dir: string): Promise<CaMaterial> {
   return ca;
 }
 
+/** Створює новий CA (старий і кеш серверного сертифіката видаляються) — телефони треба довірити заново. */
+export async function regenerateCa(dir: string): Promise<CaMaterial> {
+  await rm(join(dir, CA_FILE), { force: true });
+  await rm(join(dir, LEAF_FILE), { force: true });
+  return ensureCa(dir);
+}
+
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
 
-/** Видає серверний сертифікат на вказані IP-адреси/імена, підписаний нашим CA. */
-export function issueServerCert(ca: CaMaterial, names: string[]): ServerCert {
-  const uniq = [...new Set(names.filter((n) => n.length > 0))];
+/**
+ * Видає серверний сертифікат на вказані IP-адреси/імена, підписаний нашим CA. Імена поза обмеженнями CA
+ * (публічні IP, VPN, голе ім'я комп'ютера) відкидаються — інакше клієнти відхилили б увесь сертифікат.
+ */
+export function issueServerCert(ca: CaMaterial, names: string[], opts: { filter?: boolean } = {}): ServerCert {
+  const uniq = [...new Set(names.filter((n) => n.length > 0 && (opts.filter === false || isPermittedName(n))))];
   if (!uniq.includes("localhost")) uniq.push("localhost");
   if (!uniq.includes("127.0.0.1")) uniq.push("127.0.0.1");
   const { keyPem, publicKey } = newRsaKey();
@@ -129,8 +200,6 @@ export function issueServerCert(ca: CaMaterial, names: string[]): ServerCert {
   cert.sign(caKey, forge.md.sha256.create());
   return { keyPem, certPem: forge.pki.certificateToPem(cert), names: uniq };
 }
-
-const LEAF_FILE = "lan-leaf.json";
 
 /**
  * Серверний сертифікат із кешем на диску: перевидаємо лише коли змінився набір адрес/імен або лишилось

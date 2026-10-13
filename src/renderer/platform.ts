@@ -218,9 +218,10 @@ function createWebApi(): MortarApi {
       }
     },
     lan: {
-      info: async () => ({ enabled: false, port: 0, urls: [], httpsPort: 0, httpsUrls: [], caUrl: null, error: null }),
-      setEnabled: async () => ({ enabled: false, port: 0, urls: [], httpsPort: 0, httpsUrls: [], caUrl: null, error: null }),
-      regenerate: async () => ({ enabled: false, port: 0, urls: [], httpsPort: 0, httpsUrls: [], caUrl: null, error: null }),
+      info: async () => ({ enabled: false, port: 0, urls: [], httpsPort: 0, httpsUrls: [], caUrl: null, caConstrained: true, error: null }),
+      setEnabled: async () => ({ enabled: false, port: 0, urls: [], httpsPort: 0, httpsUrls: [], caUrl: null, caConstrained: true, error: null }),
+      regenerateCa: async () => ({ enabled: false, port: 0, urls: [], httpsPort: 0, httpsUrls: [], caUrl: null, caConstrained: true, error: null }),
+      regenerate: async () => ({ enabled: false, port: 0, urls: [], httpsPort: 0, httpsUrls: [], caUrl: null, caConstrained: true, error: null }),
       qr: async () => ""
     },
     dialogs: { pickImageFile: async () => null },

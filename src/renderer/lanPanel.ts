@@ -61,6 +61,7 @@ function render(next: LanInfo): void {
   }
   if (all.includes(previous)) sel.value = previous;
   sel.hidden = all.length < 2;
+  $("lanCaWarn").hidden = !(next.caUrl && !next.caConstrained);
   const offHint = $("lanOfflineHint");
   offHint.hidden = !next.caUrl;
   offHint.textContent = next.caUrl ? t("lanOfflineHint", { https: next.httpsPort }) : "";
@@ -93,6 +94,13 @@ export function initLanPanel(): void {
     } catch {
       // clipboard недоступний — користувач може відсканувати QR
     }
+  };
+
+  $<HTMLButtonElement>("lanCaRegen").onclick = async () => {
+    const ok = await ask(t("lanCaRegenTitle"), t("lanCaRegenText"), t("lanCaRegenConfirm"));
+    if (!ok) return;
+    render(await window.api.lan.regenerateCa());
+    toast(t("lanCaRegenDone"));
   };
 
   $<HTMLButtonElement>("lanRegen").onclick = async () => {

@@ -16,6 +16,9 @@ export const TOMBSTONE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 /** Найбільше записів журналу на терен (те саме, що FIRE_LOG_LIMIT у renderer). */
 export const FIRE_LOG_CAP = 200;
 
+/** Ключі, що можуть зачепити прототип об'єкта, якщо чужий JSON їх підсуне (`__proto__` тощо). */
+const BAD_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 function isObj(v: unknown): v is Obj {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
@@ -37,6 +40,7 @@ function mergeTombs(a: unknown, b: unknown, now: number): Record<string, number>
   const out: Record<string, number> = {};
   for (const src of [asObj(a), asObj(b)]) {
     for (const [id, ts] of Object.entries(src)) {
+      if (BAD_KEYS.has(id)) continue;
       const t = num(ts);
       if (t <= 0 || now - t > TOMBSTONE_TTL_MS) continue;
       if (!(id in out) || t > out[id]) out[id] = t;
@@ -142,6 +146,7 @@ export function mergeRoots(base: unknown, incoming: unknown, now: number = Date.
   const dataInc = asObj(incoming.data);
   const data: Obj = {};
   for (const [terrainId, ti] of Object.entries(dataInc)) {
+    if (BAD_KEYS.has(terrainId)) continue;
     if (deletedTerrains[terrainId] !== undefined) continue;
     const tb = dataBase[terrainId];
     if (!isObj(ti) || !isObj(tb)) {
@@ -166,6 +171,7 @@ export function mergeRoots(base: unknown, incoming: unknown, now: number = Date.
   }
   // Терени, яких клієнт не знає (створені деінде) — беремо з бази як є.
   for (const [terrainId, tb] of Object.entries(dataBase)) {
+    if (BAD_KEYS.has(terrainId)) continue;
     if (terrainId in data || terrainId in dataInc || deletedTerrains[terrainId] !== undefined) continue;
     data[terrainId] = tb;
     if (!opts.partial) changed = true;

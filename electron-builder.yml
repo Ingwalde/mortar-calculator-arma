@@ -8,6 +8,15 @@ electronLanguages:
   - en-US
 # sharp ставиться готовими бінарниками (@img/*): перекомпіляція нативних модулів при пакуванні не потрібна
 npmRebuild: false
+# запобіжники Electron (закривають зайві шляхи запуску коду): без ELECTRON_RUN_AS_NODE, --inspect і NODE_OPTIONS;
+# застосунок вантажиться лише з app.asar, цілісність asar перевіряється при старті
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
 compression: maximum
 files:
   - out/**/*

@@ -71,7 +71,7 @@ try {
 
   const get = async (path, headers = {}) => {
     const r = await fetch(base + path, { headers });
-    return { status: r.status, type: r.headers.get("content-type") ?? "", text: await r.text() };
+    return { status: r.status, type: r.headers.get("content-type") ?? "", headers: r.headers, text: await r.text() };
   };
   const cookie = { cookie: `mk=${token}` };
 
@@ -79,6 +79,12 @@ try {
   check(unauth.status === 401, "без токена — 401");
   const page = await get(`/?k=${token}`);
   check(page.status === 200 && page.text.includes('id="cv"'), "сторінка планшета віддається");
+  check(
+    /default-src 'self'/.test(page.headers.get("content-security-policy") ?? "") &&
+      page.headers.get("x-content-type-options") === "nosniff" &&
+      page.headers.get("x-frame-options") === "DENY",
+    "сторінка планшета віддається з CSP та захисними заголовками"
+  );
   const sw = await get("/sw.js", cookie);
   check(sw.status === 200 && /javascript/.test(sw.type), "service worker (sw.js) віддається");
   const manifest = await get("/manifest.webmanifest", cookie);
@@ -102,6 +108,11 @@ try {
   }
   check(!!caPem, "локальний CA створено (lan-ca.json)");
   if (caPem) {
+    const { default: forge } = await import("node-forge");
+    const cert = forge.pki.certificateFromPem(caPem);
+    check(cert.extensions.some((e) => e.id === "2.5.29.30"), "CA обмежений приватною мережею (NameConstraints)");
+  }
+  if (caPem) {
     const status = await new Promise((resolve) => {
       const req = httpsRequest({ host: "127.0.0.1", port: httpsPort, path: `/?k=${token}`, ca: caPem }, (res) => {
         res.resume();
@@ -111,6 +122,19 @@ try {
       req.end();
     });
     check(status === 200, "HTTPS віддає сторінку з довірою до власного CA");
+  }
+  // 3. запобіжники Electron у зібраному exe
+  try {
+    const { getCurrentFuseWire, FuseV1Options } = await import("@electron/fuses");
+    const wire = await getCurrentFuseWire(exe);
+    const on = (o) => wire[o] === 49; // 0x31 = «1» = увімкнено
+    check(!on(FuseV1Options.RunAsNode), "fuse: ELECTRON_RUN_AS_NODE вимкнено");
+    check(!on(FuseV1Options.EnableNodeOptionsEnvironmentVariable), "fuse: NODE_OPTIONS вимкнено");
+    check(!on(FuseV1Options.EnableNodeCliInspectArguments), "fuse: --inspect вимкнено");
+    check(on(FuseV1Options.OnlyLoadAppFromAsar), "fuse: лише app.asar");
+    check(on(FuseV1Options.EnableEmbeddedAsarIntegrityValidation), "fuse: перевірка цілісності asar");
+  } catch (e) {
+    check(false, `fuses не прочитано: ${e.message}`);
   }
 } catch (e) {
   if (e.message !== "не стартував") {
