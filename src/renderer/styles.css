@@ -283,3 +283,5 @@ progress::-moz-progress-bar{background:var(--accent);border-radius:999px}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
+/* Панель «Aa» на телефоні: поверх нижньої панелі й з прокруткою, щоб усі перемикачі були досяжні */
+@media (max-width:820px){.placespop{z-index:17;max-height:calc(100dvh - 150px - var(--safe-t));overflow:auto}}

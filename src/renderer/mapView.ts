@@ -9,6 +9,7 @@ import {
 } from "@core/geometry";
 import { tileIndexForWorld, tileSpan } from "@core/onlineTiles";
 import { TIER_SCALE, TIER_WEIGHT, type PlaceTier } from "@core/places";
+import { FrameMonitor } from "@core/frameMonitor";
 import { PYRAMID_TILE_SIZE, planPyramid, type PyramidPlan } from "@core/tilePyramid";
 import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
@@ -124,6 +125,58 @@ function viewH(): number {
 }
 
 let lastViewH = 0;
+
+// ---------- плавність: економний режим ----------
+const LIGHT_KEY = "mortar.lightMode.v1";
+function readLight(): boolean | null {
+  try {
+    const v = localStorage.getItem(LIGHT_KEY);
+    return v === null ? null : v === "1";
+  } catch {
+    return null;
+  }
+}
+/** true — економний режим (менше деталей): dpr 1, без плавної появи тайлів, без попереднього завантаження. */
+let lightMode = readLight() ?? false;
+/** Користувач явно вибрав режим — автоматика більше його не змінює. */
+let lightManual = readLight() !== null;
+export function isLightMode(): boolean {
+  return lightMode;
+}
+export function setLightMode(on: boolean, manual = true): void {
+  if (lightMode === on) {
+    if (manual) lightManual = true;
+    return;
+  }
+  lightMode = on;
+  window.dispatchEvent(new CustomEvent("mortar:light", { detail: { on, manual } }));
+  if (manual) {
+    lightManual = true;
+    try {
+      localStorage.setItem(LIGHT_KEY, on ? "1" : "0");
+    } catch {
+      // сховище недоступне
+    }
+  }
+  resize();
+}
+/** Монітор інтервалів між кадрами під час руху: стійко повільно — вмикаємо економний режим автоматично. */
+const frameMonitor = new FrameMonitor();
+let lastViewSig = "";
+let lastViewChangeAt = 0;
+function monitorFrame(sig: string): boolean {
+  const now = performance.now();
+  const moving = sig !== lastViewSig;
+  lastViewSig = sig;
+  const slow = frameMonitor.frame(now, moving);
+  if (moving) lastViewChangeAt = now;
+  if (slow && !lightMode && !lightManual) setLightMode(true, false);
+  return moving;
+}
+/** Карта зараз рухається (жест/зум/анімація): у цей час не завантажуємо тайли наперед. */
+function interacting(): boolean {
+  return performance.now() - lastViewChangeAt < 220;
+}
 onHeightsLoaded(() => updateReadout());
 
 /**
@@ -176,7 +229,7 @@ export function centerOnWorld(x: number, z: number): void {
 function resize(): void {
   const r = cv.getBoundingClientRect();
   // На телефоні (3× екран) полотно в 3× важке для перемальовування щокадру; 2× майже не відрізнити, а тече плавніше.
-  dpr = Math.min(window.devicePixelRatio || 1, isRemote ? 2 : 4);
+  dpr = lightMode ? 1 : Math.min(window.devicePixelRatio || 1, isRemote ? 2 : 4);
   const first = W === 0;
   // Світова точка під центром (під прицілом) лишається на місці, коли розмір карти міняється
   // (бровка панелі, режим на весь екран, зміна вікна) — інакше приціл зсувався б із цілі.
@@ -242,6 +295,7 @@ function cancelStale(): void {
 }
 /** Прозорість тайла: щойно завантажений з'являється плавно. */
 function tileAlpha(url: string): number {
+  if (lightMode) return 1;
   const e = tileCache.get(url);
   if (!e?.loadedAt) return 1;
   const a = (performance.now() - e.loadedAt) / TILE_FADE_MS;
@@ -331,7 +385,7 @@ function drawOnlineLod(lod: number, fetchIt: boolean, prefetch = false): void {
   const ty0 = Math.max(0, min.y);
   const ty1 = Math.min(Math.ceil(meta.sizeZ / span), max.y);
   if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) > 400) return;
-  if (prefetch && fetchIt) {
+  if (prefetch && fetchIt && !lightMode && !interacting()) {
     // кільце в один тайл навколо видимого: при русі карти вони вже будуть у кеші
     const maxX = Math.ceil(meta.sizeX / span);
     const maxY = Math.ceil(meta.sizeZ / span);
@@ -385,7 +439,7 @@ function drawPyramidLevel(z: number, fetchIt: boolean, prefetch = false): boolea
       const h = tileSrcH * fy * view.k;
       if (a.sx > W || a.sy > H || a.sx + w < 0 || a.sy + h < 0) {
         // поза екраном, але впритул — завантажуємо наперед (без малювання й без індикатора)
-        if (prefetch && fetchIt && a.sx < W + w && a.sy < H + h && a.sx + w > -w && a.sy + h > -h) {
+        if (prefetch && fetchIt && !lightMode && !interacting() && a.sx < W + w && a.sy < H + h && a.sx + w > -w && a.sy + h > -h) {
           loadTile(pyramidTileSrc(meta.id, z, row, col), true, true);
         }
         continue;
@@ -623,6 +677,48 @@ function drawShots(c: Record<string, string>): void {
   updateShotChip(now);
 }
 
+/**
+ * Штрихує коло лише там, де воно перетинає видиму область: у наближенні радіус кілець — тисячі пікселів,
+ * і повне коло (особливо пунктиром) на телефоні сильно гальмувало б малювання.
+ */
+function strokeArcInView(cx: number, cy: number, r: number): void {
+  const m = 16;
+  const x0 = -m;
+  const y0 = -m;
+  const x1 = W + m;
+  const y1 = H + m;
+  // коло зовсім поза екраном або охоплює його без перетину
+  const nearX = Math.max(x0, Math.min(cx, x1));
+  const nearY = Math.max(y0, Math.min(cy, y1));
+  const dMin = Math.hypot(cx - nearX, cy - nearY);
+  const dMax = Math.max(
+    Math.hypot(cx - x0, cy - y0),
+    Math.hypot(cx - x1, cy - y0),
+    Math.hypot(cx - x0, cy - y1),
+    Math.hypot(cx - x1, cy - y1)
+  );
+  if (r < dMin || r > dMax) return;
+  // крок так, щоб хорда була ~6 px (але не рідше ніж 1°)
+  const step = Math.min(Math.PI / 90, 6 / Math.max(r, 1));
+  const n = Math.ceil((Math.PI * 2) / step);
+  let pen = false;
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) {
+    const ang = i * step;
+    const px = cx + Math.cos(ang) * r;
+    const py = cy + Math.sin(ang) * r;
+    const inside = px >= x0 && px <= x1 && py >= y0 && py <= y1;
+    if (inside) {
+      if (!pen) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+      pen = true;
+    } else {
+      pen = false;
+    }
+  }
+  ctx.stroke();
+}
+
 /** Кільця дальності: зовнішнє — максимум заряду, внутрішнє пунктиром — мінімум; активний заряд яскравіший. */
 function drawRangeRings(c: Record<string, string>): void {
   if (!ringsVisible) return;
@@ -636,8 +732,8 @@ function drawRangeRings(c: Record<string, string>): void {
     const outer = r.max * pxPerM;
     const inner = r.min * pxPerM;
     if (outer < 3 || outer > 40000) continue;
-    if (r.active) {
-      // заливка між мінімумом і максимумом — зона, де заряд діє
+    // заливка зони дії (мін–макс) лише коли обидва кола помірні: гігантський кільцевий шлях сильно гальмує
+    if (r.active && !lightMode && outer < 3000) {
       ctx.globalAlpha = 0.07;
       ctx.fillStyle = c.mortar;
       ctx.beginPath();
@@ -648,16 +744,13 @@ function drawRangeRings(c: Record<string, string>): void {
     ctx.globalAlpha = r.active ? 0.95 : 0.3;
     ctx.strokeStyle = c.mortar;
     ctx.lineWidth = r.active ? 2 : 1;
-    ctx.setLineDash(r.active ? [] : [5, 5]);
-    ctx.beginPath();
-    ctx.arc(center.sx, center.sy, outer, 0, Math.PI * 2);
-    ctx.stroke();
+    // пунктир — лише в звичайному режимі й для невеликих кіл; поза екраном нічого не малюємо
+    ctx.setLineDash(r.active || lightMode || outer > 3000 ? [] : [5, 5]);
+    strokeArcInView(center.sx, center.sy, outer);
     if (r.active && inner > 3) {
-      ctx.setLineDash([7, 5]);
+      ctx.setLineDash(lightMode || inner > 3000 ? [] : [7, 5]);
       ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(center.sx, center.sy, inner, 0, Math.PI * 2);
-      ctx.stroke();
+      strokeArcInView(center.sx, center.sy, inner);
     }
   }
   // підписи лише активного кільця, над ним (на півночі)
@@ -715,14 +808,8 @@ function draw(): void {
     c.fine
   ].join("|");
 
-  let renderedBase = false;
-  if (key !== baseKey) {
-    renderedBase = true;
-    if (baseCanvas.width !== cv.width || baseCanvas.height !== cv.height) {
-      baseCanvas.width = cv.width;
-      baseCanvas.height = cv.height;
-    }
-    ctx = baseCtx;
+  const moving = monitorFrame(`${cv.width}x${cv.height}|${view.k.toFixed(6)}|${view.ox.toFixed(2)}|${view.oy.toFixed(2)}`);
+  const drawBase = (): void => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.globalAlpha = 1;
     ctx.fillStyle = c.blank;
@@ -730,13 +817,31 @@ function draw(): void {
     if (S.map?.kind === "pyramid") drawPyramid();
     else if (usesOnlineTiles()) drawOnlineTiles();
     drawGrid(c);
-    ctx = mainCtx;
-    // Поки тайли з'являються плавно, шар не вважаємо готовим — наступний кадр його перемалює.
-    baseKey = fading ? "" : key;
-  }
+  };
 
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.drawImage(baseCanvas, 0, 0);
+  let renderedBase = false;
+  if (moving) {
+    // Карта рухається: кожен кадр і так новий, буфер лише додав би копіювання на весь екран.
+    renderedBase = true;
+    ctx = mainCtx;
+    drawBase();
+    baseKey = ""; // для наступного нерухомого кадру буфер перебудується
+  } else {
+    if (key !== baseKey) {
+      renderedBase = true;
+      if (baseCanvas.width !== cv.width || baseCanvas.height !== cv.height) {
+        baseCanvas.width = cv.width;
+        baseCanvas.height = cv.height;
+      }
+      ctx = baseCtx;
+      drawBase();
+      ctx = mainCtx;
+      // Поки тайли з'являються плавно, шар не вважаємо готовим — наступний кадр його перемалює.
+      baseKey = fading ? "" : key;
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(baseCanvas, 0, 0);
+  }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   drawRangeRings(c);
