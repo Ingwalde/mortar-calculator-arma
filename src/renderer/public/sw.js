@@ -150,6 +150,8 @@ self.addEventListener("fetch", (event) => {
   const p = "/" + url.pathname.slice(ROOT.length);
   // живі запити стану й подій — завжди напряму (їх офлайн-копію веде сторінка)
   if (p === "/api/events" || p === "/api/store" || p.startsWith("/ca/") || p === "/sw.js") return;
+  // сторінка завантаження (лише на сайті) — завжди з мережі, її не кешуємо як частину застосунку
+  if (p === "/download.html" || p === "/download.js" || p.startsWith("/img/")) return;
   if (req.mode === "navigate") {
     event.respondWith(navigate(req));
     return;

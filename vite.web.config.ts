@@ -1,6 +1,6 @@
 // Автономна веб-збірка (PWA на GitHub Pages, пізніше — вміст APK): той самий renderer, але без Electron і без ПК.
 //   npm run build:web  ->  out/web
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 
@@ -46,6 +46,9 @@ const webShell: Plugin = {
     // сторінка завантаження (посилання на ПК-інсталятор, portable й Android APK з останнього релізу)
     for (const f of ["download.html", "download.js"]) {
       this.emitFile({ type: "asset", fileName: f, source: readFileSync(resolve(__dirname, "src/web", f)) });
+    }
+    for (const f of readdirSync(resolve(__dirname, "src/web/img"))) {
+      this.emitFile({ type: "asset", fileName: `img/${f}`, source: readFileSync(resolve(__dirname, "src/web/img", f)) });
     }
   }
 };
