@@ -9,7 +9,7 @@ import { mirroredTilePath, webHeightsPath, WEB_MIRROR_MIN_LOD } from "@core/webM
 import { $, toast } from "./dom";
 import { t } from "./i18n";
 import { currentMeta, getCurrent } from "./state";
-import { isOffline, isRemote, isStandalone } from "./platform";
+import { isNativeApp, isOffline, isRemote, isStandalone } from "./platform";
 
 const TILES_CACHE = "mortar-tiles-v1";
 /** Орієнтовний розмір тайла: піраміда (256 px, JPEG q90) і онлайн-тайли (~540 px). */
@@ -314,6 +314,8 @@ async function refresh(): Promise<void> {
  * на ПК — онлайн-тайли на диск (для імпортованих карт показує, що вони вже на диску).
  */
 export function initOffline(): void {
+  // в Android-застосунку все вже в пакеті: кнопка збереження карти не потрібна
+  if (isNativeApp) return;
   const btn = $<HTMLButtonElement>("offlineBtn");
   btn.hidden = false;
   const dlg = $<HTMLDialogElement>("offlineDlg");
