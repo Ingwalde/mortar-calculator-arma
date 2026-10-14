@@ -76,7 +76,7 @@ npm run dist:linux  # AppImage + deb
 Висоти вбудовані; грубі рівні карти Everon/Arland/Kolguyev лежать на сайті й кешуються офлайн (кнопка-хмарка),
 детальніші вантажаться напряму з reforger.recoil.org (потрібен інтернет). Імпорт власних карт — лише в застосунку на ПК.
 
-- Публікація: workflow `.github/workflows/pages.yml` (GitHub Pages) — вручну або при пуші тегу `v*`.
+- Публікація: workflow `.github/workflows/pages.yml` (GitHub Pages) — вручну або пушем у master зі змінами сайту.
 - Локально: `WEB_SKIP_TILES=1 npm run build:web` (без тайлів, швидко), далі будь-який статичний сервер на `out/web`.
 - Перелік дзеркалених рівнів — `src/core/webMirror.ts`; завантажене кешується в `.web-cache/`.
 
