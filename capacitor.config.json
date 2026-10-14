@@ -1,0 +1,13 @@
+{
+  "appId": "com.mortartablet.app",
+  "appName": "Планшет мінометника",
+  "webDir": "out/web",
+  "backgroundColor": "#161c18",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#161c18"
+  }
+}

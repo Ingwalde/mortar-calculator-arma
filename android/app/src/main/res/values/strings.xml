@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Планшет мінометника</string>
+    <string name="title_activity_main">Планшет мінометника</string>
+    <string name="package_name">com.mortartablet.app</string>
+    <string name="custom_url_scheme">com.mortartablet.app</string>
+</resources>

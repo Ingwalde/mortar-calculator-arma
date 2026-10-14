@@ -11,6 +11,9 @@ import { isMirroredTile, mirroredTilePath, webHeightsPath } from "@core/webMirro
 /** Автономна веб-версія (PWA на Pages / APK): без ПК, стан лише на пристрої. Підставляється збіркою. */
 export const isStandalone: boolean = typeof __STANDALONE__ !== "undefined" && __STANDALONE__;
 
+/** Усередині Android-застосунку (Capacitor): карта й висоти вже в пакеті, service worker не потрібен. */
+export const isNativeApp: boolean = !!(window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.();
+
 const clientId = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
 
 // ---- офлайн-копія стану на телефоні (localStorage): застосунок відкривається й рахує без ПК,
@@ -330,7 +333,7 @@ if (isRemote) {
   document.documentElement.classList.add("remote");
   markShortViewport();
   // Офлайн-режим: service worker (лише у збірці й лише в безпечному контексті — HTTPS або localhost).
-  if ("serviceWorker" in navigator && window.isSecureContext && import.meta.env.PROD) {
+  if ("serviceWorker" in navigator && window.isSecureContext && import.meta.env.PROD && !isNativeApp) {
     // відносний шлях: сайт може лежати на підшляху (GitHub Pages), service worker береться з тієї ж папки
     void navigator.serviceWorker.register(`sw.js?v=${__APP_VERSION__}`).catch(() => undefined);
     void navigator.storage?.persist?.().catch(() => undefined);
