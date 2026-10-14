@@ -3,6 +3,9 @@ import { getRoot, loadState, scheduleSave } from "./state";
 import { resetView } from "./mapView";
 import { initPanels } from "./panels";
 import { $, toast } from "./dom";
+import { openIncomingShare } from "./exchange";
+import { isNativeApp } from "./platform";
+import { initWebUpdate } from "./webUpdate";
 import { applyStaticTranslations, getLang, setLang, setLangSilent, t } from "./i18n";
 
 /** Заставку з іконкою знімаємо, щойно стан завантажено й інтерфейс готовий. */
@@ -41,6 +44,23 @@ async function boot(): Promise<void> {
   initPanels();
   updateStatus();
   hideSplash();
+
+  // Посилання обміну в адресі сторінки (#s=…): відкрити імпорт і прибрати фрагмент з адреси.
+  const takeShareFromHash = (): void => {
+    if (!location.hash.includes("s=")) return;
+    void openIncomingShare(location.hash).then((handled) => {
+      if (handled) history.replaceState(null, "", location.pathname + location.search);
+    });
+  };
+  takeShareFromHash();
+  window.addEventListener("hashchange", takeShareFromHash);
+  if (__STANDALONE__ && isNativeApp) {
+    // Android: посилання, відкрите через застосунок
+    void import("@capacitor/app").then(({ App }) => {
+      void App.addListener("appUrlOpen", (e) => void openIncomingShare(e.url));
+    });
+  }
+  initWebUpdate();
 
   $<HTMLButtonElement>("langBtn").onclick = () => {
     const next = getLang() === "uk" ? "en" : "uk";

@@ -12,9 +12,10 @@ import {
   type XMarker,
   type XMarkerType
 } from "@core/markerExchange";
+import { MAX_QR_URL_LENGTH, buildShareUrl, encodeShare, extractSharePayload, shareToExchangeText } from "@core/shareLink";
 import { $, ask, toast } from "./dom";
 import { t } from "./i18n";
-import { ALL_FOLDERS, currentMeta, getCurrent, getFolderNames, scheduleSave, uid, type Marker } from "./state";
+import { ALL_FOLDERS, currentMeta, getCurrent, getFolderNames, getRoot, scheduleSave, uid, type Marker } from "./state";
 
 const KEEP = "__keep";
 const NEW = "__new";
@@ -22,7 +23,11 @@ const NEW = "__new";
 interface Hooks {
   /** Перемалювати списки й карту після зміни міток. */
   renderAll: () => void;
+  /** Перемкнути поточний терен (для імпорту за посиланням з іншої карти). */
+  switchTerrain: (id: string) => void;
 }
+
+let hooksRef: Hooks | null = null;
 
 function pickedTypes(): Set<XMarkerType> {
   const s = new Set<XMarkerType>();
@@ -51,8 +56,39 @@ function buildText(): { text: string; count: number; fileName: string } {
   return { text: serializeExport(doc), count: doc.markers.length, fileName: exchangeFileName(meta.id, folder, now) };
 }
 
+async function currentShareUrl(): Promise<string> {
+  const meta = currentMeta();
+  const doc = buildExport(getCurrent().markers as XMarker[], {
+    terrain: meta.id,
+    terrainName: meta.name,
+    folder: exportFolderValue(),
+    types: pickedTypes(),
+    now: Date.now()
+  });
+  return buildShareUrl(await encodeShare(doc));
+}
+
+async function showQr(): Promise<void> {
+  const box = $("exQrBox");
+  const hint = $("exQrHint");
+  const img = $<HTMLImageElement>("exQrImg");
+  const url = await currentShareUrl();
+  box.hidden = false;
+  if (url.length > MAX_QR_URL_LENGTH) {
+    img.hidden = true;
+    hint.textContent = t("exQrTooBig");
+    return;
+  }
+  const QRCode = (await import("qrcode")).default;
+  img.src = await QRCode.toDataURL(url, { errorCorrectionLevel: "L", margin: 2, width: 280 });
+  img.hidden = false;
+  hint.textContent = t("exQrHint");
+}
+
 function refreshExport(): void {
   const { text, count } = buildText();
+  $("exQrBox").hidden = true;
+  for (const id of ["exLink", "exQr"]) $<HTMLButtonElement>(id).disabled = count === 0;
   $<HTMLTextAreaElement>("exText").value = count ? text : "";
   $("exCount").textContent = count ? t("exCount", { n: count }) : t("exEmpty");
   for (const id of ["exCopy", "exShare", "exFile"]) $<HTMLButtonElement>(id).disabled = count === 0;
@@ -162,7 +198,36 @@ async function doImport(hooks: Hooks): Promise<void> {
   $<HTMLDialogElement>("importDlg").close();
 }
 
+function openImportDialog(prefill = ""): void {
+  const dlg = $<HTMLDialogElement>("importDlg");
+  $<HTMLTextAreaElement>("imText").value = prefill;
+  fillFolders($<HTMLSelectElement>("imFolder"), { keep: true, extra: true });
+  $<HTMLSelectElement>("imFolder").value = KEEP;
+  $<HTMLInputElement>("imNewName").value = "";
+  $("imNewRow").hidden = true;
+  refreshImport();
+  if (!dlg.open) dlg.showModal();
+}
+
+/**
+ * Вхідне посилання обміну (з адреси сторінки, з буфера чи з іншого застосунку): розпаковує мітки,
+ * за потреби перемикає терен і відкриває імпорт із готовим вмістом. false — це не посилання обміну.
+ */
+export async function openIncomingShare(input: string): Promise<boolean> {
+  if (!extractSharePayload(input)) return false;
+  const text = await shareToExchangeText(input);
+  if (!text) {
+    toast(t("shareBad"), 4000);
+    return true;
+  }
+  const pr = parseExchange(text);
+  if (pr.ok && pr.terrain && pr.terrain !== currentMeta().id && getRoot().data[pr.terrain]) hooksRef?.switchTerrain(pr.terrain);
+  openImportDialog(text);
+  return true;
+}
+
 export function initExchange(hooks: Hooks): void {
+  hooksRef = hooks;
   const exDlg = $<HTMLDialogElement>("exportDlg");
   const imDlg = $<HTMLDialogElement>("importDlg");
   const closeOnBackdrop = (d: HTMLDialogElement): void => {
@@ -186,6 +251,10 @@ export function initExchange(hooks: Hooks): void {
   $<HTMLSelectElement>("exFolder").onchange = refreshExport;
   for (const id of ["exTarget", "exPoint", "exMortar"]) $<HTMLInputElement>(id).onchange = refreshExport;
   $<HTMLButtonElement>("exCopy").onclick = () => void copyToClipboard($<HTMLTextAreaElement>("exText").value, $<HTMLTextAreaElement>("exText"));
+  $<HTMLButtonElement>("exLink").onclick = async () => {
+    await copyToClipboard(await currentShareUrl(), $<HTMLTextAreaElement>("exText"));
+  };
+  $<HTMLButtonElement>("exQr").onclick = () => void showQr();
   $<HTMLButtonElement>("exFile").onclick = () => {
     const { text, fileName } = buildText();
     downloadFile(fileName, text);
@@ -204,16 +273,27 @@ export function initExchange(hooks: Hooks): void {
   $<HTMLButtonElement>("exClose").onclick = () => exDlg.close();
 
   // ---- імпорт
-  $<HTMLButtonElement>("importFolderBtn").onclick = () => {
-    $<HTMLTextAreaElement>("imText").value = "";
-    fillFolders($<HTMLSelectElement>("imFolder"), { keep: true, extra: true });
-    $<HTMLSelectElement>("imFolder").value = KEEP;
-    $<HTMLInputElement>("imNewName").value = "";
-    $("imNewRow").hidden = true;
+  $<HTMLButtonElement>("importFolderBtn").onclick = () => openImportDialog();
+  // посилання, вставлене в поле, одразу розгортається в мітки
+  const expandPastedLink = async (): Promise<void> => {
+    const area = $<HTMLTextAreaElement>("imText");
+    const v = area.value;
+    if (!v.trim().startsWith("{") && extractSharePayload(v)) {
+      const text = await shareToExchangeText(v);
+      if (text) area.value = text;
+      else toast(t("shareBad"), 4000);
+    }
     refreshImport();
-    imDlg.showModal();
   };
-  $<HTMLTextAreaElement>("imText").oninput = refreshImport;
+  $<HTMLTextAreaElement>("imText").oninput = () => void expandPastedLink();
+  $<HTMLButtonElement>("imPaste").onclick = async () => {
+    try {
+      $<HTMLTextAreaElement>("imText").value = await navigator.clipboard.readText();
+      await expandPastedLink();
+    } catch {
+      toast(t("pasteFailed"), 3500);
+    }
+  };
   $<HTMLSelectElement>("imFolder").onchange = () => {
     $("imNewRow").hidden = $<HTMLSelectElement>("imFolder").value !== NEW;
   };

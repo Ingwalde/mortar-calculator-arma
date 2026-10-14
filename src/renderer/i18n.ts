@@ -210,6 +210,28 @@ const DICT: Dict = {
   exTargets: { uk: "Цілі", en: "Targets" },
   exPoints: { uk: "Точки", en: "Points" },
   exMortars: { uk: "Міномети", en: "Mortars" },
+  exLink: { uk: "Копіювати посилання", en: "Copy link" },
+  exQr: { uk: "Показати QR", en: "Show QR" },
+  exQrHint: {
+    uk: "Наведіть камеру телефона на QR: відкриється посилання й застосунок запропонує імпорт.",
+    en: "Point the phone camera at the QR: the link opens and the app offers to import."
+  },
+  exQrTooBig: {
+    uk: "Міток забагато для QR. Скопіюйте посилання або збережіть файл.",
+    en: "Too many marks for a QR. Copy the link or save a file."
+  },
+  imPaste: { uk: "Вставити з буфера", en: "Paste from clipboard" },
+  imLinkHint: {
+    uk: "Є посилання від іншого пристрою? Вставте його сюди.",
+    en: "Got a link from another device? Paste it here."
+  },
+  shareBad: { uk: "Посилання пошкоджене або не від цього застосунку.", en: "The link is damaged or not from this app." },
+  pasteFailed: { uk: "Не вдалося прочитати буфер: вставте вручну.", en: "Could not read the clipboard: paste manually." },
+  webUpdAvailable: { uk: "Вийшла нова версія {v}", en: "New version {v} is available" },
+  updDownload: { uk: "Завантажити", en: "Download" },
+  updReloadText: { uk: "Є оновлена версія застосунку", en: "An updated version is ready" },
+  updReload: { uk: "Оновити", en: "Update" },
+  updClose: { uk: "Закрити", en: "Dismiss" },
   exCount: { uk: "У файлі буде міток: {n}", en: "Marks in the export: {n}" },
   exEmpty: { uk: "У цій папці немає міток вибраних типів", en: "No marks of the chosen types in this folder" },
   exShare: { uk: "Поділитись", en: "Share" },
