@@ -114,6 +114,6 @@ loadReleases()
     $("meta").textContent = "";
     const err = $("err");
     err.hidden = false;
-    err.textContent = "Не вдалося отримати список версій. Файли доступні на сторінці релізів GitHub (посилання вище).";
+    err.textContent = "Не вдалося отримати список версій. Спробуйте оновити сторінку пізніше.";
     $("primary").href = RELEASES;
   });
