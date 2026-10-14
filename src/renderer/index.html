@@ -270,6 +270,14 @@ html.no-splash #splash{display:none}
   </div>
   <p class="hint" id="exCount"></p>
   <textarea id="exText" rows="6" readonly></textarea>
+  <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+    <button type="button" class="btn" id="exLink" data-i18n="exLink">Копіювати посилання</button>
+    <button type="button" class="btn" id="exQr" data-i18n="exQr">Показати QR</button>
+  </div>
+  <div id="exQrBox" class="qrbox" hidden>
+    <img id="exQrImg" alt="QR" width="280" height="280">
+    <p class="hint" id="exQrHint"></p>
+  </div>
   <div class="dlg-actions" style="flex-wrap:wrap">
     <button type="button" class="btn" id="exCopy" data-i18n="copyBtn">Копіювати</button>
     <button type="button" class="btn" id="exShare" hidden data-i18n="exShare">Поділитись</button>
@@ -283,8 +291,10 @@ html.no-splash #splash{display:none}
   <textarea id="imText" rows="6" data-i18n-placeholder="imPlaceholder" placeholder="Вставте текст обміну"></textarea>
   <div class="row" style="margin-top:8px">
     <input type="file" id="imFile" accept=".json,.txt,application/json,text/plain" hidden>
+    <button type="button" class="btn" id="imPaste" data-i18n="imPaste">Вставити з буфера</button>
     <button type="button" class="btn" id="imPick" data-i18n="imPick">Вибрати файл…</button>
   </div>
+  <p class="hint" style="font-size:12px" data-i18n="imLinkHint">Є посилання від іншого пристрою? Вставте його сюди.</p>
   <p class="hint" id="imInfo" data-state=""></p>
   <div class="field"><label for="imFolder" data-i18n="imDest">Папка призначення</label><select id="imFolder"></select></div>
   <div class="field" id="imNewRow" hidden style="margin-top:8px"><label for="imNewName" data-i18n="imNewName">Назва нової папки</label><input id="imNewName" maxlength="40"></div>

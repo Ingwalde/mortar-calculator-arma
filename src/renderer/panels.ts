@@ -1296,7 +1296,14 @@ export function initPanels(): void {
   applyShotSettings();
   initOffline();
   initUpdater();
-  initExchange({ renderAll });
+  initExchange({
+    renderAll,
+    switchTerrain: (id) => {
+      switchTerrain(id);
+      fillTerrainSelect();
+      onTerrainSwitched();
+    }
+  });
   fillTerrainSelect();
   renderStaticHints();
   setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });

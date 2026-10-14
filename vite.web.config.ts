@@ -13,7 +13,8 @@ const csp = [
   // глибші рівні онлайн-карти вантажаться напряму з reforger.recoil.org
   "img-src 'self' data: blob: https://reforger.recoil.org",
   "font-src 'self'",
-  "connect-src 'self'",
+  // перевірка нової версії Android-застосунку (останній реліз на GitHub)
+  "connect-src 'self' https://api.github.com",
   "media-src 'self' blob: data:",
   "worker-src 'self'",
   "manifest-src 'self'",
