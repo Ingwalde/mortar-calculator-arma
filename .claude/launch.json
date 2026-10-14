@@ -9,6 +9,15 @@
         "dev"
       ],
       "port": 3000
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "D:/tmp/static-sub.mjs"
+      ],
+      "port": 4173,
+      "url": "http://localhost:4173"
     }
   ]
 }

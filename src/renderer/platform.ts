@@ -4,6 +4,12 @@
  * Імпортувати цей модуль треба першим (main.ts), до будь-якого використання window.api.
  */
 import type { MortarApi } from "../preload/index";
+import { tileUrl } from "@core/onlineTiles";
+import { findPreset } from "@core/terrains";
+import { isMirroredTile, mirroredTilePath, webHeightsPath } from "@core/webMirror";
+
+/** Автономна веб-версія (PWA на Pages / APK): без ПК, стан лише на пристрої. Підставляється збіркою. */
+export const isStandalone: boolean = typeof __STANDALONE__ !== "undefined" && __STANDALONE__;
 
 const clientId = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
 
@@ -255,7 +261,68 @@ function createWebApi(): MortarApi {
   };
 }
 
-if (typeof (window as { api?: unknown }).api === "undefined") window.api = createWebApi();
+/** Розпаковує gzip (сітки висот на сайті лежать стиснутими; DecompressionStream є в усіх сучасних браузерах). */
+async function gunzip(bytes: ArrayBuffer): Promise<Uint8Array> {
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+function createStandaloneApi(): MortarApi {
+  const base = createWebApi();
+  probe = null;
+  const heightsCache = new Map<string, Promise<Uint8Array | null>>();
+  return {
+    ...base,
+    store: {
+      async load() {
+        const raw = lsGet(LS_STATE);
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw) as unknown;
+        } catch {
+          return null;
+        }
+      },
+      async save(data) {
+        try {
+          localStorage.setItem(LS_STATE, JSON.stringify(data));
+        } catch {
+          window.dispatchEvent(new CustomEvent("mortar:storage-error"));
+        }
+        return false;
+      },
+      onChanged(cb) {
+        // той самий застосунок, відкритий у другій вкладці
+        const h = (e: StorageEvent): void => {
+          if (e.key === LS_STATE) cb();
+        };
+        window.addEventListener("storage", h);
+        return () => window.removeEventListener("storage", h);
+      }
+    },
+    heights: {
+      importFromUrl: base.heights.importFromUrl,
+      read(terrainId) {
+        let p = heightsCache.get(terrainId);
+        if (!p) {
+          p = (async () => {
+            try {
+              const res = await fetch(webHeightsPath(terrainId));
+              if (!res.ok) return null;
+              return await gunzip(await res.arrayBuffer());
+            } catch {
+              return null;
+            }
+          })();
+          heightsCache.set(terrainId, p);
+        }
+        return p;
+      }
+    }
+  };
+}
+
+if (typeof (window as { api?: unknown }).api === "undefined") window.api = isStandalone ? createStandaloneApi() : createWebApi();
 
 export const isRemote: boolean = window.api.remote;
 
@@ -264,7 +331,8 @@ if (isRemote) {
   markShortViewport();
   // Офлайн-режим: service worker (лише у збірці й лише в безпечному контексті — HTTPS або localhost).
   if ("serviceWorker" in navigator && window.isSecureContext && import.meta.env.PROD) {
-    void navigator.serviceWorker.register(`/sw.js?v=${__APP_VERSION__}`).catch(() => undefined);
+    // відносний шлях: сайт може лежати на підшляху (GitHub Pages), service worker береться з тієї ж папки
+    void navigator.serviceWorker.register(`sw.js?v=${__APP_VERSION__}`).catch(() => undefined);
     void navigator.storage?.persist?.().catch(() => undefined);
   }
   window.addEventListener("online", () => void probe?.().then((ok) => ok && setOnline(true)));
@@ -291,6 +359,12 @@ function markShortViewport(): void {
 
 /** URL тайла онлайн-карти: у Electron — кастомний протокол, у браузері телефона — LAN-сервер. */
 export function onlineTileSrc(terrainId: string, lod: number, x: number, y: number): string {
+  if (isStandalone) {
+    // грубі рівні — зі свого сайту (кешуються офлайн), глибші — напряму з reforger.recoil.org
+    if (isMirroredTile(terrainId, lod)) return mirroredTilePath(terrainId, lod, x, y);
+    const base = findPreset(terrainId)?.tiles?.base;
+    if (base) return tileUrl(base, lod, x, y);
+  }
   return isRemote ? `/tile/${terrainId}/${lod}/${x}/${y}` : `tile://${terrainId}/${lod}/${x}/${y}`;
 }
 

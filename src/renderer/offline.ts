@@ -5,10 +5,11 @@
  */
 import { planPyramid } from "@core/tilePyramid";
 import { onlineTileList } from "@core/onlineTiles";
+import { mirroredTilePath, webHeightsPath, WEB_MIRROR_MIN_LOD } from "@core/webMirror";
 import { $, toast } from "./dom";
 import { t } from "./i18n";
 import { currentMeta, getCurrent } from "./state";
-import { isOffline, isRemote } from "./platform";
+import { isOffline, isRemote, isStandalone } from "./platform";
 
 const TILES_CACHE = "mortar-tiles-v1";
 /** Орієнтовний розмір тайла: піраміда (256 px, JPEG q90) і онлайн-тайли (~540 px). */
@@ -28,7 +29,7 @@ export interface OfflineOption {
 /** Середній розмір тайла піраміди з ПК (кеш у пам'яті сторінки); null — невідомо. */
 const avgBytesCache = new Map<string, number | null>();
 async function loadAvgBytes(id: string): Promise<void> {
-  if (avgBytesCache.has(id)) return;
+  if (isStandalone || avgBytesCache.has(id)) return;
   try {
     const res = await fetch(`/api/tilestat/${encodeURIComponent(id)}`);
     const j = (await res.json()) as { avgBytes: number | null };
@@ -38,7 +39,29 @@ async function loadAvgBytes(id: string): Promise<void> {
   }
 }
 
+/** Автономна версія: зберігаємо дзеркальні тайли зі свого сайту (глибші рівні — лише онлайн). */
+function standaloneOptions(): OfflineOption[] {
+  const meta = currentMeta();
+  const tiles = meta.preset?.tiles;
+  const minMirror = WEB_MIRROR_MIN_LOD[meta.id];
+  if (!tiles || minMirror === undefined) return [];
+  const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
+  const lods = [...new Set([Math.min(tiles.maxLod, 3), Math.min(tiles.maxLod, 2), minMirror])]
+    .filter((l) => l >= minMirror && l <= tiles.maxLod)
+    .sort((a, b) => b - a);
+  return lods.map((lod, i) => {
+    const urls = onlineTileList(meta.sizeX, meta.sizeZ, tiles.maxLod, lod).map((c) => mirroredTilePath(meta.id, c.lod, c.x, c.y));
+    return {
+      key: `w${lod}`,
+      label: names[i] ?? names[names.length - 1],
+      urls: [...urls, webHeightsPath(meta.id)],
+      bytes: urls.length * ONLINE_TILE_BYTES
+    };
+  });
+}
+
 export function offlineOptions(): OfflineOption[] {
+  if (isStandalone) return standaloneOptions();
   const meta = currentMeta();
   const S = getCurrent();
   const extra = [`/api/heights/${encodeURIComponent(meta.id)}`];
@@ -99,6 +122,11 @@ async function cachedCount(prefixes: string[]): Promise<number> {
 }
 
 function terrainPrefixes(id: string): string[] {
+  if (isStandalone) {
+    // сайт може лежати на підшляху (GitHub Pages): ключі кешу — повні шляхи
+    const root = new URL("./", document.baseURI).pathname;
+    return [`${root}tiles/${id}/`, `${root}heights/${id}`];
+  }
   return [`/localtile/${id}/`, `/tile/${id}/`, `/api/heights/${id}`];
 }
 

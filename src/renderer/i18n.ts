@@ -314,6 +314,10 @@ const DICT: Dict = {
   },
   lanCaRegenConfirm: { uk: "Перевипустити", en: "Re-issue" },
   lanCaRegenDone: { uk: "Сертифікат перевипущено", en: "Certificate re-issued" },
+  storageFailed: {
+    uk: "Не вдалося зберегти: сховище браузера заповнене або вимкнене. Зробіть експорт міток.",
+    en: "Could not save: browser storage is full or disabled. Export your markers."
+  },
   lanOptOffline: { uk: "офлайн (HTTPS)", en: "offline (HTTPS)" },
   lanOptCert: { uk: "Сертифікат довіри (одноразово)", en: "Trust certificate (one time)" },
   lanOfflineHint: {
