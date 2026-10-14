@@ -2,7 +2,7 @@ import "./platform";
 import { getRoot, loadState, scheduleSave } from "./state";
 import { resetView } from "./mapView";
 import { initPanels } from "./panels";
-import { $ } from "./dom";
+import { $, toast } from "./dom";
 import { applyStaticTranslations, getLang, setLang, setLangSilent, t } from "./i18n";
 
 /** Заставку з іконкою знімаємо, щойно стан завантажено й інтерфейс готовий. */
@@ -26,6 +26,7 @@ window.addEventListener("mortar:pending", (e) => {
   pending = (e as CustomEvent<{ count: number }>).detail.count;
   updateStatus();
 });
+window.addEventListener("mortar:storage-error", () => toast(t("storageFailed")));
 window.addEventListener("mortar:connectivity", (e) => {
   offline = !(e as CustomEvent<{ online: boolean }>).detail.online;
   updateStatus();

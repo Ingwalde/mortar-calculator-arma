@@ -16,6 +16,8 @@
     "check-places": "tsx scripts/check-places.ts",
     "dist:win": "electron-vite build && electron-builder --win",
     "smoke": "node scripts/smoke-packaged.mjs",
+    "build:web": "vite build --config vite.web.config.ts && tsx scripts/build-web-assets.ts",
+    "preview:web": "vite preview --config vite.web.config.ts --outDir out/web --port 4173",
     "pack": "electron-vite build && electron-builder --win --dir",
     "check": "npm run typecheck && vitest run && npm run pack && npm run smoke",
     "dist:setup": "electron-vite build && electron-builder --win nsis",

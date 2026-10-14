@@ -8,6 +8,8 @@
  * Стан (мітки, журнал) цей worker не чіпає: його зберігає сама сторінка (localStorage) і синхронізує з ПК.
  */
 const VERSION = new URL(self.location.href).searchParams.get("v") || "0";
+// Корінь сайту: "/" на ПК-сервері, "/<репозиторій>/" на GitHub Pages. Усі шляхи нижче — відносно нього.
+const ROOT = new URL("./", self.location.href).pathname;
 const SHELL = "mortar-shell-" + VERSION;
 const TILES = "mortar-tiles-v1";
 
@@ -36,7 +38,7 @@ async function collectAssets(cache, path, seen, depth) {
     } catch {
       continue;
     }
-    if (u.origin === self.location.origin && u.pathname.startsWith("/assets/")) found.add(u.pathname);
+    if (u.origin === self.location.origin && u.pathname.startsWith(ROOT + "assets/")) found.add(u.pathname);
   }
   await Promise.all([...found].map((p) => collectAssets(cache, p, seen, depth + 1)));
 }
@@ -45,16 +47,16 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(SHELL);
-      const res = await fetch("/", { credentials: "same-origin", cache: "no-store" });
+      const res = await fetch(ROOT, { credentials: "same-origin", cache: "no-store" });
       if (!res.ok) throw new Error("shell " + res.status);
       const html = await res.clone().text();
-      await cache.put("/", res);
+      await cache.put(ROOT, res);
       const seen = new Set();
       const paths = new Set();
       for (const m of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
         let u;
         try {
-          u = new URL(m[1], self.location.origin + "/");
+          u = new URL(m[1], self.location.origin + ROOT);
         } catch {
           continue;
         }
@@ -98,10 +100,10 @@ async function navigate(request) {
   try {
     // Коли ПК недосяжний, браузер довго чекає — тримаємо швидкий відступ на кеш.
     const res = await withTimeout(fetch(request), 4000);
-    if (res.ok && new URL(request.url).pathname === "/") cache.put("/", res.clone());
+    if (res.ok && new URL(request.url).pathname === ROOT) cache.put(ROOT, res.clone());
     return res;
   } catch {
-    const cached = await cache.match("/");
+    const cached = await cache.match(ROOT);
     if (cached) return cached;
     return new Response("Офлайн: застосунок ще не збережено на цьому пристрої.", {
       status: 503,
@@ -126,7 +128,7 @@ async function staticAsset(request) {
   const hit = await cache.match(key);
   if (hit) {
     // Хешовані файли незмінні; решту тихо оновлюємо в фоні.
-    if (!key.startsWith("/assets/")) {
+    if (!key.startsWith(ROOT + "assets/")) {
       fetch(request)
         .then((res) => (res.ok ? cache.put(key, res) : undefined))
         .catch(() => undefined);
@@ -143,14 +145,22 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-  const p = url.pathname;
+  if (!url.pathname.startsWith(ROOT)) return;
+  // шлях відносно кореня сайту, з початковим "/"
+  const p = "/" + url.pathname.slice(ROOT.length);
   // живі запити стану й подій — завжди напряму (їх офлайн-копію веде сторінка)
   if (p === "/api/events" || p === "/api/store" || p.startsWith("/ca/") || p === "/sw.js") return;
   if (req.mode === "navigate") {
     event.respondWith(navigate(req));
     return;
   }
-  if (p.startsWith("/localtile/") || p.startsWith("/tile/") || p.startsWith("/api/heights/")) {
+  if (
+    p.startsWith("/localtile/") ||
+    p.startsWith("/tile/") ||
+    p.startsWith("/api/heights/") ||
+    p.startsWith("/tiles/") ||
+    p.startsWith("/heights/")
+  ) {
     event.respondWith(cacheFirst(req, TILES));
     return;
   }

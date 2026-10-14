@@ -7,3 +7,4 @@ dist/
 /.tile-test/
 /.check-places/
 .claude/settings.local.json
+.web-cache/

@@ -49,7 +49,7 @@ export default defineConfig({
         }
       }
     ],
-    define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+    define: { __APP_VERSION__: JSON.stringify(pkg.version), __STANDALONE__: "false" },
     build: {
       rollupOptions: {
         input: { index: resolve(__dirname, "src/renderer/index.html") }
