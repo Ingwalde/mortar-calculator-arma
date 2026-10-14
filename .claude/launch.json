@@ -14,7 +14,7 @@
       "name": "web",
       "runtimeExecutable": "node",
       "runtimeArgs": [
-        "D:/tmp/static-sub.mjs"
+        "scripts/serve-web.mjs"
       ],
       "port": 4173,
       "url": "http://localhost:4173"
