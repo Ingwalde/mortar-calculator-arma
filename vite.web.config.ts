@@ -43,6 +43,10 @@ const webShell: Plugin = {
       ]
     };
     this.emitFile({ type: "asset", fileName: "manifest.webmanifest", source: JSON.stringify(manifest) });
+    // сторінка завантаження (посилання на ПК-інсталятор, portable й Android APK з останнього релізу)
+    for (const f of ["download.html", "download.js"]) {
+      this.emitFile({ type: "asset", fileName: f, source: readFileSync(resolve(__dirname, "src/web", f)) });
+    }
   }
 };
 

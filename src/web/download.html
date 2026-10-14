@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src https://api.github.com; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#161c18">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<title>Планшет мінометника — завантаження</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #161c18; color: #e6ece7; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: #9db0a2; margin: 0 0 20px; }
+  a.card { display: block; padding: 14px 16px; margin: 0 0 12px; border-radius: 12px; background: #202a24; border: 1px solid #2e3b33; color: inherit; text-decoration: none; }
+  a.card:hover, a.card:focus-visible { border-color: #5fd9a0; outline: none; }
+  a.card.rec { border-color: #5fd9a0; }
+  .t { font-weight: 600; }
+  .d { color: #9db0a2; font-size: 14px; }
+  .note { color: #9db0a2; font-size: 13px; margin-top: 20px; }
+  .err { color: #f0b46a; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Планшет мінометника</h1>
+  <p class="sub" id="ver">Завантаження списку версій…</p>
+  <div id="list"></div>
+  <a class="card" id="web" href="./">
+    <div class="t">Відкрити в браузері (без встановлення)</div>
+    <div class="d">Працює на телефоні й ПК, карта зберігається для офлайну. iPhone: «Поділитись» → «На екран Додому».</div>
+  </a>
+  <p class="note" id="note"></p>
+</main>
+<script src="download.js"></script>
+</body>
+</html>
