@@ -3,7 +3,8 @@
 //   WEB_SKIP_TILES=1 ...                          (без тайлів — швидка локальна збірка)
 // Завантажене кешується в .web-cache/, щоб повторні збірки не качали все знову (CI кешує цю папку).
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
@@ -82,6 +83,38 @@ async function buildHeights(): Promise<void> {
   console.log(`висоти: ${bundled.size} терен(ів)`);
 }
 
+/** Карти модових теренів: архів зі службового релізу web-assets (готується scripts/make-web-mod-maps.mjs). */
+const MOD_MAPS_URL = "https://github.com/Ingwalde/mortar-calculator-arma/releases/download/web-assets/mod-maps.tar.gz";
+
+async function buildModMaps(): Promise<void> {
+  const archive = join(cache, "mod-maps.tar.gz");
+  const local = process.env.WEB_MOD_MAPS_ARCHIVE;
+  if (local) await copyFile(local, archive);
+  else if (!existsSync(archive)) {
+    const buf = await fetchBuffer(MOD_MAPS_URL);
+    if (!buf) {
+      console.warn("  ! архів карт модів недоступний: терени модів будуть без карти");
+      return;
+    }
+    await writeFile(archive, buf);
+  }
+  const dir = join(cache, "mod-maps-unpacked");
+  await rm(dir, { recursive: true, force: true });
+  await mkdir(dir, { recursive: true });
+  // відносні шляхи й cwd: GNU tar приймає "D:" у шляху за ім'я віддаленого хоста
+  execFileSync("tar", ["-xzf", "mod-maps.tar.gz", "-C", "mod-maps-unpacked"], { cwd: cache, stdio: "inherit" });
+  const index = JSON.parse(await readFile(join(dir, "mod-maps", "index.json"), "utf8")) as Record<string, { width: number; height: number }>;
+  const expected = JSON.parse(await readFile(join(root, "src", "core", "web-mod-maps.json"), "utf8")) as typeof index;
+  for (const [id, v] of Object.entries(index)) {
+    const e = expected[id];
+    if (!e || e.width !== v.width || e.height !== v.height) {
+      throw new Error(`Карта ${id}: розміри в архіві (${v.width}x${v.height}) не збігаються з src/core/web-mod-maps.json`);
+    }
+    await cp(join(dir, "mod-maps", id), join(out, "maps", id), { recursive: true });
+  }
+  console.log(`карти модів: ${Object.keys(index).length} терен(ів)`);
+}
+
 async function buildTiles(): Promise<void> {
   for (const [id, minLod] of Object.entries(WEB_MIRROR_MIN_LOD)) {
     const preset = PRESETS.find((p) => p.id === id);
@@ -127,6 +160,7 @@ if (!existsSync(join(out, "index.html"))) {
 }
 await mkdir(cache, { recursive: true });
 await buildHeights();
+await buildModMaps();
 if (process.env.WEB_SKIP_TILES === "1") console.log("тайли пропущено (WEB_SKIP_TILES=1)");
 else await buildTiles();
 // на Pages без Jekyll: файли з підкресленням і так не потрібні, але вимикаємо обробку явно

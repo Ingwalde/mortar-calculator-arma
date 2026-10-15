@@ -5,6 +5,24 @@
  * Сюди ж звертається скрипт збірки (scripts/build-web-assets.mjs).
  */
 
+import webModMaps from "./web-mod-maps.json";
+
+/**
+ * Модові терени не мають онлайн-тайлів: їхні карти — піраміди, які будуються на ПК. Для автономної версії
+ * вони пакуються (scripts/make-web-mod-maps.mjs) до рівня, що вкладається в бюджет, і кладуться на сайт
+ * (`maps/<id>/<z>/<рядок>/<колонка>.webp`). Тут — розміри такої піраміди (вона може бути меншою за повну).
+ */
+export const WEB_MOD_MAPS: Readonly<Record<string, { width: number; height: number }>> = webModMaps;
+
+export function webModMap(terrainId: string): { width: number; height: number } | null {
+  return WEB_MOD_MAPS[terrainId] ?? null;
+}
+
+/** Відносний шлях тайла піраміди модового терену на сайті. */
+export function modMapTilePath(terrainId: string, z: number, row: number, col: number): string {
+  return `maps/${terrainId}/${z}/${row}/${col}.webp`;
+}
+
 /** Найдетальніший дзеркалений LOD терену (менший номер — детальніше): дзеркало містить LOD ≥ цього. */
 export const WEB_MIRROR_MIN_LOD: Readonly<Record<string, number>> = {
   everon: 2,

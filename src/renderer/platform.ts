@@ -6,7 +6,7 @@
 import type { MortarApi } from "../preload/index";
 import { tileUrl } from "@core/onlineTiles";
 import { findPreset } from "@core/terrains";
-import { isMirroredTile, mirroredTilePath, webHeightsPath } from "@core/webMirror";
+import { isMirroredTile, mirroredTilePath, modMapTilePath, webHeightsPath, webModMap } from "@core/webMirror";
 
 /** Автономна веб-версія (PWA на Pages / APK): без ПК, стан лише на пристрої. Підставляється збіркою. */
 export const isStandalone: boolean = typeof __STANDALONE__ !== "undefined" && __STANDALONE__;
@@ -373,5 +373,6 @@ export function onlineTileSrc(terrainId: string, lod: number, x: number, y: numb
 
 /** URL тайла імпортованої піраміди ({z}/{row}/{col}). */
 export function pyramidTileSrc(terrainId: string, z: number, row: number, col: number): string {
+  if (isStandalone && webModMap(terrainId)) return modMapTilePath(terrainId, z, row, col);
   return isRemote ? `/localtile/${terrainId}/${z}/${row}/${col}` : `localtile://${terrainId}/${z}/${row}/${col}`;
 }
