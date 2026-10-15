@@ -16,6 +16,8 @@ export interface XMarker {
   w: "M252" | "2B14";
   folder: string;
   u: number;
+  /** Ціль/точку позначено зруйнованою (вручну). */
+  destroyed?: boolean;
 }
 
 export interface ExchangeDoc {
@@ -78,7 +80,8 @@ function clean(m: unknown, fallbackFolder: string): XMarker | null {
     h: h !== null && Number.isFinite(h) ? h : null,
     w: r.w === "2B14" ? "2B14" : "M252",
     folder: typeof r.folder === "string" ? r.folder.slice(0, 40) : fallbackFolder,
-    u: Number.isFinite(Number(r.u)) ? Number(r.u) : 0
+    u: Number.isFinite(Number(r.u)) ? Number(r.u) : 0,
+    ...(r.destroyed === true && type !== "mortar" ? { destroyed: true } : {})
   };
 }
 
@@ -134,7 +137,7 @@ export interface MergeResult {
 }
 
 function same(a: XMarker, b: XMarker): boolean {
-  return a.name === b.name && a.type === b.type && a.x === b.x && a.z === b.z && a.h === b.h && a.w === b.w && a.folder === b.folder;
+  return a.name === b.name && a.type === b.type && a.x === b.x && a.z === b.z && a.h === b.h && a.w === b.w && a.folder === b.folder && !!a.destroyed === !!b.destroyed;
 }
 
 /**

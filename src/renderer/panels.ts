@@ -109,6 +109,7 @@ export function renderMarksList(): void {
     const li = document.createElement("li");
     li.dataset.id = m.id;
     if (m.id === selectedId) li.className = "sel";
+    if (m.destroyed) li.classList.add("destroyed");
     const badge = document.createElement("div");
     badge.className = "badge b-" + m.type;
     const bs = document.createElement("span");
@@ -141,9 +142,33 @@ export function renderMarksList(): void {
     editBtn.className = "btn small";
     editBtn.textContent = t("editBtn");
     editBtn.onclick = () => openMarkerDialog(m);
-    li.append(badge, info, copyBtn, editBtn);
+    li.append(badge, info);
+    if (m.type !== "mortar") {
+      // швидка позначка «зруйновано» (і повернення назад) без відкриття діалогу
+      const dBtn = document.createElement("button");
+      dBtn.className = "btn small icon-only destroy-btn";
+      dBtn.textContent = m.destroyed ? "↺" : "✕";
+      dBtn.title = m.destroyed ? t("restoreBtn") : t("destroyBtn");
+      dBtn.setAttribute("aria-label", dBtn.title);
+      dBtn.setAttribute("aria-pressed", String(!!m.destroyed));
+      dBtn.onclick = () => toggleDestroyed(m.id);
+      li.append(dBtn);
+    }
+    li.append(copyBtn, editBtn);
     ul.appendChild(li);
   }
+}
+
+/** Позначає ціль/точку зруйнованою або повертає назад; синхронізується як звичайна правка мітки. */
+function toggleDestroyed(id: string): void {
+  const m = getCurrent().markers.find((x) => x.id === id);
+  if (!m || m.type === "mortar") return;
+  if (m.destroyed) delete m.destroyed;
+  else m.destroyed = true;
+  m.u = Date.now();
+  scheduleSave();
+  renderAll();
+  toast(t(m.destroyed ? "markDestroyed" : "markRestored", { n: m.name || typeLabel(m.type) }));
 }
 
 export function selectMarker(id: string, center: boolean): void {
@@ -186,6 +211,9 @@ function setDlgType(t: MarkerType): void {
     b.setAttribute("aria-pressed", b.dataset.t === t ? "true" : "false");
   }
   $("fWeapon").hidden = t !== "mortar";
+  // «зруйновано» буває лише в цілі й точки
+  const row = document.getElementById("fDestroyedRow");
+  if (row) row.hidden = t === "mortar";
 }
 function setDlgWeapon(w: WeaponId): void {
   dlgWeapon = w;
@@ -242,6 +270,8 @@ export function openMarkerDialog(marker?: Marker, preset?: DialogPreset): void {
   fillFolderDatalist();
   $<HTMLInputElement>("fFolder").value = marker ? marker.folder : lastUsedFolder();
   $<HTMLButtonElement>("fDel").hidden = !marker;
+  $<HTMLInputElement>("fDestroyed").checked = !!marker?.destroyed;
+  $("fDestroyedRow").hidden = d.type === "mortar";
   dlg.showModal();
 
   if (!marker && d.h === null && isFinite(d.x) && isFinite(d.z)) {
@@ -289,6 +319,7 @@ $<HTMLFormElement>("dlgForm").addEventListener("submit", (e) => {
   }
   const hv = $<HTMLInputElement>("fH").value.trim();
   const h = hv === "" ? null : parseFloat(hv);
+  const destroyedNow = dlgType !== "mortar" && $<HTMLInputElement>("fDestroyed").checked;
   const data = {
     name: $<HTMLInputElement>("fName").value.trim().slice(0, 40) || nextName(dlgType),
     type: dlgType,
@@ -299,9 +330,12 @@ $<HTMLFormElement>("dlgForm").addEventListener("submit", (e) => {
     folder: $<HTMLInputElement>("fFolder").value.trim().slice(0, 40)
   };
   const S = getCurrent();
-  if (editing) Object.assign(editing, data, { u: Date.now() });
-  else {
-    const m: Marker = { id: uid(), ...data, u: Date.now() };
+  if (editing) {
+    Object.assign(editing, data, { u: Date.now() });
+    if (destroyedNow) editing.destroyed = true;
+    else delete editing.destroyed;
+  } else {
+    const m: Marker = { id: uid(), ...data, u: Date.now(), ...(destroyedNow ? { destroyed: true } : {}) };
     S.markers.push(m);
     selectedId = m.id;
     if (m.type === "mortar") {
@@ -413,7 +447,9 @@ function fillFireSelects(): void {
   if (mortars.length && !mortars.some((m) => m.id === S.sel.m)) S.sel.m = mortars[0].id;
   selM.value = S.sel.m ?? "";
   selT.add(new Option(t("centerOption"), "__center"));
-  for (const m of markersInFolder(S.sel.targetFolder).filter((x) => x.type !== "mortar")) selT.add(new Option(m.name, m.id));
+  for (const m of markersInFolder(S.sel.targetFolder).filter((x) => x.type !== "mortar")) {
+    selT.add(new Option(m.destroyed ? "✕ " + m.name : m.name, m.id));
+  }
   if (![...selT.options].some((o) => o.value === S.sel.t)) S.sel.t = "__center";
   selT.value = S.sel.t;
 }

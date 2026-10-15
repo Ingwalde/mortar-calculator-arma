@@ -18,6 +18,8 @@ export interface Marker {
   folder: string;
   /** Час останньої правки (мс) — за ним зливаються копії з різних пристроїв. */
   u: number;
+  /** Ціль/точку позначено зруйнованою (вручну); у мінометів не буває. */
+  destroyed?: boolean;
 }
 
 export type MapState = { kind: "none" } | { kind: "pyramid"; width: number; height: number };
@@ -143,7 +145,8 @@ function normalizeMarker(m: unknown): Marker | null {
     h: isFinite(h as number) ? (h as number) : null,
     w: r.w === "2B14" ? "2B14" : "M252",
     folder: typeof r.folder === "string" ? r.folder.slice(0, 40) : "",
-    u: isFinite(Number(r.u)) ? Number(r.u) : 0
+    u: isFinite(Number(r.u)) ? Number(r.u) : 0,
+    ...(r.destroyed === true && type !== "mortar" ? { destroyed: true } : {})
   };
 }
 

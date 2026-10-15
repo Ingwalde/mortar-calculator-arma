@@ -225,6 +225,7 @@ html.no-splash #splash{display:none}
       <div class="field"><label for="fH" data-i18n="fieldHeight">Висота, м</label><input id="fH" type="number" inputmode="decimal" step="any" data-i18n-placeholder="heightOptional" placeholder="необов'язково"></div>
     </div>
     <div class="field" style="margin:8px 0"><label for="fFolder" data-i18n="fieldFolder">Папка / місія</label><input id="fFolder" list="folderList" maxlength="40" data-i18n-placeholder="folderPlaceholder" placeholder="без місії"><datalist id="folderList"></datalist></div>
+    <label class="row" id="fDestroyedRow" style="gap:8px;cursor:pointer;margin:4px 0 10px"><input type="checkbox" id="fDestroyed"> <span data-i18n="fieldDestroyed">Зруйновано (відмічено вручну)</span></label>
     <div class="dlg-actions">
       <button type="button" class="btn danger" id="fDel" data-i18n="deleteBtn">Видалити</button>
       <span class="row">

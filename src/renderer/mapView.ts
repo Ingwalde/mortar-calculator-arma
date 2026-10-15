@@ -1069,8 +1069,22 @@ function drawMarkers(c: Record<string, string>): void {
     } else {
       ctx.rect(s.sx - r + 1, s.sy - r + 1, (r - 1) * 2, (r - 1) * 2);
     }
+    if (m.destroyed) ctx.globalAlpha = 0.55;
     ctx.fill();
     ctx.stroke();
+    if (m.destroyed) {
+      // зруйновано: хрест поверх приглушеної мітки
+      const k = r + 4;
+      ctx.strokeStyle = c.ink;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(s.sx - k, s.sy - k);
+      ctx.lineTo(s.sx + k, s.sy + k);
+      ctx.moveTo(s.sx + k, s.sy - k);
+      ctx.lineTo(s.sx - k, s.sy + k);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     if (m.id === callbacks.selectedId) {
       ctx.strokeStyle = col;
       ctx.lineWidth = 1.5;
@@ -1087,7 +1101,9 @@ function drawMarkers(c: Record<string, string>): void {
     ctx.fillRect(s.sx + r + 5, s.sy - 9, tw + 8, 18);
     ctx.globalAlpha = 1;
     ctx.fillStyle = c.ink;
+    if (m.destroyed) ctx.globalAlpha = 0.6;
     ctx.fillText(label, s.sx + r + 9, s.sy);
+    ctx.globalAlpha = 1;
   }
 }
 
