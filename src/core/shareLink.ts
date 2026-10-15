@@ -91,7 +91,8 @@ export async function encodeShare(doc: ExchangeDoc): Promise<string> {
     ...(doc.terrainName ? { n: doc.terrainName } : {}),
     f: doc.folder,
     m: doc.markers.map((m): PackedMarker => {
-      const row: PackedMarker = [m.id, m.name, Math.max(0, TYPES.indexOf(m.type)), m.x, m.z, m.h, m.w === "2B14" ? 1 : 0, m.u];
+      const typeCode = Math.max(0, TYPES.indexOf(m.type)) + (m.destroyed ? TYPES.length : 0);
+      const row: PackedMarker = [m.id, m.name, typeCode, m.x, m.z, m.h, m.w === "2B14" ? 1 : 0, m.u];
       if (perMarkerFolder) row.push(m.folder);
       return row;
     })
@@ -123,13 +124,14 @@ export async function decodeShare(payload: string): Promise<ExchangeDoc | null> 
     markers.push({
       id: typeof id === "string" ? id : "",
       name: typeof name === "string" ? name : "",
-      type: TYPES[type] ?? "point",
+      type: TYPES[Number(type) % TYPES.length] ?? "point",
       x: Number(x),
       z: Number(z),
       h: h === null || h === undefined ? null : Number(h),
       w: w === 1 ? "2B14" : "M252",
       folder: typeof f === "string" ? f : (folder ?? ""),
-      u: Number(u) || 0
+      u: Number(u) || 0,
+      ...(Number(type) >= TYPES.length && Number(type) % TYPES.length !== 0 ? { destroyed: true } : {})
     });
   }
   return {

@@ -79,3 +79,20 @@ describe("shareLink", () => {
     expect(url.length).toBeLessThan(MAX_QR_URL_LENGTH);
   });
 });
+
+describe("shareLink: зруйновані мітки", () => {
+  it("прапорець «зруйновано» переживає кругову передачу, мінометів не стосується", async () => {
+    const marks: XMarker[] = [
+      { id: "t1", name: "Будівля", type: "target", x: 1, z: 2, h: null, w: "M252", folder: "", u: 5, destroyed: true },
+      { id: "t2", name: "Ціль", type: "target", x: 3, z: 4, h: null, w: "M252", folder: "", u: 6 },
+      { id: "p1", name: "Точка", type: "point", x: 5, z: 6, h: null, w: "M252", folder: "", u: 7, destroyed: true }
+    ];
+    const d = buildExport(marks, { terrain: "everon", folder: null, types: new Set(["mortar", "target", "point"] as const), now: 1 });
+    const back = await decodeShare(await encodeShare(d));
+    expect(back!.markers.map((m) => [m.id, m.type, !!m.destroyed])).toEqual([
+      ["t1", "target", true],
+      ["t2", "target", false],
+      ["p1", "point", true]
+    ]);
+  });
+});
