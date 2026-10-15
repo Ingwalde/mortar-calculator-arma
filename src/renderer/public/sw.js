@@ -161,6 +161,7 @@ self.addEventListener("fetch", (event) => {
     p.startsWith("/tile/") ||
     p.startsWith("/api/heights/") ||
     p.startsWith("/tiles/") ||
+    p.startsWith("/maps/") ||
     p.startsWith("/heights/")
   ) {
     event.respondWith(cacheFirst(req, TILES));

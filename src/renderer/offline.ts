@@ -5,7 +5,7 @@
  */
 import { planPyramid } from "@core/tilePyramid";
 import { onlineTileList } from "@core/onlineTiles";
-import { mirroredTilePath, webHeightsPath, WEB_MIRROR_MIN_LOD } from "@core/webMirror";
+import { mirroredTilePath, modMapTilePath, webHeightsPath, WEB_MIRROR_MIN_LOD } from "@core/webMirror";
 import { $, toast } from "./dom";
 import { t } from "./i18n";
 import { currentMeta, getCurrent } from "./state";
@@ -64,7 +64,7 @@ export function offlineOptions(): OfflineOption[] {
   if (isStandalone) return standaloneOptions();
   const meta = currentMeta();
   const S = getCurrent();
-  const extra = [`/api/heights/${encodeURIComponent(meta.id)}`];
+  const extra = [isStandalone ? webHeightsPath(meta.id) : `/api/heights/${encodeURIComponent(meta.id)}`];
   const opts: OfflineOption[] = [];
 
   if (S.map && S.map.kind === "pyramid") {
@@ -75,7 +75,9 @@ export function offlineOptions(): OfflineOption[] {
       for (const lv of plan.levels) {
         if (lv.z > maxZ) break;
         for (let row = 0; row < lv.rows; row++) {
-          for (let col = 0; col < lv.cols; col++) out.push(`/localtile/${meta.id}/${lv.z}/${row}/${col}`);
+          for (let col = 0; col < lv.cols; col++) {
+            out.push(isStandalone ? modMapTilePath(meta.id, lv.z, row, col) : `/localtile/${meta.id}/${lv.z}/${row}/${col}`);
+          }
         }
       }
       return out;
@@ -125,7 +127,7 @@ function terrainPrefixes(id: string): string[] {
   if (isStandalone) {
     // сайт може лежати на підшляху (GitHub Pages): ключі кешу — повні шляхи
     const root = new URL("./", document.baseURI).pathname;
-    return [`${root}tiles/${id}/`, `${root}heights/${id}`];
+    return [`${root}tiles/${id}/`, `${root}maps/${id}/`, `${root}heights/${id}`];
   }
   return [`/localtile/${id}/`, `/tile/${id}/`, `/api/heights/${id}`];
 }

@@ -3,6 +3,7 @@ import { PRESETS, findPreset, DEFAULT_TERRAIN_ID, type TerrainPreset } from "@co
 import type { WeaponId } from "@core/ballistics";
 import type { Lang } from "./i18n";
 import { clampPlacesScale, normalizePlacesLevel, type PlaceTier } from "@core/places";
+import { webModMap } from "@core/webMirror";
 
 export type MarkerType = "mortar" | "target" | "point";
 
@@ -231,6 +232,11 @@ export function normalizeRoot(raw: unknown): RootState {
   const dataObj = (r.data && typeof r.data === "object" ? r.data : {}) as Record<string, unknown>;
   for (const meta of allTerrainMetas(root)) {
     root.data[meta.id] = normalizeTerrain(dataObj[meta.id], meta.sizeX, meta.sizeZ);
+    // автономна версія: карта модового терену лежить на сайті (див. core/webMirror.ts)
+    if (typeof __STANDALONE__ !== "undefined" && __STANDALONE__) {
+      const wm = webModMap(meta.id);
+      if (wm) root.data[meta.id].map = { kind: "pyramid", width: wm.width, height: wm.height };
+    }
   }
 
   root.deletedTerrains = normalizeTombs(r.deletedTerrains);

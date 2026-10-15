@@ -31,7 +31,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .web-cache
-          key: web-assets-${{ hashFiles('src/core/webMirror.ts', 'src/core/terrains-data.json', 'scripts/build-web-assets.ts') }}
+          key: web-assets-${{ hashFiles('src/core/webMirror.ts', 'src/core/web-mod-maps.json', 'src/core/terrains-data.json', 'scripts/build-web-assets.ts') }}
       - run: npm run build:web
       - run: node scripts/sync-android-version.mjs
       - run: npx cap sync android

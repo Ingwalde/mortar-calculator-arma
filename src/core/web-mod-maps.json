@@ -1,0 +1,30 @@
+{
+ "badorb": {
+  "width": 4096,
+  "height": 4096
+ },
+ "bystrany": {
+  "width": 18432,
+  "height": 18432
+ },
+ "gogland": {
+  "width": 8192,
+  "height": 8192
+ },
+ "ironholdcastle": {
+  "width": 8192,
+  "height": 8192
+ },
+ "kirovograd": {
+  "width": 16384,
+  "height": 16384
+ },
+ "mogadishu": {
+  "width": 15360,
+  "height": 15360
+ },
+ "novyinovka": {
+  "width": 8192,
+  "height": 8192
+ }
+}
