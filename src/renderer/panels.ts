@@ -49,7 +49,7 @@ import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { initExchange } from "./exchange";
-import { playShot, setShotMuted } from "./shotAudio";
+import { playShot, playTestSound, setShotMuted } from "./shotAudio";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
@@ -1031,6 +1031,8 @@ $<HTMLButtonElement>("soundBtn").onclick = () => {
   applyShotSettings();
   scheduleSave();
   toast(t(r.soundShots ? "soundOn" : "soundOff"));
+  // увімкнули — одразу чути короткий звук (і аудіо розблоковується жестом)
+  if (r.soundShots) void playTestSound();
 };
 
 function applyPlacesStyle(): void {

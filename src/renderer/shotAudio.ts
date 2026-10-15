@@ -37,7 +37,61 @@ export function setShotMuted(m: boolean): void {
   if (ctx && master) master.gain.setTargetAtTime(m ? 0 : MASTER_GAIN, ctx.currentTime, 0.03);
 }
 
+/**
+ * iPhone: WebAudio за замовчуванням належить до категорії «навколишні звуки», яку глушить перемикач
+ * «Без звуку». Раніше сторінка по http тримала приховане відео (nosleep) і сесія ставала «програванням»;
+ * по https екран тримає Wake Lock, відео нема, і звук зникав. Тому категорію ставимо явно.
+ */
+type AudioSessionNav = Navigator & { audioSession?: { type: string } };
+let sessionPrimed = false;
+let silentUrl: string | null = null;
+const IS_IOS = typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent);
+
+function primeAudioSession(): void {
+  if (sessionPrimed) return;
+  sessionPrimed = true;
+  try {
+    const s = (navigator as AudioSessionNav).audioSession;
+    if (s) s.type = "playback";
+  } catch {
+    // API недоступний — діє запасний шлях нижче
+  }
+}
+
+/** Запасний шлях для iOS без Audio Session API: коротка тиха доріжка переводить сесію в «програвання». */
+function playSilentClip(): void {
+  if (!IS_IOS || (navigator as AudioSessionNav).audioSession) return;
+  try {
+    if (!silentUrl) {
+      const n = 8000; // 1 с, 8 кГц, 8 біт, тиша
+      const wav = new Uint8Array(44 + n);
+      const dv = new DataView(wav.buffer);
+      const tag = (o: number, s: string): void => [...s].forEach((ch, i) => dv.setUint8(o + i, ch.charCodeAt(0)));
+      tag(0, "RIFF");
+      dv.setUint32(4, 36 + n, true);
+      tag(8, "WAVEfmt ");
+      dv.setUint32(16, 16, true);
+      dv.setUint16(20, 1, true);
+      dv.setUint16(22, 1, true);
+      dv.setUint32(24, 8000, true);
+      dv.setUint32(28, 8000, true);
+      dv.setUint16(32, 1, true);
+      dv.setUint16(34, 8, true);
+      tag(36, "data");
+      dv.setUint32(40, n, true);
+      wav.fill(0x80, 44);
+      silentUrl = URL.createObjectURL(new Blob([wav], { type: "audio/wav" }));
+    }
+    const a = new Audio(silentUrl);
+    a.setAttribute("playsinline", "");
+    void a.play().catch(() => undefined);
+  } catch {
+    // не вийшло — лишається звичайний WebAudio
+  }
+}
+
 function context(): AudioContext | null {
+  primeAudioSession();
   try {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return null;
@@ -186,6 +240,19 @@ function scheduleFlight(c: AudioContext, launchPerfMs: number, flightSec: number
   burst(c, hit, 0.07, 0.3, { type: "highpass", f0: 2400, f1: 1800, q: 0.7 }, 0.2);
 }
 
+/** Короткий «тунк» для перевірки звуку: лунає при ввімкненні звуку кнопкою (це ж і розблоковує аудіо на телефоні). */
+export async function playTestSound(): Promise<void> {
+  const c = context();
+  if (!c || muted) return;
+  playSilentClip();
+  if (c.state !== "running") {
+    await Promise.race([c.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 500))]);
+  }
+  const at = c.currentTime + 0.02;
+  thump(c, at, 120, 38, 0.3, 0.6);
+  burst(c, at, 0.22, 0.35, { type: "lowpass", f0: 1400, f1: 180, q: 0.6 }, 0.5);
+}
+
 /**
  * Постріл і влучання. `launchPerfMs` — момент запуску анімації (performance.now()): влучання
  * прив'язується саме до візуального прильоту, з поправкою на затримку виходу звуку (Bluetooth тощо),
@@ -194,6 +261,7 @@ function scheduleFlight(c: AudioContext, launchPerfMs: number, flightSec: number
 export async function playShot(flightSec: number, launchPerfMs: number = performance.now()): Promise<void> {
   const c = context();
   if (!c) return;
+  playSilentClip();
   // Поки контекст призупинений, його годинник стоїть: чекаємо запуску, інакше звук відстав би від картинки.
   if (c.state !== "running") {
     await Promise.race([c.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 500))]);
