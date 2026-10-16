@@ -12,6 +12,8 @@ import { TIER_SCALE, TIER_WEIGHT, type PlaceTier } from "@core/places";
 import { FrameMonitor } from "@core/frameMonitor";
 import { PYRAMID_TILE_SIZE, planPyramid, type PyramidPlan } from "@core/tilePyramid";
 import { spreadOutline } from "@core/spread";
+import { pointInPolygon } from "@core/buildings";
+import { buildingIndexFor, setBuildingsLoadedHook } from "./buildings";
 import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
 import { t } from "./i18n";
@@ -262,6 +264,8 @@ export function requestDraw(): void {
     requestAnimationFrame(draw);
   }
 }
+// дані будівель підвантажились — перемалювати зруйновані
+setBuildingsLoadedHook(requestDraw);
 
 // ---------- tile image cache ----------
 interface CacheEntry {
@@ -850,6 +854,7 @@ function draw(): void {
   drawRangeRings(c);
   drawSpread(c);
   drawFiringLine(c);
+  drawDestroyed();
   drawCalibPoints(c);
   drawPlaces(c);
   drawMarkers(c);
@@ -933,6 +938,120 @@ function labelBox(t: string, x: number, y: number, c: Record<string, string>): v
   ctx.globalAlpha = 1;
   ctx.fillStyle = c.ink;
   ctx.fillText(t, x, y);
+}
+
+/** Радіус «зони» зруйнованої мітки, коли контуру будівлі нема (м). */
+const DESTROYED_FALLBACK_RADIUS_M = 12;
+
+interface DestroyedShape {
+  markerId: string;
+  /** Вершини контуру у світових координатах; null — круг навколо мітки. */
+  poly: Float32Array | null;
+  cx: number;
+  cz: number;
+}
+
+/** Зруйновані цілі й точки видимої папки з контуром будівлі, на яку вони потрапили. */
+function destroyedShapes(): DestroyedShape[] {
+  const list = getVisibleMarkers().filter((m) => m.destroyed && m.type !== "mortar");
+  if (!list.length) return [];
+  const idx = buildingIndexFor(currentMeta().id);
+  return list.map((m) => {
+    const b = idx?.findAt(m.x, m.z) ?? null;
+    return b ? { markerId: m.id, poly: b.pts, cx: b.cx, cz: b.cz } : { markerId: m.id, poly: null, cx: m.x, cz: m.z };
+  });
+}
+
+/** Червона будівля (або круг, якщо контуру нема) з підписом «Зруйновано» посередині. */
+function drawDestroyed(): void {
+  const shapes = destroyedShapes();
+  if (!shapes.length) return;
+  ctx.save();
+  for (const sh of shapes) {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    // горизонтальна й вертикальна «хорда» через центр: стільки місця реально є під підпис
+    let chordW = 0;
+    let chordH = 0;
+    ctx.beginPath();
+    if (sh.poly) {
+      const scr: { x: number; y: number }[] = [];
+      for (let i = 0; i < sh.poly.length; i += 2) {
+        const p = scrFromWorld(sh.poly[i], sh.poly[i + 1]);
+        scr.push({ x: p.sx, y: p.sy });
+        minX = Math.min(minX, p.sx);
+        maxX = Math.max(maxX, p.sx);
+        if (i === 0) ctx.moveTo(p.sx, p.sy);
+        else ctx.lineTo(p.sx, p.sy);
+      }
+      ctx.closePath();
+      const cc = scrFromWorld(sh.cx, sh.cz);
+      chordW = chordThrough(scr, cc.sx, cc.sy, true);
+      chordH = chordThrough(scr, cc.sx, cc.sy, false);
+    } else {
+      const c0 = scrFromWorld(sh.cx, sh.cz);
+      const r = Math.max(6, Math.abs(scrFromWorld(sh.cx + DESTROYED_FALLBACK_RADIUS_M, sh.cz).sx - c0.sx));
+      ctx.arc(c0.sx, c0.sy, r, 0, Math.PI * 2);
+      minX = c0.sx - r;
+      maxX = c0.sx + r;
+      chordW = chordH = r * 2;
+    }
+    if (maxX < -50 || minX > W + 50) continue;
+    ctx.fillStyle = "rgba(224,49,49,0.58)";
+    ctx.fill();
+    ctx.strokeStyle = "#a51111";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // підпис посередині: лише коли вміщається (на далекому масштабі будівля — крапка)
+    const label = t("destroyedLabel");
+    ctx.font = '700 12px "IBM Plex Sans Condensed",sans-serif';
+    const tw = ctx.measureText(label).width;
+    // вміщаємо і за шириною, і за висотою хорди (текст горизонтальний, а будівля може бути повернута)
+    const size = Math.min(15, (12 * chordW * 0.9) / tw, chordH * 0.8);
+    if (size >= 8) {
+      const c1 = scrFromWorld(sh.cx, sh.cz);
+      ctx.font = `700 ${size.toFixed(1)}px "IBM Plex Sans Condensed",sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = Math.max(2, size / 5);
+      ctx.strokeStyle = "rgba(60,0,0,0.85)";
+      ctx.strokeText(label, c1.sx, c1.sy);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(label, c1.sx, c1.sy);
+    }
+  }
+  ctx.restore();
+}
+
+/** Довжина перерізу багатокутника (екранні точки) горизонталлю або вертикаллю через (cx, cy), що містить центр. */
+function chordThrough(poly: { x: number; y: number }[], cx: number, cy: number, horizontal: boolean): number {
+  const hits: number[] = [];
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = horizontal ? poly[j] : { x: poly[j].y, y: poly[j].x };
+    const b = horizontal ? poly[i] : { x: poly[i].y, y: poly[i].x };
+    const line = horizontal ? cy : cx;
+    if (a.y > line !== b.y > line) hits.push(a.x + ((line - a.y) * (b.x - a.x)) / (b.y - a.y));
+  }
+  hits.sort((p, q) => p - q);
+  const mid = horizontal ? cx : cy;
+  for (let k = 0; k + 1 < hits.length; k += 2) {
+    if (mid >= hits[k] && mid <= hits[k + 1]) return hits[k + 1] - hits[k];
+  }
+  // центр випав з полігона (увігнута форма): беремо найширший відрізок
+  let best = 0;
+  for (let k = 0; k + 1 < hits.length; k += 2) best = Math.max(best, hits[k + 1] - hits[k]);
+  return best;
+}
+
+/** Яка зруйнована мітка «володіє» точкою екрана (клік по червоній будівлі); null — жодна. */
+function hitTestDestroyed(sx: number, sy: number): string | null {
+  const w = worldFromScr(sx, sy);
+  for (const sh of destroyedShapes()) {
+    if (sh.poly ? pointInPolygon(w.x, w.z, sh.poly) : Math.hypot(w.x - sh.cx, w.z - sh.cz) <= DESTROYED_FALLBACK_RADIUS_M) {
+      return sh.markerId;
+    }
+  }
+  return null;
 }
 
 function drawSpread(c: Record<string, string>): void {
@@ -1232,7 +1351,7 @@ cv.addEventListener(
 );
 
 function tap(x: number, y: number): void {
-  const id = hitTestMarker(x, y);
+  const id = hitTestMarker(x, y) ?? hitTestDestroyed(x, y);
   if (id) {
     tapHandlers?.onMarkerTap(id);
     return;

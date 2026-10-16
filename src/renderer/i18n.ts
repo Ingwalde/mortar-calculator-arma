@@ -248,6 +248,7 @@ const DICT: Dict = {
   spreadNoData: { uk: "Для цього пострілу даних гри нема.", en: "No game data for this shot." },
   spreadNow: { uk: "Радіуси розкиду: {a} × {b} м", en: "Dispersion radii: {a} × {b} m" },
   spreadEmpty: { uk: "Задайте значення (з гри чи досвіду): розкид у таблицях балістики відсутній.", en: "Enter values (from the game or experience): the ballistic tables have no dispersion." },
+  destroyedLabel: { uk: "Зруйновано", en: "Destroyed" },
   exCount: { uk: "У файлі буде міток: {n}", en: "Marks in the export: {n}" },
   exEmpty: { uk: "У цій папці немає міток вибраних типів", en: "No marks of the chosen types in this folder" },
   exShare: { uk: "Поділитись", en: "Share" },
