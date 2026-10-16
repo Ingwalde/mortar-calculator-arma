@@ -2,9 +2,12 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer, request } from "node:https";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import forge from "node-forge";
 import { ensureCa, issueServerCert, mobileconfig } from "./tls";
+
+// генерація RSA-ключів у чистому JS: на завантаженій машині її мало 5 с за замовчуванням
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 let dir = "";
 beforeAll(async () => {

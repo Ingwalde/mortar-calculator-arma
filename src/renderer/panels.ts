@@ -2,6 +2,7 @@ import { clampPlacesScale, normalizePlacesLevel } from "@core/places";
 import { fmtM, gridRef, parseGrid, parseGridCorner } from "@core/geometry";
 import { PRESETS, findPreset } from "@core/terrains";
 import { TABLES, bearing, shellRange, solve, type WeaponId } from "@core/ballistics";
+import { MAX_SPREAD_PCT, normalizeSpread, spreadRadii } from "@core/spread";
 import {
   addCustomTerrain,
   addFireLogEntry,
@@ -395,6 +396,87 @@ function firePair(): { m: Marker; t: FirePairPoint } | null {
 }
 setDrawCallbacks({ firePair });
 
+/** Еліпс розкиду для вибраної пари міномет → ціль; null, якщо вимкнено або значення не задано. */
+function spreadSpec(): { x: number; z: number; ux: number; uz: number; a: number; b: number } | null {
+  const r = getRoot();
+  if (!r.spread.on) return null;
+  const pair = firePair();
+  if (!pair) return null;
+  const dx = pair.t.x - pair.m.x;
+  const dz = pair.t.z - pair.m.z;
+  const dist = Math.hypot(dx, dz);
+  const radii = spreadRadii(dist, r.spread[pair.m.w]);
+  if (!radii) return null;
+  return { x: pair.t.x, z: pair.t.z, ux: dx / dist, uz: dz / dist, a: radii.a, b: radii.b };
+}
+setDrawCallbacks({ spread: spreadSpec });
+
+/** Блок «Розкид» у вкладці розрахунку: вмикач і два числа (% дальності) для поточної гармати. */
+function buildSpreadBox(w: WeaponId, dist: number): HTMLElement {
+  const root = getRoot();
+  const box = document.createElement("div");
+  box.className = "spread-box";
+  const head = document.createElement("label");
+  head.className = "row";
+  head.style.cssText = "gap:8px;cursor:pointer;margin:14px 0 6px;font-weight:600";
+  const on = document.createElement("input");
+  on.type = "checkbox";
+  on.checked = root.spread.on;
+  const title = document.createElement("span");
+  title.textContent = t("spreadShow");
+  head.append(on, title);
+
+  const grid = document.createElement("div");
+  grid.className = "spread-grid";
+  const note = document.createElement("p");
+  note.className = "hint";
+  note.style.margin = "6px 0 0";
+  const field = (label: string, key: "len" | "wid"): HTMLInputElement => {
+    const wrap = document.createElement("div");
+    wrap.className = "field";
+    const lb = document.createElement("label");
+    lb.textContent = label;
+    const inp = document.createElement("input");
+    inp.type = "number";
+    inp.inputMode = "decimal";
+    inp.min = "0";
+    inp.max = String(MAX_SPREAD_PCT);
+    inp.step = "0.1";
+    inp.value = root.spread[w][key] ? String(root.spread[w][key]) : "";
+    inp.placeholder = "0";
+    inp.oninput = () => {
+      const v = parseFloat(inp.value);
+      root.spread[w][key] = Number.isFinite(v) ? v : 0;
+      root.spread = normalizeSpread(root.spread);
+      refresh();
+      scheduleSave();
+      requestDraw();
+    };
+    wrap.append(lb, inp);
+    grid.appendChild(wrap);
+    return inp;
+  };
+  field(t("spreadLen"), "len");
+  field(t("spreadWid"), "wid");
+
+  const refresh = (): void => {
+    grid.hidden = note.hidden = !root.spread.on;
+    const radii = spreadRadii(dist, root.spread[w]);
+    note.textContent = radii
+      ? t("spreadNow", { a: Math.round(radii.a), b: Math.round(radii.b) })
+      : t("spreadEmpty");
+  };
+  on.onchange = () => {
+    root.spread.on = on.checked;
+    refresh();
+    scheduleSave();
+    requestDraw();
+  };
+  box.append(head, grid, note);
+  refresh();
+  return box;
+}
+
 /** Кільця дальності: вибраний міномет (або перший у папці), снаряд і заряди з таблиць. */
 function ringSpec(): { x: number; z: number; rings: { level: number; min: number; max: number; active: boolean }[] } | null {
   const S = getCurrent();
@@ -582,6 +664,7 @@ export function renderFire(): void {
   cell(meta, t("cellHeightDiff"), dh === null ? "—" : (dh > 0 ? "+" : "") + fmtM(dh), dh === null ? undefined : t("unitM"));
   meta.style.gridTemplateColumns = "1fr 1fr";
   box.append(hero, meta);
+  box.appendChild(buildSpreadBox(w, dist));
   if (heightsFromTerrain) {
     const note = document.createElement("p");
     note.className = "hint";
