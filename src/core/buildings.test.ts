@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BuildingIndex, decodeBuildings, distanceToPolygon, pointInPolygon } from "./buildings";
+import { BuildingIndex, decodeBuildings, distanceToPolygon, pointInPolygon, polygonArea, polygonsTouch } from "./buildings";
 
 /** Збирає бінарні дані в тому ж форматі, що пише scripts/extract-buildings.mjs. */
 function pack(polys: number[][][]): Uint8Array {
@@ -56,9 +56,11 @@ describe("buildings", () => {
   it("findAt: всередині — точно, поруч — найближча в межах допуску, далеко — null", () => {
     const idx = new BuildingIndex(decodeBuildings(pack([square(100, 100, 10), square(140, 100, 10)])));
     expect(idx.findAt(100, 100)!.cx).toBeCloseTo(100);
-    // 4 м від стіни першої будівлі, але всередині другої НЕ є: найближча — перша
-    expect(idx.findAt(114, 100)!.cx).toBeCloseTo(100);
-    expect(idx.findAt(136, 100)!.cx).toBeCloseTo(140);
+    // 2 м від стіни першої будівлі, всередині другої нема: найближча — перша
+    expect(idx.findAt(112, 100)!.cx).toBeCloseTo(100);
+    expect(idx.findAt(138, 100)!.cx).toBeCloseTo(140);
+    // 4 м від стіни — за допуском (3 м) це вже не «на будівлі»
+    expect(idx.findAt(114, 100)).toBeNull();
     expect(idx.findAt(120, 200)).toBeNull();
     expect(idx.findAt(120, 100, 0.5)).toBeNull();
   });
@@ -68,5 +70,31 @@ describe("buildings", () => {
     const idx = new BuildingIndex(decodeBuildings(pack([square(128, 128, 8)])));
     expect(idx.findAt(122, 122)).not.toBeNull();
     expect(idx.findAt(134, 134)).not.toBeNull();
+  });
+
+  it("зчеплення: прибудова впритул або внахлест об'єднується з основною будівлею, окрема — ні", () => {
+    const list = decodeBuildings(pack([square(100, 100, 10), square(112, 100, 3), square(105, 108, 4), square(150, 100, 10)]));
+    expect(polygonsTouch(list[0], list[2], 0.6)).toBe(true); // внахлест
+    expect(polygonsTouch(list[0], list[3], 0.6)).toBe(false); // 30 м між
+    const idx = new BuildingIndex(list);
+    const cl = idx.clusterOf(list[0]);
+    expect(cl).toContain(list[2]);
+    expect(cl).not.toContain(list[3]);
+  });
+
+  it("хрестоподібні контури (ребра перетинаються без вершин усередині) зчіплюються", () => {
+    const a = decodeBuildings(pack([[[90, 98], [110, 98], [110, 102], [90, 102]]]))[0];
+    const b = decodeBuildings(pack([[[98, 90], [102, 90], [102, 110], [98, 110]]]))[0];
+    expect(polygonsTouch(a, b, 0.1)).toBe(true);
+  });
+
+  it("ряд будинків не зчіплюється в нескінченний ланцюг", () => {
+    const row = Array.from({ length: 30 }, (_, i) => square(100 + i * 10, 100, 5)); // стикаються торцями
+    const idx = new BuildingIndex(decodeBuildings(pack(row)));
+    expect(idx.clusterOf(idx.buildings[0]).length).toBeLessThanOrEqual(10);
+  });
+
+  it("площа багатокутника", () => {
+    expect(polygonArea(decodeBuildings(pack([square(0 + 50, 50, 5)]))[0].pts)).toBeCloseTo(100);
   });
 });
