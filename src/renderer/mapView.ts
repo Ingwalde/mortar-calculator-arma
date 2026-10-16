@@ -11,6 +11,7 @@ import { tileIndexForWorld, tileSpan } from "@core/onlineTiles";
 import { TIER_SCALE, TIER_WEIGHT, type PlaceTier } from "@core/places";
 import { FrameMonitor } from "@core/frameMonitor";
 import { PYRAMID_TILE_SIZE, planPyramid, type PyramidPlan } from "@core/tilePyramid";
+import { spreadOutline } from "@core/spread";
 import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
 import { t } from "./i18n";
@@ -482,8 +483,10 @@ export interface DrawCallbacks {
   selectedId: string | null;
   firePair: () => { m: { x: number; z: number }; t: { x: number; z: number } } | null;
   rings: () => RingSpec | null;
+  /** Еліпс розкиду навколо цілі: центр, напрямок вогню (одиничний вектор) і радіуси в метрах. */
+  spread: () => { x: number; z: number; ux: number; uz: number; a: number; b: number } | null;
 }
-let callbacks: DrawCallbacks = { selectedId: null, firePair: () => null, rings: () => null };
+let callbacks: DrawCallbacks = { selectedId: null, firePair: () => null, rings: () => null, spread: () => null };
 
 let ringsVisible = true;
 export function setRingsVisible(v: boolean): void {
@@ -845,6 +848,7 @@ function draw(): void {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   drawRangeRings(c);
+  drawSpread(c);
   drawFiringLine(c);
   drawCalibPoints(c);
   drawPlaces(c);
@@ -929,6 +933,25 @@ function labelBox(t: string, x: number, y: number, c: Record<string, string>): v
   ctx.globalAlpha = 1;
   ctx.fillStyle = c.ink;
   ctx.fillText(t, x, y);
+}
+
+function drawSpread(c: Record<string, string>): void {
+  const sp = callbacks.spread();
+  if (!sp) return;
+  const pts = spreadOutline(sp.x, sp.z, sp.ux, sp.uz, sp.a, sp.b).map((p) => scrFromWorld(p.x, p.z));
+  ctx.save();
+  ctx.beginPath();
+  pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.sx, p.sy) : ctx.lineTo(p.sx, p.sy)));
+  ctx.closePath();
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = c.target;
+  ctx.fill();
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = c.target;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash(lightMode ? [] : [5, 4]);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawFiringLine(c: Record<string, string>): void {

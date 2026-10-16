@@ -331,3 +331,8 @@ input[type=checkbox],input[type=radio],progress{accent-color:var(--accent)}
 #list li.destroyed .badge{opacity:.55;filter:grayscale(.8)}
 .destroy-btn{font-size:15px;line-height:1}
 .destroy-btn[aria-pressed="true"]{background:color-mix(in srgb,var(--target) 22%,transparent)}
+
+/* ---------- розкид ---------- */
+.spread-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.spread-grid .field{margin:0}
+.spread-grid input{width:100%}
