@@ -27,6 +27,11 @@ export function setBuildingsLoadedHook(cb: () => void): void {
   onLoaded = cb;
 }
 
+/** true, поки дані терену ще вантажаться (не малюємо тимчасовий круг, щоб не блимав). */
+export function buildingsLoading(terrainId: string): boolean {
+  return loading.has(terrainId);
+}
+
 /** Індекс будівель терену; null — даних нема або вони ще вантажаться (після завантаження спрацює хук). */
 export function buildingIndexFor(terrainId: string): BuildingIndex | null {
   if (cache.has(terrainId)) return cache.get(terrainId) ?? null;

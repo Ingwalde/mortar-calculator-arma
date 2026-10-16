@@ -12,8 +12,8 @@ import { TIER_SCALE, TIER_WEIGHT, type PlaceTier } from "@core/places";
 import { FrameMonitor } from "@core/frameMonitor";
 import { PYRAMID_TILE_SIZE, planPyramid, type PyramidPlan } from "@core/tilePyramid";
 import { spreadOutline } from "@core/spread";
-import { pointInPolygon } from "@core/buildings";
-import { buildingIndexFor, setBuildingsLoadedHook } from "./buildings";
+import { pointInPolygon, polygonArea } from "@core/buildings";
+import { buildingIndexFor, buildingsLoading, setBuildingsLoadedHook } from "./buildings";
 import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
 import { t } from "./i18n";
@@ -941,12 +941,13 @@ function labelBox(t: string, x: number, y: number, c: Record<string, string>): v
 }
 
 /** Радіус «зони» зруйнованої мітки, коли контуру будівлі нема (м). */
-const DESTROYED_FALLBACK_RADIUS_M = 12;
+const DESTROYED_FALLBACK_RADIUS_M = 8;
 
 interface DestroyedShape {
   markerId: string;
-  /** Вершини контуру у світових координатах; null — круг навколо мітки. */
-  poly: Float32Array | null;
+  /** Контури будівлі й прибудов (світові координати); порожньо — круг навколо мітки. */
+  polys: Float32Array[];
+  /** Центр підпису: для будівлі — центр найбільшого контуру. */
   cx: number;
   cz: number;
 }
@@ -955,10 +956,25 @@ interface DestroyedShape {
 function destroyedShapes(): DestroyedShape[] {
   const list = getVisibleMarkers().filter((m) => m.destroyed && m.type !== "mortar");
   if (!list.length) return [];
-  const idx = buildingIndexFor(currentMeta().id);
+  const terrainId = currentMeta().id;
+  const idx = buildingIndexFor(terrainId);
+  // дані будівель ще вантажаться: малюємо, коли прийдуть (замість тимчасового круга)
+  if (!idx && buildingsLoading(terrainId)) return [];
   return list.map((m) => {
     const b = idx?.findAt(m.x, m.z) ?? null;
-    return b ? { markerId: m.id, poly: b.pts, cx: b.cx, cz: b.cz } : { markerId: m.id, poly: null, cx: m.x, cz: m.z };
+    if (!b || !idx) return { markerId: m.id, polys: [], cx: m.x, cz: m.z };
+    // будівля разом з прибудовами, що торкаються її; підпис — по центру найбільшого блоку
+    const cluster = idx.clusterOf(b);
+    let main = b;
+    let mainArea = polygonArea(b.pts);
+    for (const c of cluster) {
+      const a = polygonArea(c.pts);
+      if (a > mainArea) {
+        main = c;
+        mainArea = a;
+      }
+    }
+    return { markerId: m.id, polys: cluster.map((c) => c.pts), cx: main.cx, cz: main.cz };
   });
 }
 
@@ -974,20 +990,25 @@ function drawDestroyed(): void {
     let chordW = 0;
     let chordH = 0;
     ctx.beginPath();
-    if (sh.poly) {
-      const scr: { x: number; y: number }[] = [];
-      for (let i = 0; i < sh.poly.length; i += 2) {
-        const p = scrFromWorld(sh.poly[i], sh.poly[i + 1]);
-        scr.push({ x: p.sx, y: p.sy });
-        minX = Math.min(minX, p.sx);
-        maxX = Math.max(maxX, p.sx);
-        if (i === 0) ctx.moveTo(p.sx, p.sy);
-        else ctx.lineTo(p.sx, p.sy);
-      }
-      ctx.closePath();
+    if (sh.polys.length) {
       const cc = scrFromWorld(sh.cx, sh.cz);
-      chordW = chordThrough(scr, cc.sx, cc.sy, true);
-      chordH = chordThrough(scr, cc.sx, cc.sy, false);
+      for (const poly of sh.polys) {
+        const scr: { x: number; y: number }[] = [];
+        for (let i = 0; i < poly.length; i += 2) {
+          const p = scrFromWorld(poly[i], poly[i + 1]);
+          scr.push({ x: p.sx, y: p.sy });
+          minX = Math.min(minX, p.sx);
+          maxX = Math.max(maxX, p.sx);
+          if (i === 0) ctx.moveTo(p.sx, p.sy);
+          else ctx.lineTo(p.sx, p.sy);
+        }
+        ctx.closePath();
+        // хорда береться в тому контурі, де лежить центр підпису
+        if (chordW === 0 && pointInPolygon(sh.cx, sh.cz, poly)) {
+          chordW = chordThrough(scr, cc.sx, cc.sy, true);
+          chordH = chordThrough(scr, cc.sx, cc.sy, false);
+        }
+      }
     } else {
       const c0 = scrFromWorld(sh.cx, sh.cz);
       const r = Math.max(6, Math.abs(scrFromWorld(sh.cx + DESTROYED_FALLBACK_RADIUS_M, sh.cz).sx - c0.sx));
@@ -1047,9 +1068,10 @@ function chordThrough(poly: { x: number; y: number }[], cx: number, cy: number, 
 function hitTestDestroyed(sx: number, sy: number): string | null {
   const w = worldFromScr(sx, sy);
   for (const sh of destroyedShapes()) {
-    if (sh.poly ? pointInPolygon(w.x, w.z, sh.poly) : Math.hypot(w.x - sh.cx, w.z - sh.cz) <= DESTROYED_FALLBACK_RADIUS_M) {
-      return sh.markerId;
-    }
+    const hit = sh.polys.length
+      ? sh.polys.some((p) => pointInPolygon(w.x, w.z, p))
+      : Math.hypot(w.x - sh.cx, w.z - sh.cz) <= DESTROYED_FALLBACK_RADIUS_M;
+    if (hit) return sh.markerId;
   }
   return null;
 }

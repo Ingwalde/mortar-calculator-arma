@@ -1,4 +1,5 @@
 // Дозбирає статичний сайт автономної версії (out/web): сітки висот і дзеркальні тайли карт.
+//   WEB_SKIP_MOD_MAPS=1 пропускає карти модів (швидка локальна збірка)
 //   npx tsx scripts/build-web-assets.ts            (після vite build --config vite.web.config.ts)
 //   WEB_SKIP_TILES=1 ...                          (без тайлів — швидка локальна збірка)
 // Завантажене кешується в .web-cache/, щоб повторні збірки не качали все знову (CI кешує цю папку).
@@ -87,6 +88,10 @@ async function buildHeights(): Promise<void> {
 const MOD_MAPS_URL = "https://github.com/Ingwalde/mortar-calculator-arma/releases/download/web-assets/mod-maps.tar.gz";
 
 async function buildModMaps(): Promise<void> {
+  if (process.env.WEB_SKIP_MOD_MAPS === "1") {
+    console.log("карти модів пропущено (WEB_SKIP_MOD_MAPS=1)");
+    return;
+  }
   const archive = join(cache, "mod-maps.tar.gz");
   const local = process.env.WEB_MOD_MAPS_ARCHIVE;
   if (local) await copyFile(local, archive);
