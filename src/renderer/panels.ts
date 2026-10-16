@@ -2,7 +2,7 @@ import { clampPlacesScale, normalizePlacesLevel } from "@core/places";
 import { fmtM, gridRef, parseGrid, parseGridCorner } from "@core/geometry";
 import { PRESETS, findPreset } from "@core/terrains";
 import { TABLES, bearing, shellRange, solve, type WeaponId } from "@core/ballistics";
-import { MAX_SPREAD_PCT, normalizeSpread, spreadRadii } from "@core/spread";
+import { MAX_SPREAD_PCT, gameRangeSpread, normalizeSpread, spreadRadii } from "@core/spread";
 import {
   addCustomTerrain,
   addFireLogEntry,
@@ -405,9 +405,31 @@ function spreadSpec(): { x: number; z: number; ux: number; uz: number; a: number
   const dx = pair.t.x - pair.m.x;
   const dz = pair.t.z - pair.m.z;
   const dist = Math.hypot(dx, dz);
-  const radii = spreadRadii(dist, r.spread[pair.m.w]);
+  const radii = currentSpreadRadii(pair.m.w, dist);
   if (!radii) return null;
   return { x: pair.t.x, z: pair.t.z, ux: dx / dist, uz: dz / dist, a: radii.a, b: radii.b };
+}
+
+/** Заряд, за яким рахуємо розкид: вибраний, інакше найкращий для цієї дальності. */
+function spreadCharge(w: WeaponId, dist: number): number | null {
+  const S = getCurrent();
+  const sols = solve(w, S.sel.shell, Math.round(dist), null);
+  if (!sols.length) return null;
+  return sols.some((o) => o.charge === S.sel.charge) ? (S.sel.charge as number) : sols[0].charge;
+}
+
+/** Радіуси розкиду для гармати й дальності: за даними гри (за зарядом) або з ручних відсотків. */
+function currentSpreadRadii(w: WeaponId, dist: number): { a: number; b: number; charge: number | null } | null {
+  const r = getRoot();
+  if (r.spread.auto) {
+    // дані гри стосуються лише осколково-фугасних мін (швидкості інших снарядів інші)
+    if (getCurrent().sel.shell !== "HE") return null;
+    const charge = spreadCharge(w, dist);
+    const g = charge === null ? null : gameRangeSpread(w, charge, dist);
+    return g ? { a: g.a, b: g.b, charge } : null;
+  }
+  const m = spreadRadii(dist, r.spread[w]);
+  return m ? { ...m, charge: null } : null;
 }
 setDrawCallbacks({ spread: spreadSpec });
 
@@ -425,6 +447,16 @@ function buildSpreadBox(w: WeaponId, dist: number): HTMLElement {
   const title = document.createElement("span");
   title.textContent = t("spreadShow");
   head.append(on, title);
+
+  const autoRow = document.createElement("label");
+  autoRow.className = "row";
+  autoRow.style.cssText = "gap:8px;cursor:pointer;margin:0 0 8px";
+  const autoCb = document.createElement("input");
+  autoCb.type = "checkbox";
+  autoCb.checked = root.spread.auto;
+  const autoTxt = document.createElement("span");
+  autoTxt.textContent = t("spreadAuto");
+  autoRow.append(autoCb, autoTxt);
 
   const grid = document.createElement("div");
   grid.className = "spread-grid";
@@ -460,11 +492,20 @@ function buildSpreadBox(w: WeaponId, dist: number): HTMLElement {
   field(t("spreadWid"), "wid");
 
   const refresh = (): void => {
-    grid.hidden = note.hidden = !root.spread.on;
-    const radii = spreadRadii(dist, root.spread[w]);
-    note.textContent = radii
-      ? t("spreadNow", { a: Math.round(radii.a), b: Math.round(radii.b) })
-      : t("spreadEmpty");
+    const on = root.spread.on;
+    autoRow.hidden = !on;
+    grid.hidden = !on || root.spread.auto;
+    note.hidden = !on;
+    const radii = currentSpreadRadii(w, dist);
+    if (!radii) note.textContent = root.spread.auto ? t("spreadNoData") : t("spreadEmpty");
+    else if (root.spread.auto) note.textContent = t("spreadAutoNow", { a: Math.round(radii.a), c: radii.charge ?? "?" });
+    else note.textContent = t("spreadNow", { a: Math.round(radii.a), b: Math.round(radii.b) });
+  };
+  autoCb.onchange = () => {
+    root.spread.auto = autoCb.checked;
+    refresh();
+    scheduleSave();
+    requestDraw();
   };
   on.onchange = () => {
     root.spread.on = on.checked;
@@ -472,7 +513,7 @@ function buildSpreadBox(w: WeaponId, dist: number): HTMLElement {
     scheduleSave();
     requestDraw();
   };
-  box.append(head, grid, note);
+  box.append(head, autoRow, grid, note);
   refresh();
   return box;
 }

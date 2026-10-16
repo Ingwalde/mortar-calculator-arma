@@ -240,6 +240,12 @@ const DICT: Dict = {
   spreadShow: { uk: "Показувати розкид на карті", en: "Show dispersion on the map" },
   spreadLen: { uk: "Уздовж вогню, % дальності", en: "Along fire, % of range" },
   spreadWid: { uk: "Упоперек, % дальності", en: "Across, % of range" },
+  spreadAuto: { uk: "Оцінка за даними гри (залежить від заряду)", en: "Estimate from game data (depends on charge)" },
+  spreadAutoNow: {
+    uk: "За даними гри: ±{a} м за дальністю (заряд {c}). Бокового розкиду в даних нема: еліпс умовно вузький. Значення варто звірити в грі.",
+    en: "From game data: ±{a} m in range (charge {c}). No lateral dispersion in the data: the ellipse is drawn narrow. Verify in the game."
+  },
+  spreadNoData: { uk: "Для цього пострілу даних гри нема.", en: "No game data for this shot." },
   spreadNow: { uk: "Радіуси розкиду: {a} × {b} м", en: "Dispersion radii: {a} × {b} m" },
   spreadEmpty: { uk: "Задайте значення (з гри чи досвіду): розкид у таблицях балістики відсутній.", en: "Enter values (from the game or experience): the ballistic tables have no dispersion." },
   exCount: { uk: "У файлі буде міток: {n}", en: "Marks in the export: {n}" },

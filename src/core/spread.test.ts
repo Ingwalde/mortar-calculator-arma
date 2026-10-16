@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_SPREAD_PCT, defaultSpread, normalizeSpread, spreadOutline, spreadRadii } from "./spread";
+import { MAX_SPREAD_PCT, defaultSpread, gameRangeSpread, normalizeSpread, spreadOutline, spreadRadii } from "./spread";
 
 describe("spread", () => {
   it("радіуси — відсоток дальності; без значень розкиду нема", () => {
@@ -21,6 +21,26 @@ describe("spread", () => {
     expect(n.M252).toEqual({ len: 5, wid: 0 });
     expect(n["2B14"]).toEqual({ len: MAX_SPREAD_PCT, wid: 0 });
     expect(normalizeSpread({ on: "yes" }).on).toBe(false);
+  });
+
+  it("оцінка за даними гри: менший розкид на більших зарядах, нічого без даних", () => {
+    const c0 = gameRangeSpread("M252", 0, 300)!;
+    const c4 = gameRangeSpread("M252", 4, 300)!;
+    expect(c0.pct).toBeGreaterThan(c4.pct * 2);
+    // M252, заряд 2, 900 м: n=1.66, v=66*2.085=137.6 -> 1.66*3/137.6 = 3.6% -> ~32.6 м
+    const m = gameRangeSpread("M252", 2, 900)!;
+    expect(m.pct).toBeCloseTo(3.62, 1);
+    expect(m.a).toBeCloseTo(32.6, 0);
+    expect(m.b).toBeCloseTo(m.a * 0.12, 5);
+    expect(gameRangeSpread("2B14", 2, 800)!.a).toBeGreaterThan(20);
+    expect(gameRangeSpread("M252", 9, 500)).toBeNull();
+    expect(gameRangeSpread("M252", 2, 0)).toBeNull();
+  });
+
+  it("налаштування за замовчуванням: авто-режим увімкнено, ручний лишається доступним", () => {
+    expect(defaultSpread().auto).toBe(true);
+    expect(normalizeSpread({ on: true, auto: false }).auto).toBe(false);
+    expect(normalizeSpread({ on: true }).auto).toBe(true);
   });
 
   it("контур еліпса: велика вісь уздовж лінії вогню", () => {
