@@ -61,6 +61,7 @@ function mapColors(): MapColors {
     "pl-industry": css("--pl-industry"),
     "pl-water": css("--pl-water"),
     "pl-nature": css("--pl-nature"),
+    accent: css("--accent"),
     mortar: css("--mortar"),
     target: css("--target"),
     point: css("--point")
@@ -855,6 +856,7 @@ function draw(): void {
   drawSpread(c);
   drawFiringLine(c);
   drawDestroyed();
+  drawAimBuilding(c);
   drawCalibPoints(c);
   drawPlaces(c);
   drawMarkers(c);
@@ -976,6 +978,45 @@ function destroyedShapes(): DestroyedShape[] {
     }
     return { markerId: m.id, polys: cluster.map((c) => c.pts), cx: main.cx, cz: main.cz };
   });
+}
+
+const AIM_SNAP_TAP_M = 1.5;
+
+/** Будівля під прицілом (центр екрана всередині контуру); null — прицілу нічого прив'язувати. */
+export function aimBuilding(): { cx: number; cz: number; pts: Float32Array } | null {
+  const idx = buildingIndexFor(currentMeta().id);
+  if (!idx) return null;
+  const w = centerWorld();
+  const b = idx.findAt(w.x, w.z, 0.5);
+  return b ? { cx: b.cx, cz: b.cz, pts: b.pts } : null;
+}
+
+/** Тонка підсвітка будівлі під прицілом: видно, що мітка стане в її центр. */
+function drawAimBuilding(c: Record<string, string>): void {
+  const b = aimBuilding();
+  if (!b) return;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  ctx.save();
+  ctx.beginPath();
+  for (let i = 0; i < b.pts.length; i += 2) {
+    const p = scrFromWorld(b.pts[i], b.pts[i + 1]);
+    minX = Math.min(minX, p.sx);
+    maxX = Math.max(maxX, p.sx);
+    if (i === 0) ctx.moveTo(p.sx, p.sy);
+    else ctx.lineTo(p.sx, p.sy);
+  }
+  ctx.closePath();
+  if (maxX - minX >= 6) {
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = c.accent;
+    ctx.fill();
+    ctx.globalAlpha = 0.95;
+    ctx.strokeStyle = c.accent;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /** Червона будівля (або круг, якщо контуру нема) з підписом «Зруйновано» посередині. */
@@ -1379,7 +1420,10 @@ function tap(x: number, y: number): void {
     return;
   }
   const w = worldFromScr(x, y);
-  centerOnWorld(w.x, w.z);
+  // тап по будівлі наводить приціл точно в її центр
+  const b = buildingIndexFor(currentMeta().id)?.findAt(w.x, w.z, AIM_SNAP_TAP_M);
+  if (b) centerOnWorld(b.cx, b.cz);
+  else centerOnWorld(w.x, w.z);
 }
 
 $<HTMLButtonElement>("zin").onclick = () => zoomAt(1.6, W / 2, viewH() / 2);

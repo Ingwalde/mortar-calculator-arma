@@ -49,3 +49,17 @@ export function placeKind(name: string): PlaceKind {
   for (const [kind, re] of KIND_RULES) if (re.test(name)) return kind;
   return "settlement";
 }
+
+/** Найближчий іменований пункт у межах `maxM` метрів (для назви цілі за місцем); null, якщо поруч нічого нема. */
+export function nearestPlace<T extends { name: string; x: number; z: number }>(places: readonly T[] | undefined, x: number, z: number, maxM = 500): T | null {
+  let best: T | null = null;
+  let bd = maxM;
+  for (const p of places ?? []) {
+    const d = Math.hypot(p.x - x, p.z - z);
+    if (d <= bd) {
+      bd = d;
+      best = p;
+    }
+  }
+  return best;
+}

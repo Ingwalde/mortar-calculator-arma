@@ -38,3 +38,21 @@ describe("placeKind", () => {
     expect(placeKind("Montignac")).toBe("settlement");
   });
 });
+
+describe("nearestPlace", () => {
+  const places = [
+    { name: "Montignac", x: 4776, z: 7087 },
+    { name: "Provins", x: 5488, z: 6083 }
+  ];
+  it("знаходить найближчий пункт у межах відстані", async () => {
+    const { nearestPlace } = await import("./places");
+    expect(nearestPlace(places, 4700, 7050)?.name).toBe("Montignac");
+    expect(nearestPlace(places, 5400, 6100)?.name).toBe("Provins");
+  });
+  it("далеко або без списку — null", async () => {
+    const { nearestPlace } = await import("./places");
+    expect(nearestPlace(places, 0, 0)).toBeNull();
+    expect(nearestPlace(places, 4776, 7500, 300)).toBeNull();
+    expect(nearestPlace(undefined, 1, 1)).toBeNull();
+  });
+});

@@ -3,6 +3,7 @@ import { fmtM, gridRef, parseGrid, parseGridCorner } from "@core/geometry";
 import { PRESETS, findPreset } from "@core/terrains";
 import { TABLES, bearing, shellRange, solve, type WeaponId } from "@core/ballistics";
 import { MAX_SPREAD_PCT, gameRangeSpread, normalizeSpread, spreadRadii } from "@core/spread";
+import { nearestPlace } from "@core/places";
 import {
   addCustomTerrain,
   addFireLogEntry,
@@ -25,6 +26,7 @@ import {
   type MarkerType
 } from "./state";
 import {
+  aimBuilding,
   centerOnWorld,
   centerPx,
   centerWorld,
@@ -237,6 +239,8 @@ $("fType").onclick = (e) => {
 };
 
 interface DialogPreset {
+  /** Назва, запропонована для нової мітки (наприклад, за селищем поруч). */
+  name?: string;
   type: MarkerType;
   x: number;
   z: number;
@@ -262,7 +266,7 @@ export function openMarkerDialog(marker?: Marker, preset?: DialogPreset): void {
   const lastMortar = [...getCurrent().markers].reverse().find((x) => x.type === "mortar");
   setDlgWeapon(marker?.w ?? lastMortar?.w ?? "M252");
   $("dlgTitle").textContent = marker ? t("dlgTitleEdit") : t("dlgTitleNew");
-  $<HTMLInputElement>("fName").value = marker ? marker.name : nextName(d.type);
+  $<HTMLInputElement>("fName").value = marker ? marker.name : (preset?.name ?? nextName(d.type));
   $<HTMLInputElement>("fX").value = isFinite(d.x) ? String(Math.round(d.x)) : "";
   $<HTMLInputElement>("fZ").value = isFinite(d.z) ? String(Math.round(d.z)) : "";
   $<HTMLInputElement>("fH").value = d.h !== null && isFinite(d.h) ? String(d.h) : "";
@@ -361,7 +365,17 @@ $<HTMLButtonElement>("placeBtn").onclick = () => {
   }
   const w = centerWorld();
   const hasMortar = getCurrent().markers.some((m) => m.type === "mortar");
-  openMarkerDialog(undefined, { type: hasMortar ? "target" : "mortar", x: w.x, z: w.z, h: null, fromMap: true });
+  const type: MarkerType = hasMortar ? "target" : "mortar";
+  // приціл на будівлі: мітка стає точно в її центр, а ціль отримує назву за найближчим селищем
+  const aim = aimBuilding();
+  const x = aim ? aim.cx : w.x;
+  const z = aim ? aim.cz : w.z;
+  let name: string | undefined;
+  if (aim && type !== "mortar") {
+    const place = nearestPlace(currentMeta().preset?.places, x, z, 500);
+    if (place) name = `${place.name}: ${nextName(type)}`.slice(0, 40);
+  }
+  openMarkerDialog(undefined, { type, x, z, h: null, fromMap: true, name });
 };
 $<HTMLButtonElement>("addManual").onclick = () => {
   const hasMortar = getCurrent().markers.some((m) => m.type === "mortar");
@@ -1161,8 +1175,25 @@ $<HTMLButtonElement>("wipe").onclick = async () => {
     renderAll();
   }
 };
+function applyNight(): void {
+  const on = getRoot().night;
+  if (on) document.documentElement.dataset.theme = "night";
+  else if (document.documentElement.dataset.theme === "night") delete document.documentElement.dataset.theme;
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (meta) meta.content = on ? "#0b0303" : "#161c18";
+  $("nightBtn").setAttribute("aria-pressed", String(on));
+}
+$<HTMLButtonElement>("nightBtn").onclick = () => {
+  const r = getRoot();
+  r.night = !r.night;
+  applyNight();
+  scheduleSave();
+  toast(t(r.night ? "nightOn" : "nightOff"));
+};
+
 function applyShotSettings(): void {
   const r = getRoot();
+  applyNight();
   setRingsVisible(r.showRings);
   ($("ringsToggle") as HTMLInputElement).checked = r.showRings;
   ($("lightToggle") as HTMLInputElement).checked = isLightMode();

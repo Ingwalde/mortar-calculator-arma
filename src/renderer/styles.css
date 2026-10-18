@@ -26,6 +26,17 @@
   --accent:#6ee7a8;--on-accent:#0d1a10;
   --pl-transport:#f0c060;
 }
+/* Нічний (червоний) режим: монохромна червона палітра, що не засліплює після темряви */
+:root[data-theme="night"]{
+  --bg:#0b0303;--surface:#140606;--raised:#1c0a0a;--line:#3d1414;--ink:#ff7a6b;--muted:#b4574c;
+  --mortar:#ffa38f;--target:#ff5f4f;--point:#ffc2a8;--grid:rgba(255,110,95,.40);--gridfine:rgba(255,110,95,.12);
+  --mapblank:#120505;--focus:#ff8f80;
+  --accent:#ff5a48;--on-accent:#1a0302;
+  --pl-settlement:#ff9a8a;--pl-military:#ff5a48;--pl-transport:#ff9a70;--pl-industry:#ffb6a0;--pl-water:#d0605a;--pl-nature:#ff8a78;
+}
+/* карта (знімки) малюється на канві: переводимо її в червону монохромну гаму */
+:root[data-theme="night"] #cv{filter:grayscale(1) sepia(1) hue-rotate(-52deg) saturate(3.4) brightness(.44) contrast(1.12)}
+:root[data-theme="night"] #splash{background:#0b0303}
 html{height:100%;overscroll-behavior:none}
 body{margin:0;height:100%;background:var(--bg);color:var(--ink);
   font-family:"IBM Plex Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
@@ -336,3 +347,6 @@ input[type=checkbox],input[type=radio],progress{accent-color:var(--accent)}
 .spread-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .spread-grid .field{margin:0}
 .spread-grid input{width:100%}
+
+#nightBtn svg{width:18px;height:18px}
+#nightBtn[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 24%,transparent)}
