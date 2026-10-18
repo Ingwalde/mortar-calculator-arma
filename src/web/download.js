@@ -10,6 +10,16 @@ const KINDS = {
   apk: { re: /\.apk$/i, link: "dlApk", label: "Завантажити для Android" }
 };
 
+/** Лише https на github.com у межах нашого репозиторію: відповідь API — зовнішні дані. */
+function trusted(raw) {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && u.hostname === "github.com" && u.pathname.startsWith(`/${REPO}/`);
+  } catch {
+    return false;
+  }
+}
+
 function fmtSize(bytes) {
   const mb = bytes / 1048576;
   return mb >= 10 ? `${Math.round(mb)} МБ` : `${mb.toFixed(1)} МБ`;
@@ -47,7 +57,7 @@ function pickAssets(releases) {
   for (const rel of releases) {
     for (const [key, k] of Object.entries(KINDS)) {
       if (found[key]) continue;
-      const asset = rel.assets.find((a) => k.re.test(a.name) && !/blockmap$/i.test(a.name));
+      const asset = rel.assets.find((a) => k.re.test(a.name) && !/blockmap$/i.test(a.name) && trusted(a.browser_download_url));
       if (asset) found[key] = { asset, rel };
     }
   }

@@ -221,7 +221,7 @@ export async function openIncomingShare(input: string): Promise<boolean> {
     return true;
   }
   const pr = parseExchange(text);
-  if (pr.ok && pr.terrain && pr.terrain !== currentMeta().id && getRoot().data[pr.terrain]) hooksRef?.switchTerrain(pr.terrain);
+  if (pr.ok && pr.terrain && pr.terrain !== currentMeta().id && Object.hasOwn(getRoot().data, pr.terrain)) hooksRef?.switchTerrain(pr.terrain);
   openImportDialog(text);
   return true;
 }

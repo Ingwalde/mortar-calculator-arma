@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { apkUrlOf, isNewerVersion, parseVersion, updateFrom } from "./appVersion";
+import { apkUrlOf, isNewerVersion, isTrustedReleaseUrl, parseVersion, updateFrom } from "./appVersion";
+
+const R = "https://github.com/Ingwalde/mortar-calculator-arma/releases";
 
 describe("appVersion", () => {
   it("розбирає версії з префіксом v і без", () => {
@@ -19,18 +21,37 @@ describe("appVersion", () => {
   it("оновлення: лише стабільний новіший реліз; APK має пріоритет над сторінкою релізу", () => {
     const rel = {
       tag_name: "v0.11.0",
-      html_url: "https://github.com/x/y/releases/tag/v0.11.0",
+      html_url: `${R}/tag/v0.11.0`,
       assets: [
-        { name: "MortarTablet-Setup-0.11.0.exe", browser_download_url: "https://x/setup.exe" },
-        { name: "MortarTablet-0.11.0.apk", browser_download_url: "https://x/app.apk" }
+        { name: "MortarTablet-Setup-0.11.0.exe", browser_download_url: `${R}/download/v0.11.0/setup.exe` },
+        { name: "MortarTablet-0.11.0.apk", browser_download_url: `${R}/download/v0.11.0/app.apk` }
       ]
     };
-    expect(apkUrlOf(rel)).toBe("https://x/app.apk");
-    expect(updateFrom(rel, "0.10.0")).toEqual({ version: "0.11.0", url: "https://x/app.apk" });
+    expect(apkUrlOf(rel)).toBe(`${R}/download/v0.11.0/app.apk`);
+    expect(updateFrom(rel, "0.10.0")).toEqual({ version: "0.11.0", url: `${R}/download/v0.11.0/app.apk` });
     expect(updateFrom({ ...rel, assets: [] }, "0.10.0")).toEqual({ version: "0.11.0", url: rel.html_url });
     expect(updateFrom(rel, "0.11.0")).toBeNull();
     expect(updateFrom({ ...rel, prerelease: true }, "0.10.0")).toBeNull();
     expect(updateFrom({ ...rel, draft: true }, "0.10.0")).toBeNull();
     expect(updateFrom(null, "0.10.0")).toBeNull();
+  });
+
+  it("довіряє лише https github.com у межах нашого репозиторію", () => {
+    expect(isTrustedReleaseUrl(`${R}/download/v1.0.0/a.apk`)).toBe(true);
+    expect(isTrustedReleaseUrl("http://github.com/Ingwalde/mortar-calculator-arma/releases")).toBe(false);
+    expect(isTrustedReleaseUrl("https://evil.example/Ingwalde/mortar-calculator-arma/releases")).toBe(false);
+    expect(isTrustedReleaseUrl("https://github.com/other/repo/releases")).toBe(false);
+    expect(isTrustedReleaseUrl("https://github.com.evil.example/Ingwalde/mortar-calculator-arma/x")).toBe(false);
+    expect(isTrustedReleaseUrl("https://user:pw@github.com/Ingwalde/mortar-calculator-arma/x")).toBe(false);
+    expect(isTrustedReleaseUrl("javascript:alert(1)")).toBe(false);
+    expect(isTrustedReleaseUrl("не url")).toBe(false);
+  });
+
+  it("підмінене посилання в API не стає оновленням", () => {
+    const evil = { tag_name: "v9.9.9", html_url: "https://evil.example/x", assets: [{ name: "a.apk", browser_download_url: "https://evil.example/a.apk" }] };
+    expect(updateFrom(evil, "0.10.0")).toBeNull();
+    // APK підмінено, сторінка релізу справжня — лишається сторінка
+    const half = { tag_name: "v9.9.9", html_url: `${R}/tag/v9.9.9`, assets: [{ name: "a.apk", browser_download_url: "https://evil.example/a.apk" }] };
+    expect(updateFrom(half, "0.10.0")).toEqual({ version: "9.9.9", url: `${R}/tag/v9.9.9` });
   });
 });

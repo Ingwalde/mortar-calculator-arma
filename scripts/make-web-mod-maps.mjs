@@ -5,6 +5,7 @@
 // Далі архів mod-maps.tar.gz завантажується в реліз web-assets (його качає scripts/build-web-assets.ts):
 //   gh release create web-assets --prerelease --title "Дані карт для веб-збірки" D:/tmp/webmaps/mod-maps.tar.gz
 // Розміри повного зображення береться з board.json у батьківській папці (там записано width/height піраміди).
+import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -91,4 +92,9 @@ execFileSync("tar", ["-czf", "mod-maps.tar.gz", "mod-maps"], { cwd: outDir, stdi
 // розміри піраміди потрібні й клієнту (вони складають map у стані автономної версії)
 const dims = Object.fromEntries(Object.entries(index).map(([id, v]) => [id, { width: v.width, height: v.height }]));
 writeFileSync(join(root, "src", "core", "web-mod-maps.json"), JSON.stringify(dims, null, 1) + "\n");
+// контрольна сума архіву: збірка сайту звіряє її перед розпакуванням (архів лежить у публічному релізі)
+const sha = createHash("sha256").update(readFileSync(archive)).digest("hex");
+writeFileSync(join(root, "scripts", "web-mod-maps.sha256"), sha + "
+");
+console.log(`sha256 ${sha}`);
 console.log(`разом ${(total / 1048576).toFixed(1)} МБ -> ${archive} (${(statSync(archive).size / 1048576).toFixed(1)} МБ)`);

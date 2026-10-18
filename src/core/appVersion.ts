@@ -24,6 +24,22 @@ export interface ReleaseLike {
   assets?: { name: string; browser_download_url: string }[];
 }
 
+/** Репозиторій, з релізів якого приймаємо посилання оновлень. */
+export const RELEASE_REPO = "Ingwalde/mortar-calculator-arma";
+
+/**
+ * Посилання годиться для відкриття, лише якщо це https на github.com у межах нашого репозиторію.
+ * Відповідь API — зовнішні дані: без цієї перевірки підмінене посилання відкрилось би в браузері як «оновлення».
+ */
+export function isTrustedReleaseUrl(raw: string, repo: string = RELEASE_REPO): boolean {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && u.hostname === "github.com" && u.username === "" && u.password === "" && u.pathname.startsWith(`/${repo}/`);
+  } catch {
+    return false;
+  }
+}
+
 /** Пряме посилання на APK із релізу; null — файлу ще нема. */
 export function apkUrlOf(rel: ReleaseLike): string | null {
   const asset = rel.assets?.find((a) => /\.apk$/i.test(a.name));
@@ -34,6 +50,7 @@ export function apkUrlOf(rel: ReleaseLike): string | null {
 export function updateFrom(rel: ReleaseLike | null, current: string): { version: string; url: string } | null {
   if (!rel || rel.draft || rel.prerelease) return null;
   if (!isNewerVersion(rel.tag_name, current)) return null;
-  const url = apkUrlOf(rel) ?? rel.html_url ?? null;
+  // APK, інакше сторінка релізу; обидва лише з довіреного джерела
+  const url = [apkUrlOf(rel), rel.html_url].find((u): u is string => typeof u === "string" && isTrustedReleaseUrl(u)) ?? null;
   return url ? { version: rel.tag_name.replace(/^v/, ""), url } : null;
 }

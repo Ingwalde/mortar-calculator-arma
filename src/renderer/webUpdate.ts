@@ -3,7 +3,7 @@
  *  - веб-версія (PWA): service worker сам завантажує нову збірку; коли вона перебрала керування, пропонуємо перезавантажити;
  *  - Android-застосунок: раз на пів доби дивимось останній реліз на GitHub і пропонуємо завантажити APK.
  */
-import { updateFrom, type ReleaseLike } from "@core/appVersion";
+import { isTrustedReleaseUrl, updateFrom, type ReleaseLike } from "@core/appVersion";
 import { t } from "./i18n";
 import { isNativeApp, isStandalone } from "./platform";
 
@@ -57,6 +57,7 @@ function showBanner(text: string, actionLabel: string, onAction: () => void, onC
 }
 
 async function openExternal(url: string): Promise<void> {
+  if (!isTrustedReleaseUrl(url)) return;
   if (__STANDALONE__ && isNativeApp) {
     const { Browser } = await import("@capacitor/browser");
     await Browser.open({ url });

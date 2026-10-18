@@ -3,6 +3,7 @@ import { getRoot, loadState, scheduleSave } from "./state";
 import { resetView } from "./mapView";
 import { initPanels } from "./panels";
 import { $, toast } from "./dom";
+import { isOwnShareUrl } from "@core/shareLink";
 import { openIncomingShare } from "./exchange";
 import { isNativeApp } from "./platform";
 import { initWebUpdate } from "./webUpdate";
@@ -57,7 +58,9 @@ async function boot(): Promise<void> {
   if (__STANDALONE__ && isNativeApp) {
     // Android: посилання, відкрите через застосунок
     void import("@capacitor/app").then(({ App }) => {
-      void App.addListener("appUrlOpen", (e) => void openIncomingShare(e.url));
+      void App.addListener("appUrlOpen", (e) => {
+        if (isOwnShareUrl(e.url)) void openIncomingShare(e.url);
+      });
     });
   }
   initWebUpdate();

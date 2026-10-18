@@ -146,6 +146,17 @@ export async function decodeShare(payload: string): Promise<ExchangeDoc | null> 
   };
 }
 
+/** Адреса — наша веб-версія (хост і шлях SHARE_BASE); для посилань, відкритих Android-застосунком. */
+export function isOwnShareUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    const own = new URL(SHARE_BASE);
+    return u.protocol === own.protocol && u.hostname === own.hostname && u.pathname.startsWith(own.pathname.replace(/\/$/, ""));
+  } catch {
+    return false;
+  }
+}
+
 export function buildShareUrl(payload: string, base: string = SHARE_BASE): string {
   return `${base}#s=${payload}`;
 }

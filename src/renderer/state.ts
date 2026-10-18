@@ -401,7 +401,8 @@ export function applyExternalState(raw: unknown): ExternalApply {
 }
 
 export function switchTerrain(id: string): void {
-  if (!ROOT.data[id]) return;
+  // власний ключ, а не успадкований: id із чужого посилання на кшталт "__proto__" не має стати поточним теренем
+  if (!Object.hasOwn(ROOT.data, id)) return;
   ROOT.cur = id;
   scheduleSave();
 }

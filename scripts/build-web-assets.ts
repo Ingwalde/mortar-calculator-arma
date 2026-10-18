@@ -6,6 +6,7 @@
 import { existsSync } from "node:fs";
 import { copyFile, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
@@ -103,6 +104,19 @@ async function buildModMaps(): Promise<void> {
     }
     await writeFile(archive, buf);
   }
+  // цілісність: архів із публічного релізу має збігатися з сумою, зафіксованою в репозиторії
+  const expectedSha = (await readFile(join(root, "scripts", "web-mod-maps.sha256"), "utf8").catch(() => "")).trim();
+  const actualSha = createHash("sha256").update(await readFile(archive)).digest("hex");
+  if (!expectedSha || actualSha !== expectedSha) {
+    await rm(archive, { force: true });
+    throw new Error(`Архів карт модів не збігається з scripts/web-mod-maps.sha256 (очікувалось ${expectedSha || "—"}, є ${actualSha})`);
+  }
+  // перед розпакуванням перевіряємо список: лише mod-maps/…, без абсолютних шляхів і '..'
+  const listing = execFileSync("tar", ["-tzf", "mod-maps.tar.gz"], { cwd: cache, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
+    .split(/\r?\n/)
+    .filter(Boolean);
+  const bad = listing.find((e) => !/^mod-maps\/[A-Za-z0-9_.\-/]*$/.test(e) || e.split("/").includes(".."));
+  if (bad) throw new Error(`Небезпечний шлях в архіві карт модів: ${bad}`);
   const dir = join(cache, "mod-maps-unpacked");
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });

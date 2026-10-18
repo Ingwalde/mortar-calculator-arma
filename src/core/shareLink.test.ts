@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildShareUrl, decodeShare, encodeShare, extractSharePayload, shareToExchangeText, MAX_QR_URL_LENGTH } from "./shareLink";
+import { buildShareUrl, decodeShare, encodeShare, extractSharePayload, isOwnShareUrl, shareToExchangeText, MAX_QR_URL_LENGTH } from "./shareLink";
 import { buildExport, parseExchange, type XMarker } from "./markerExchange";
 
 const sample: XMarker[] = [
@@ -94,5 +94,17 @@ describe("shareLink: зруйновані мітки", () => {
       ["t2", "target", false],
       ["p1", "point", true]
     ]);
+  });
+});
+
+describe("shareLink: безпека", () => {
+  it("isOwnShareUrl приймає лише нашу веб-версію", () => {
+    expect(isOwnShareUrl("https://ingwalde.github.io/mortar-calculator-arma/#s=abc")).toBe(true);
+    expect(isOwnShareUrl("https://ingwalde.github.io/mortar-calculator-arma/")).toBe(true);
+    expect(isOwnShareUrl("http://ingwalde.github.io/mortar-calculator-arma/#s=abc")).toBe(false);
+    expect(isOwnShareUrl("https://evil.example/mortar-calculator-arma/#s=abc")).toBe(false);
+    expect(isOwnShareUrl("https://ingwalde.github.io.evil.example/mortar-calculator-arma/#s=abc")).toBe(false);
+    expect(isOwnShareUrl("https://ingwalde.github.io/other/#s=abc")).toBe(false);
+    expect(isOwnShareUrl("мотлох")).toBe(false);
   });
 });

@@ -91,4 +91,14 @@ describe("exchangeFileName", () => {
   it("усі папки", () => {
     expect(exchangeFileName("everon", null, new Date(2026, 0, 2).getTime())).toBe("mortar-everon-all-20260102.json");
   });
+
+  it("координати-сміття (понад мільйон метрів) відкидаються як невалідні мітки", () => {
+    const text = JSON.stringify({ markers: [{ id: "a", name: "ok", type: "target", x: 100, z: 200 }, { id: "b", name: "bad", type: "target", x: 1e9, z: 0 }, { id: "c", name: "bad2", type: "target", x: 0, z: -2e6 }] });
+    const r = parseExchange(text);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.markers.map((x) => x.id)).toEqual(["a"]);
+      expect(r.skipped).toBe(2);
+    }
+  });
 });

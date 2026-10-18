@@ -15,7 +15,12 @@ import webModMaps from "./web-mod-maps.json";
 export const WEB_MOD_MAPS: Readonly<Record<string, { width: number; height: number }>> = webModMaps;
 
 export function webModMap(terrainId: string): { width: number; height: number } | null {
-  return WEB_MOD_MAPS[terrainId] ?? null;
+  return Object.hasOwn(WEB_MOD_MAPS, terrainId) ? WEB_MOD_MAPS[terrainId] : null;
+}
+
+/** Найдетальніший дзеркалений LOD терену або undefined. Лише власні ключі: "__proto__" тощо не проходять. */
+export function webMirrorMinLod(terrainId: string): number | undefined {
+  return Object.hasOwn(WEB_MIRROR_MIN_LOD, terrainId) ? WEB_MIRROR_MIN_LOD[terrainId] : undefined;
 }
 
 /** Відносний шлях тайла піраміди модового терену на сайті. */
@@ -31,7 +36,7 @@ export const WEB_MIRROR_MIN_LOD: Readonly<Record<string, number>> = {
 };
 
 export function isMirroredTile(terrainId: string, lod: number): boolean {
-  const min = WEB_MIRROR_MIN_LOD[terrainId];
+  const min = webMirrorMinLod(terrainId);
   return min !== undefined && lod >= min;
 }
 

@@ -35,7 +35,7 @@ export function buildingsLoading(terrainId: string): boolean {
 /** Індекс будівель терену; null — даних нема або вони ще вантажаться (після завантаження спрацює хук). */
 export function buildingIndexFor(terrainId: string): BuildingIndex | null {
   if (cache.has(terrainId)) return cache.get(terrainId) ?? null;
-  const loader = LOADERS[terrainId];
+  const loader = Object.hasOwn(LOADERS, terrainId) ? LOADERS[terrainId] : undefined;
   if (!loader) {
     cache.set(terrainId, null);
     return null;

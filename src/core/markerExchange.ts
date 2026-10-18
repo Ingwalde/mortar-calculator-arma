@@ -63,12 +63,17 @@ export type ParseResult =
   | { ok: true; terrain: string | null; terrainName: string | null; folder: string | null; markers: XMarker[]; skipped: number }
   | { ok: false; reason: "empty" | "json" | "shape" | "none" };
 
+/** Найбільша допустима за модулем координата імпортованої мітки, м. */
+const MAX_COORD = 1_000_000;
+
 function clean(m: unknown, fallbackFolder: string): XMarker | null {
   if (!m || typeof m !== "object") return null;
   const r = m as Record<string, unknown>;
   const x = Number(r.x);
   const z = Number(r.z);
   if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+  // карти — десятки кілометрів; значення на порядки більші — явне сміття або спроба зламати малювання
+  if (Math.abs(x) > MAX_COORD || Math.abs(z) > MAX_COORD) return null;
   const h = r.h === null || r.h === undefined || r.h === "" ? null : Number(r.h);
   const type: XMarkerType = r.type === "mortar" || r.type === "target" ? r.type : "point";
   return {

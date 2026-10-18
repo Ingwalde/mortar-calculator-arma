@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMirroredTile, mirroredTilePath, webHeightsPath, WEB_MIRROR_MIN_LOD } from "./webMirror";
+import { isMirroredTile, mirroredTilePath, webHeightsPath, webMirrorMinLod, webModMap, WEB_MIRROR_MIN_LOD } from "./webMirror";
 import { PRESETS } from "./terrains";
 
 describe("webMirror", () => {
@@ -23,5 +23,15 @@ describe("webMirror", () => {
       expect(p?.tiles, id).toBeTruthy();
       expect(WEB_MIRROR_MIN_LOD[id]).toBeLessThanOrEqual(p!.tiles!.maxLod);
     }
+  });
+
+  it("успадковані ключі (__proto__, constructor) не вважаються теренами", () => {
+    for (const bad of ["__proto__", "constructor", "toString", "hasOwnProperty"]) {
+      expect(webModMap(bad)).toBeNull();
+      expect(webMirrorMinLod(bad)).toBeUndefined();
+      expect(isMirroredTile(bad, 5)).toBe(false);
+    }
+    expect(webModMap("bystrany")).not.toBeNull();
+    expect(webMirrorMinLod("everon")).toBe(2);
   });
 });

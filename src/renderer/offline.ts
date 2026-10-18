@@ -5,7 +5,7 @@
  */
 import { planPyramid } from "@core/tilePyramid";
 import { onlineTileList } from "@core/onlineTiles";
-import { mirroredTilePath, modMapTilePath, webHeightsPath, WEB_MIRROR_MIN_LOD } from "@core/webMirror";
+import { mirroredTilePath, modMapTilePath, webHeightsPath, webMirrorMinLod } from "@core/webMirror";
 import { $, toast } from "./dom";
 import { t } from "./i18n";
 import { currentMeta, getCurrent } from "./state";
@@ -43,7 +43,7 @@ async function loadAvgBytes(id: string): Promise<void> {
 function standaloneOptions(): OfflineOption[] {
   const meta = currentMeta();
   const tiles = meta.preset?.tiles;
-  const minMirror = WEB_MIRROR_MIN_LOD[meta.id];
+  const minMirror = webMirrorMinLod(meta.id);
   if (!tiles || minMirror === undefined) return [];
   const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
   const lods = [...new Set([Math.min(tiles.maxLod, 3), Math.min(tiles.maxLod, 2), minMirror])]
