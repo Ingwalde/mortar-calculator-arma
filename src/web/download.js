@@ -91,7 +91,13 @@ function setPrimary(platform, found) {
     text.textContent = "Відкрити для iPhone";
     return;
   }
-  // macOS/Linux або файлів нема: головна кнопка веде до списку нижче
+  if (!found.setup && !found.apk && !found.portable) {
+    // інсталяторів поки нема: головна кнопка відкриває вебверсію
+    btn.href = "./";
+    text.textContent = "Відкрити вебверсію";
+    return;
+  }
+  // macOS/Linux: головна кнопка веде до списку нижче
   btn.href = "#get";
   text.textContent = "Обрати платформу";
 }
@@ -100,7 +106,7 @@ function setMeta(found) {
   // версія — за ПК-інсталятором (стабільний реліз); тестова Android-збірка з пре-релізу лише позначається
   const newest = (found.setup ?? found.apk)?.rel;
   if (!newest) {
-    $("meta").textContent = "Файлів для завантаження поки немає.";
+    $("meta").textContent = "Інсталятори для Windows і Android з'являться у версії 1.0.0. Поки що користуйтеся вебверсією: вона працює в браузері й встановлюється як застосунок.";
     return;
   }
   const date = new Date(newest.published_at).toLocaleDateString("uk-UA", { year: "numeric", month: "long", day: "numeric" });

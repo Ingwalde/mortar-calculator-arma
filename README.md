@@ -31,6 +31,8 @@ npm run dist:mac    # dmg (потребує macOS)
 npm run dist:linux  # AppImage + deb
 ```
 
+Інсталятори для Windows і APK для Android з'являться у релізі 1.0.0; до того доступна вебверсія (її можна встановити як застосунок).
+
 Готові файли після `npm run dist:win`:
 - `dist/Планшет мінометника 0.15.1.exe` — portable, без інсталяції.
 - `dist/Планшет мінометника Setup 0.15.1.exe` — інсталятор (NSIS).
