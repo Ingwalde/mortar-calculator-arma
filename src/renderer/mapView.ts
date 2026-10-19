@@ -17,6 +17,7 @@ import { buildingIndexFor, buildingsLoading, setBuildingsLoadedHook } from "./bu
 import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
 import { $ } from "./dom";
 import { t } from "./i18n";
+import { reducedMotion } from "./motion";
 import { isRemote, onlineTileSrc, pyramidTileSrc } from "./platform";
 import { heightAt, onHeightsLoaded } from "./terrainHeight";
 
@@ -210,6 +211,7 @@ function kLimits() {
 }
 
 export function fit(): void {
+  cancelFly();
   if (!W) return;
   const vh = viewH();
   view.k = Math.min(W / imgW, vh / imgH) * 0.96;
@@ -219,6 +221,7 @@ export function fit(): void {
 }
 
 export function zoomAt(factor: number, sx: number, sy: number): void {
+  cancelFly();
   const l = kLimits();
   const nk = Math.min(l.max, Math.max(l.min, view.k * factor));
   const p = pxFromScr(sx, sy);
@@ -228,7 +231,43 @@ export function zoomAt(factor: number, sx: number, sy: number): void {
   requestDraw();
 }
 
+let flyId: number | null = null;
+/** Зупиняє поточний переліт (жест користувача, масштаб, «вся карта»). */
+function cancelFly(): void {
+  if (flyId !== null) cancelAnimationFrame(flyId);
+  flyId = null;
+}
+
+/** Плавно їде до точки: карта прискорюється й гальмує замість того, щоб стрибнути. */
+export function flyToWorld(x: number, z: number): void {
+  const p = pxFromWorld(geometry(), x, z);
+  const tx = W / 2 - p.px * view.k;
+  const ty = viewH() / 2 - p.py * view.k;
+  cancelFly();
+  const sx = view.ox;
+  const sy = view.oy;
+  const dist = Math.hypot(tx - sx, ty - sy);
+  if (!W || dist < 3 || reducedMotion()) {
+    view.ox = tx;
+    view.oy = ty;
+    requestDraw();
+    return;
+  }
+  const ms = Math.min(850, Math.max(300, 240 + dist * 0.4));
+  const t0 = performance.now();
+  const step = (now: number): void => {
+    const u = Math.min(1, (now - t0) / ms);
+    const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    view.ox = sx + (tx - sx) * e;
+    view.oy = sy + (ty - sy) * e;
+    requestDraw();
+    flyId = u < 1 ? requestAnimationFrame(step) : null;
+  };
+  flyId = requestAnimationFrame(step);
+}
+
 export function centerOnWorld(x: number, z: number): void {
+  cancelFly();
   const p = pxFromWorld(geometry(), x, z);
   view.ox = W / 2 - p.px * view.k;
   view.oy = viewH() / 2 - p.py * view.k;
@@ -522,7 +561,7 @@ interface Shot {
   label: string;
 }
 const shots: Shot[] = [];
-const IMPACT_MS = 1100;
+const IMPACT_MS = 1500;
 let animating = false;
 
 /** Запускає анімацію міни від міномета до цілі за час польоту; label — підпис у лічильнику. */
@@ -641,19 +680,64 @@ function drawShots(c: Record<string, string>): void {
         shots.splice(i, 1);
         continue;
       }
-      const r = 8 + k * 46;
+      const e1 = 1 - Math.pow(1 - k, 3);
       ctx.save();
-      ctx.globalAlpha = (1 - k) * 0.9;
-      ctx.strokeStyle = c.target;
-      ctx.lineWidth = 3 * (1 - k) + 1;
+      // пляма на землі: темніє одразу й повільно блякне
+      ctx.globalAlpha = 0.3 * Math.min(1, k * 8) * (1 - Math.max(0, (k - 0.45) / 0.55));
+      ctx.fillStyle = "#000";
       ctx.beginPath();
-      ctx.arc(b.sx, b.sy, r, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = (1 - k) * 0.5;
-      ctx.fillStyle = c.target;
-      ctx.beginPath();
-      ctx.arc(b.sx, b.sy, 5 + (1 - k) * 9, 0, Math.PI * 2);
+      ctx.ellipse(b.sx, b.sy, 9 + e1 * 5, 6 + e1 * 3.5, 0, 0, Math.PI * 2);
       ctx.fill();
+      // яскравий спалах у перші мілісекунди
+      if (k < 0.3) {
+        const f = 1 - k / 0.3;
+        const g = ctx.createRadialGradient(b.sx, b.sy, 0, b.sx, b.sy, 10 + (1 - f) * 26);
+        g.addColorStop(0, "rgba(255,255,255,1)");
+        g.addColorStop(0.4, "rgba(255,190,110,0.8)");
+        g.addColorStop(1, "rgba(255,140,60,0)");
+        ctx.globalAlpha = f;
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(b.sx, b.sy, 10 + (1 - f) * 26, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // дві ударні хвилі
+      ctx.strokeStyle = c.target;
+      for (const [delay, maxR, lw] of [
+        [0, 56, 3.4],
+        [0.1, 36, 2.2]
+      ]) {
+        const kk = (k - delay) / (1 - delay);
+        if (kk <= 0) continue;
+        const ee = 1 - Math.pow(1 - kk, 3);
+        ctx.globalAlpha = (1 - kk) * 0.85;
+        ctx.lineWidth = lw * (1 - kk) + 0.8;
+        ctx.beginPath();
+        ctx.arc(b.sx, b.sy, 6 + ee * maxR, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      // уламки: короткі промені, що розлітаються
+      ctx.lineCap = "round";
+      ctx.lineWidth = 1.6;
+      for (let i = 0; i < 10; i++) {
+        const ang = i * 0.628 + 0.3;
+        const r0 = 4 + e1 * 30 * (0.7 + 0.15 * (i % 3));
+        const len = Math.max(0, 10 * (1 - k));
+        ctx.globalAlpha = 1 - k;
+        ctx.beginPath();
+        ctx.moveTo(b.sx + Math.cos(ang) * r0, b.sy + Math.sin(ang) * r0);
+        ctx.lineTo(b.sx + Math.cos(ang) * (r0 + len), b.sy + Math.sin(ang) * (r0 + len));
+        ctx.stroke();
+      }
+      // дим: кілька кіл, що здіймаються й розпливаються
+      ctx.fillStyle = c.ink;
+      for (let i = 0; i < 5; i++) {
+        const ang = i * 1.256 + 0.7;
+        ctx.globalAlpha = 0.22 * (1 - k) * Math.min(1, k * 6);
+        ctx.beginPath();
+        ctx.arc(b.sx + Math.cos(ang) * (6 + e1 * 14), b.sy + Math.sin(ang) * (4 + e1 * 8) - e1 * 16, 4 + e1 * 9, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
       continue;
     }
@@ -1387,6 +1471,7 @@ function pos(e: PointerEvent) {
 }
 
 cv.addEventListener("pointerdown", (e) => {
+  cancelFly();
   cv.setPointerCapture(e.pointerId);
   const p = pos(e);
   ptrs.set(e.pointerId, p);
@@ -1449,8 +1534,8 @@ function tap(x: number, y: number): void {
   const w = worldFromScr(x, y);
   // тап по будівлі наводить приціл точно в її центр
   const b = buildingIndexFor(currentMeta().id)?.findAt(w.x, w.z, AIM_SNAP_TAP_M);
-  if (b) centerOnWorld(b.cx, b.cz);
-  else centerOnWorld(w.x, w.z);
+  if (b) flyToWorld(b.cx, b.cz);
+  else flyToWorld(w.x, w.z);
 }
 
 $<HTMLButtonElement>("zin").onclick = () => zoomAt(1.6, W / 2, viewH() / 2);

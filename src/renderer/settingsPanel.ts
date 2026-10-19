@@ -38,7 +38,11 @@ export function openSettings(section?: string): void {
   // кнопка збережених карт з'являється лише там, де є офлайн-режим
   $("setOfflineOpen").closest<HTMLElement>(".set-row")!.hidden = $("offlineBtn").hidden;
   showSection(activeSection);
-  if (!dlg().open) dlg().showModal();
+  if (!dlg().open) {
+    dlg().showModal();
+    // діалог сам фокусує перше поле (пошук): на телефоні це розгорнуло б його й відкрило клавіатуру
+    if (document.activeElement === $("setSearch")) $<HTMLInputElement>("setSearch").blur();
+  }
   hooks?.renderSetup();
   hooks?.refreshLan();
 }
@@ -52,12 +56,24 @@ function sectionVisible(sec: string): boolean {
   return !!el && !el.dataset.hiddenPlatform;
 }
 
+function sectionOrder(): string[] {
+  return [...document.querySelectorAll<HTMLButtonElement>("#setNav button")].filter((b) => !b.dataset.hiddenPlatform).map((b) => b.dataset.sec!);
+}
+
 function showSection(sec: string): void {
   if (!sectionVisible(sec)) sec = "view";
+  // напрямок переходу: нова вкладка виїжджає з того боку, куди ми «йдемо»
+  const order = sectionOrder();
+  const dir = order.indexOf(sec) >= order.indexOf(activeSection) ? "next" : "prev";
+  const changed = sec !== activeSection;
   activeSection = sec;
   const q = ($<HTMLInputElement>("setSearch").value || "").trim();
   if (q) return; // під час пошуку показуємо всі збіги
-  for (const s of document.querySelectorAll<HTMLElement>(".set-sec")) s.hidden = s.dataset.sec !== sec || !!s.dataset.hiddenPlatform;
+  for (const s of document.querySelectorAll<HTMLElement>(".set-sec")) {
+    s.hidden = s.dataset.sec !== sec || !!s.dataset.hiddenPlatform;
+    if (!s.hidden && changed) s.dataset.dir = dir;
+    else delete s.dataset.dir;
+  }
   for (const b of document.querySelectorAll<HTMLButtonElement>("#setNav button")) b.setAttribute("aria-pressed", String(b.dataset.sec === sec));
   // на телефоні смуга розділів прокручується: активний пункт має лишатись на екрані
   document.querySelector<HTMLElement>(`#setNav button[data-sec="${sec}"]`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
@@ -247,6 +263,25 @@ export function initSettings(h: SettingsHooks): void {
   }
 
   slideIndicator($("setNav"), { active: 'button[aria-pressed="true"]' });
+  // свайп вліво/вправо по вмісту перемикає розділ (телефон)
+  let touch: { x: number; y: number } | null = null;
+  const content = $("setContent");
+  content.addEventListener("touchstart", (e) => {
+    const p = e.touches[0];
+    touch = e.touches.length === 1 && p ? { x: p.clientX, y: p.clientY } : null;
+  }, { passive: true });
+  content.addEventListener("touchend", (e) => {
+    const p = e.changedTouches[0];
+    const st = touch;
+    touch = null;
+    if (!st || !p || $<HTMLInputElement>("setSearch").value.trim()) return;
+    const dx = p.clientX - st.x;
+    const dy = p.clientY - st.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const order = sectionOrder();
+    const next = order[order.indexOf(activeSection) + (dx < 0 ? 1 : -1)];
+    if (next) showSection(next);
+  }, { passive: true });
   $("settingsBtn").onclick = () => openSettings();
   $("setClose").onclick = () => closeSettings();
   root.addEventListener("click", (e) => {

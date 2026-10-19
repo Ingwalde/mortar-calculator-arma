@@ -161,8 +161,8 @@ dialog h3{margin:0 0 10px;font-size:18px}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);font-weight:600}
 .calibbox{border:1px solid var(--glass-border);border-radius:14px;padding:10px;margin:8px 0;background:color-mix(in srgb,var(--ink) 5%,transparent)}
 .calibbox .t{font-weight:600;margin-bottom:6px}
-.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
-.toast.on{opacity:1}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translate(-50%,18px) scale(.95);background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.35);transition:opacity .22s ease,transform .34s cubic-bezier(.2,.9,.3,1.15);z-index:30}
+.toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
 .about{font-size:14px}
 #aboutDlg{max-height:min(82vh,680px);overflow:auto;width:min(480px,calc(100vw - 24px))}
 #aboutDlg .about h2:first-child{margin-top:0}
@@ -267,8 +267,6 @@ details.card[open]>.card-body{animation:cardIn .22s ease both}
 @keyframes mapSlide{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
 .pane:not([hidden]){animation:paneIn .2s ease both}
 @keyframes paneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-dialog[open]{animation:dlgIn .2s ease both}
-dialog[open]::backdrop{animation:fadeIn .2s ease both}
 @keyframes dlgIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 progress{appearance:none;-webkit-appearance:none;height:8px;border:0;border-radius:999px;background:color-mix(in srgb,var(--ink) 12%,transparent);overflow:hidden}
@@ -515,3 +513,47 @@ label:not(.set-switch)>input[type=checkbox]:focus-visible{outline:2px solid colo
 /* вибір теми: активна кнопка плавно змінює рамку, фон і ореол (без слайда) */
 .themechip{transition:border-color .28s ease,background-color .28s ease,box-shadow .28s ease,color .28s ease}
 .themechip[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);box-shadow:0 0 0 1px var(--accent),0 0 14px color-mix(in srgb,var(--accent) 28%,transparent)}
+
+/* ---- 0.16.3: анімації ---- */
+/* діалоги: плавні поява й зникання (разом із затемненням фону) */
+dialog{opacity:0;transform:translateY(12px) scale(.97);
+  transition:opacity .22s ease,transform .28s cubic-bezier(.2,.8,.2,1),overlay .28s allow-discrete,display .28s allow-discrete}
+dialog[open]{opacity:1;transform:none}
+@starting-style{dialog[open]{opacity:0;transform:translateY(12px) scale(.97)}}
+dialog::backdrop{background:rgba(0,0,0,0);backdrop-filter:blur(0);
+  transition:background-color .24s ease,backdrop-filter .24s ease,overlay .28s allow-discrete,display .28s allow-discrete}
+dialog[open]::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
+@starting-style{dialog[open]::backdrop{background:rgba(0,0,0,0);backdrop-filter:blur(0)}}
+
+/* списки міток і журналу: нові рядки з'являються, видалені згортаються */
+@keyframes listIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes listOut{from{opacity:1;height:var(--h)}55%{opacity:0}to{opacity:0;height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-width:0}}
+.anim-in{animation:listIn .32s cubic-bezier(.2,.8,.2,1) both}
+.anim-out{box-sizing:border-box;overflow:hidden;pointer-events:none;animation:listOut .32s ease both}
+
+/* ефект натискання на великих кнопках */
+.btn.primary,.btn.fire-shot{position:relative;overflow:hidden}
+.rip{position:absolute;border-radius:50%;pointer-events:none;background:currentColor;opacity:.26;transform:scale(0);animation:ripple .62s ease-out forwards}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+
+/* перемикання розділів налаштувань: вкладка виїжджає з боку руху */
+@keyframes secNext{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes secPrev{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+.set-sec[data-dir="next"]:not([hidden]){animation:secNext .3s cubic-bezier(.2,.8,.2,1) both}
+.set-sec[data-dir="prev"]:not([hidden]){animation:secPrev .3s cubic-bezier(.2,.8,.2,1) both}
+
+/* вузький екран: пошук у налаштуваннях — значок, що розгортається в поле */
+@media (max-width:640px){
+  .set-head h3{max-width:220px;overflow:hidden;white-space:nowrap;transition:max-width .26s ease,opacity .2s ease}
+  .set-head input[type=search]{flex:1 1 42px;max-width:42px;padding:0;color:transparent;cursor:pointer;background-position:12px center;
+    transition:max-width .28s cubic-bezier(.2,.8,.2,1),padding .2s ease,border-color .15s ease,box-shadow .15s ease}
+  .set-head input[type=search]::placeholder{color:transparent}
+  .set-head input[type=search]:focus,.set-head input[type=search]:not(:placeholder-shown){max-width:100%;padding:0 14px 0 42px;color:var(--ink);cursor:text}
+  .set-head input[type=search]:focus::placeholder{color:var(--muted)}
+  .set-head:has(input[type=search]:focus) h3,.set-head:has(input[type=search]:not(:placeholder-shown)) h3{max-width:0;opacity:0}
+}
+
+@media (prefers-reduced-motion:reduce){
+  dialog,dialog::backdrop,.toast{transition:none}
+  .anim-in,.anim-out,.rip,.set-sec[data-dir]{animation:none}
+}

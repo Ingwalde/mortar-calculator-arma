@@ -8,13 +8,18 @@ import { openIncomingShare } from "./exchange";
 import { isNativeApp } from "./platform";
 import { initWebUpdate } from "./webUpdate";
 import { applyStaticTranslations, getLang, onLangChange, setLangSilent, t } from "./i18n";
+import { reducedMotion } from "./motion";
 
 /** Заставку з іконкою знімаємо, щойно стан завантажено й інтерфейс готовий. */
 function hideSplash(): void {
   const el = document.getElementById("splash");
   if (!el) return;
-  el.classList.add("done");
-  setTimeout(() => el.remove(), 400);
+  // дамо анімації емблеми дограти (≈1 с від старту), але не затримуємо запуск довше
+  const wait = reducedMotion() ? 0 : Math.max(0, 1100 - performance.now());
+  setTimeout(() => {
+    el.classList.add("done");
+    setTimeout(() => el.remove(), 400);
+  }, wait);
 }
 
 let offline = false;

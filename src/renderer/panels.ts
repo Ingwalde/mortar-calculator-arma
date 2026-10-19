@@ -30,7 +30,7 @@ import {
 } from "./state";
 import {
   aimBuilding,
-  centerOnWorld,
+  flyToWorld,
   centerPx,
   centerWorld,
   requestDraw,
@@ -59,6 +59,7 @@ import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
 import { vibrate as haptic } from "./haptics";
 import { slideIndicator } from "./slider";
+import { beginListRender, initRipple, tweenNumber } from "./motion";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
@@ -105,6 +106,13 @@ function lastUsedFolder(): string {
 
 // ---------- marks list ----------
 export function renderMarksList(): void {
+  const ul = $("list");
+  const done = beginListRender(ul);
+  renderMarksListInner();
+  done();
+}
+
+function renderMarksListInner(): void {
   fillFolderSelect();
   const ul = $("list");
   ul.textContent = "";
@@ -200,7 +208,7 @@ export function selectMarker(id: string, center: boolean): void {
   selectedId = id;
   setDrawCallbacks({ selectedId });
   const m = getCurrent().markers.find((x) => x.id === id);
-  if (m && center) centerOnWorld(m.x, m.z);
+  if (m && center) flyToWorld(m.x, m.z);
   renderMarksList();
   requestDraw();
   document.querySelector(`#list li[data-id="${id}"]`)?.scrollIntoView({ block: "nearest" });
@@ -585,7 +593,7 @@ $<HTMLSelectElement>("selT").onchange = (e) => {
   S.sel.t = (e.target as HTMLSelectElement).value;
   scheduleSave();
   const t = S.markers.find((m) => m.id === S.sel.t);
-  if (t) centerOnWorld(t.x, t.z);
+  if (t) flyToWorld(t.x, t.z);
   renderFire();
   requestDraw();
 };
@@ -612,6 +620,8 @@ $<HTMLSelectElement>("selCharge").onchange = (e) => {
 };
 
 let lastDist: number | null = null;
+/** Попередні значення чисел розрахунку: від них стартує плавна зміна. */
+const numPrev: { az?: number; el?: number; range?: number } = {};
 
 export function renderFire(): void {
   const box = $("sol");
@@ -659,7 +669,7 @@ export function renderFire(): void {
   hero.className = "solution-hero";
   const meta = document.createElement("div");
   meta.className = "solution-meta";
-  const cell = (into: HTMLElement, k: string, v: string, u?: string) => {
+  const cell = (into: HTMLElement, k: string, v: string, u?: string): HTMLElement => {
     const d = document.createElement("div");
     const kk = document.createElement("div");
     kk.className = "k";
@@ -675,15 +685,25 @@ export function renderFire(): void {
     }
     d.append(kk, vv);
     into.appendChild(d);
+    return vv;
   };
   // Горизонтальна наводка — лише в градусах; підвищення лишається в мілах.
-  cell(hero, t("cellAzimuthDeg"), b.deg.toFixed(1), "°");
-  cell(
+  // числа плавно «докручуються» від попередніх значень до нових
+  const azV = cell(hero, t("cellAzimuthDeg"), b.deg.toFixed(1), "°");
+  tweenNumber("az", azV.firstChild as Text, numPrev.az, b.deg, (n) => n.toFixed(1), { wrap360: true });
+  numPrev.az = b.deg;
+  const elV = cell(
     hero,
     sols.length ? t("cellElevationMilsCharge", { c: sols[0].charge }) : t("cellElevationMils"),
     sols.length ? String(sols[0].elevation) : "—"
   );
-  cell(meta, t("cellRange"), fmtM(dist), t("unitM"));
+  if (sols.length) {
+    tweenNumber("el", elV.firstChild as Text, numPrev.el, sols[0].elevation, (n) => String(Math.round(n)));
+    numPrev.el = sols[0].elevation;
+  }
+  const rgV = cell(meta, t("cellRange"), fmtM(dist), t("unitM"));
+  tweenNumber("range", rgV.firstChild as Text, numPrev.range, dist, (n) => fmtM(n));
+  numPrev.range = dist;
   cell(meta, t("cellHeightDiff"), dh === null ? "—" : (dh > 0 ? "+" : "") + fmtM(dh), dh === null ? undefined : t("unitM"));
   meta.style.gridTemplateColumns = "1fr 1fr";
   box.append(hero, meta);
@@ -836,6 +856,13 @@ function renderTable(dist: number | null): void {
 // ---------- fire log ----------
 function renderLog(): void {
   const ul = $("logList");
+  const done = beginListRender(ul);
+  renderLogInner();
+  done();
+}
+
+function renderLogInner(): void {
+  const ul = $("logList");
   ul.textContent = "";
   const S = getCurrent();
   const entries = [...S.fireLog].reverse();
@@ -863,6 +890,7 @@ function renderLog(): void {
 
     const li = document.createElement("li");
     li.className = "logcard";
+    li.dataset.id = e.id;
 
     const top = document.createElement("div");
     top.className = "logtop";
@@ -1471,6 +1499,7 @@ export function initPanels(): void {
   initWakeLock();
   slideIndicator(document.querySelector<HTMLElement>(".tabs"), { active: 'button[aria-selected="true"]' });
   for (const seg of document.querySelectorAll<HTMLElement>(".seg")) slideIndicator(seg, { active: 'button[aria-pressed="true"]' });
+  initRipple();
   initSettings({
     applyAll: () => {
       applyShotSettings();
