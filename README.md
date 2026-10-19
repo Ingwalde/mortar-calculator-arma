@@ -155,12 +155,14 @@ npm run dist:linux  # AppImage + deb
 
 ### Ліцензії джерел даних
 
-- [EnfusionMapMaker](https://github.com/nickludlam/EnfusionMapMaker) (nickludlam) — APL-SA:
-  назви пунктів Everon/Arland, схема онлайн-тайлів.
-- [GeNeFRAG/ArmaReforger](https://github.com/GeNeFRAG/ArmaReforger) — MIT:
-  балістичні таблиці M252/2Б14, розміри теренів, супутникові знімки, дані висот.
+Повний перелік (дані, моди, бібліотеки) і тексти ліцензій — у [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md); у самому застосунку той самий текст
+лежить у «Про програму» → «Ліцензії та подяки».
 
-Атрибуція також показана у вкладці «Про» самого застосунку. Некомерційний проєкт.
+- [EnfusionMapMaker](https://github.com/nickludlam/EnfusionMapMaker) (nickludlam) — APL-SA: назви пунктів Everon/Arland, схема онлайн-тайлів.
+  Ці дані (`src/core/terrains-data.json`) лишаються під APL-SA: лише некомерційно й лише для Arma. Код застосунку це не змінює.
+- [GeNeFRAG/ArmaReforger](https://github.com/GeNeFRAG/ArmaReforger) — MIT: балістичні таблиці M252/2Б14, розміри теренів, супутникові знімки, дані висот.
+
+Некомерційний проєкт, не пов'язаний з Bohemia Interactive.
 
 ## Формат тайлів карт
 

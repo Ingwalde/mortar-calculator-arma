@@ -399,3 +399,6 @@ dialog.settings[open]{display:flex;flex-direction:column}
     @starting-style { ::picker(select):popover-open { opacity: 0; transform: translateY(-4px); } }
   }
 }
+.about-licenses{margin:8px 0 4px;border-top:1px solid var(--line);padding-top:10px}
+.about-licenses summary{cursor:pointer;font-weight:600;font-size:14px}
+.about-licenses pre{white-space:pre-wrap;word-break:break-word;font:12px/1.5 ui-monospace,Consolas,monospace;color:var(--muted);max-height:40vh;overflow:auto;margin:10px 0 0}

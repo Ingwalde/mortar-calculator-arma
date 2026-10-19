@@ -55,6 +55,7 @@ import { closeSettings, initSettings, openSettings } from "./settingsPanel";
 import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
+import { NOTICES_TEXT } from "./licenses";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
@@ -1220,6 +1221,14 @@ function renderAbout(): void {
   if (!el) return;
   el.innerHTML = t("aboutHtml");
   mountUpdateBox(el);
+  const lic = document.createElement("details");
+  lic.className = "about-licenses";
+  const sum = document.createElement("summary");
+  sum.textContent = t("aboutLicenses");
+  const pre = document.createElement("pre");
+  pre.textContent = NOTICES_TEXT;
+  lic.append(sum, pre);
+  el.appendChild(lic);
 
 }
 

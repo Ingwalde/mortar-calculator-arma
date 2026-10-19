@@ -457,6 +457,7 @@ const DICT: Dict = {
   delTerrainTitle: { uk: "Видалити терен?", en: "Delete terrain?" },
   delTerrainText: { uk: "«{name}» зникне зі списку разом з мітками і картою.", en: "“{name}” will disappear from the list along with its marks and map." },
 
+  aboutLicenses: { uk: "Ліцензії та подяки", en: "Licences and credits" },
   aboutHtml: {
     uk: `<h2>Про програму</h2>
     <p class="hint">Планшет мінометника для Arma Reforger: розрахунок вогню з мінометів M252 і 2Б14 прямо на карті. Некомерційний застосунок для особистого й ігрового використання.</p>
