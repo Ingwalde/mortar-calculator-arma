@@ -427,7 +427,7 @@ dialog.settings[open]{display:flex;flex-direction:column}
     margin-block: 8px; box-shadow: 0 20px 48px rgba(0,0,0,.55), 0 2px 10px rgba(0,0,0,.35);
     max-height: min(340px, 60vh); overflow: auto; scrollbar-width: thin;
   }
-  select option { display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 10px 14px; border-radius: 11px; cursor: pointer; color: var(--ink); background: transparent;
+  select option { display: flex; align-items: center; gap: 12px; box-sizing: border-box; min-height: 40px; padding: 8px 14px; border-radius: 10px; cursor: pointer; color: var(--ink); background: transparent;
     font-family: inherit; font-size: 14.5px; font-weight: 500; letter-spacing: 0; text-transform: none; text-indent: 0; transition: background .12s ease; }
   select option + option { margin-top: 2px; }
   select option:hover { background: color-mix(in srgb, var(--ink) 9%, transparent); }
@@ -467,7 +467,7 @@ dialog.settings[open]{display:flex;flex-direction:column}
 .tabs.has-slide button[aria-selected="true"],.set-nav.has-slide button[aria-pressed="true"],.seg.has-slide button[aria-pressed="true"]{background:none}
 .set-nav.has-slide>.slide-ind{border-radius:12px}
 .seg.has-slide>.slide-ind{border-radius:9px}
-.theme-grid.has-slide>.slide-ind.ring{background:none;border:2px solid var(--accent);border-radius:14px;box-sizing:border-box}
+.theme-grid.has-slide>.slide-ind.ring{z-index:2;background:none;border:2px solid var(--accent);border-radius:14px;box-sizing:border-box;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
 .theme-grid.has-slide .themechip[aria-pressed="true"]{border-color:var(--line);box-shadow:none}
 .themechip{transition:border-color .2s ease,background .2s ease}
 @keyframes paneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -513,3 +513,5 @@ label:not(.set-switch)>input[type=checkbox]:checked{background:var(--accent);bor
 label:not(.set-switch)>input[type=checkbox]:checked::after{transform:rotate(-45deg) scale(1)}
 label:not(.set-switch)>input[type=checkbox]:hover{border-color:var(--accent)}
 label:not(.set-switch)>input[type=checkbox]:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:2px}
+.themechip:focus:not(:focus-visible){outline:none}
+.themechip:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
