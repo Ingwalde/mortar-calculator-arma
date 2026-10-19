@@ -384,8 +384,13 @@ async function refresh(): Promise<void> {
  * на ПК — онлайн-тайли на диск (для імпортованих карт показує, що вони вже на диску).
  */
 export function initOffline(): void {
-  // в Android-застосунку все вже в пакеті: кнопка збереження карти не потрібна
+  // Android-застосунок: усе вже в пакеті. Вебверсія: тайли йдуть з першоджерела й зберегти їх не можна,
+  // тож офлайн-режиму там нема (кнопка лишається прихованою), а збережене старими версіями прибираємо.
   if (isNativeApp) return;
+  if (isStandalone) {
+    if ("caches" in window) void caches.delete(TILES_CACHE).catch(() => undefined);
+    return;
+  }
   const btn = $<HTMLButtonElement>("offlineBtn");
   btn.hidden = false;
   const dlg = $<HTMLDialogElement>("offlineDlg");
