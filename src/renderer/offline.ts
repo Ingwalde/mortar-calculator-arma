@@ -5,7 +5,7 @@
  */
 import { planPyramid } from "@core/tilePyramid";
 import { onlineTileList } from "@core/onlineTiles";
-import { detailTilePath, isMirroredTile, mirroredTilePath, modMapTilePath, webDetailMinLod, webHeightsPath, webMirrorMinLod } from "@core/webMirror";
+import { modMapTilePath, webHeightsPath } from "@core/webMirror";
 import { PRESETS } from "@core/terrains";
 import { getRoot } from "./state";
 import { $, toast } from "./dom";
@@ -18,6 +18,8 @@ const TILES_CACHE = "mortar-tiles-v1";
 const PYRAMID_TILE_BYTES = 16 * 1024;
 const ONLINE_TILE_BYTES = 40 * 1024;
 const CONCURRENCY = 6;
+/** Запасна оцінка розміру збереженого файла (тайл зі свого сайту), якщо сервер не вказав довжину. */
+const SITE_TILE_BYTES = 22 * 1024;
 
 export interface OfflineOption {
   /** Скільки найгрубших рівнів включено (від найгрубшого). */
@@ -41,35 +43,9 @@ async function loadAvgBytes(id: string): Promise<void> {
   }
 }
 
-/** Середній розмір тайла зі свого сайту (дзеркальні й деталізовані JPEG), для оцінки обсягу. */
-const SITE_TILE_BYTES = 22 * 1024;
-
-/** Автономна версія: тайли зі свого сайту — дзеркальні й (у PWA) деталізовані; глибше — лише онлайн. */
-function standaloneOptions(): OfflineOption[] {
-  const meta = currentMeta();
-  const tiles = meta.preset?.tiles;
-  const minMirror = webMirrorMinLod(meta.id);
-  if (!tiles || minMirror === undefined) return [];
-  // у Android-застосунку деталізованих рівнів нема (діалог там прихований, але логіка лишається правильною)
-  const detail = isNativeApp ? undefined : webDetailMinLod(meta.id);
-  const finest = Math.min(minMirror, detail ?? minMirror);
-  const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
-  const lods = [3, 2, 1, 0].filter((l) => l >= finest && l <= tiles.maxLod);
-  const sitePath = (lod: number, x: number, y: number): string =>
-    isMirroredTile(meta.id, lod) ? mirroredTilePath(meta.id, lod, x, y) : detailTilePath(meta.id, lod, x, y);
-  return lods.map((lod, i) => {
-    const urls = onlineTileList(meta.sizeX, meta.sizeZ, tiles.maxLod, lod).map((c) => sitePath(c.lod, c.x, c.y));
-    return {
-      key: `w${lod}`,
-      label: names[i] ?? names[names.length - 1],
-      urls: [...urls, webHeightsPath(meta.id)],
-      bytes: urls.length * SITE_TILE_BYTES
-    };
-  });
-}
-
 export function offlineOptions(): OfflineOption[] {
-  if (isStandalone) return standaloneOptions();
+  // автономна версія: тайли офіційних карт йдуть напряму з першоджерела, на сайті їх нема, тож зберігати нічого
+  if (isStandalone) return [];
   const meta = currentMeta();
   const S = getCurrent();
   const extra = [isStandalone ? webHeightsPath(meta.id) : `/api/heights/${encodeURIComponent(meta.id)}`];
@@ -133,7 +109,7 @@ async function cachedCount(prefixes: string[]): Promise<number> {
 
 function terrainPrefixes(id: string): string[] {
   if (isStandalone) {
-    // сайт може лежати на підшляху (GitHub Pages): ключі кешу — повні шляхи
+    // сайт може лежати на підшляху (GitHub Pages): ключі кешу — повні шляхи; tiles/ і tiles-hd/ — те, що збережено старими версіями
     const root = new URL("./", document.baseURI).pathname;
     return [`${root}tiles/${id}/`, `${root}tiles-hd/${id}/`, `${root}maps/${id}/`, `${root}heights/${id}`];
   }

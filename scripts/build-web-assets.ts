@@ -1,7 +1,6 @@
-// Дозбирає статичний сайт автономної версії (out/web): сітки висот і дзеркальні тайли карт.
+// Дозбирає статичний сайт автономної версії (out/web): сітки висот і карти модів. Тайли офіційних карт на сайт не копіюються.
 //   WEB_SKIP_MOD_MAPS=1 пропускає карти модів (швидка локальна збірка)
 //   npx tsx scripts/build-web-assets.ts            (після vite build --config vite.web.config.ts)
-//   WEB_SKIP_TILES=1 ...                          (без тайлів — швидка локальна збірка)
 // Завантажене кешується в .web-cache/, щоб повторні збірки не качали все знову (CI кешує цю папку).
 import { existsSync } from "node:fs";
 import { copyFile, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -10,9 +9,8 @@ import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
-import { onlineTileList, tileUrl } from "../src/core/onlineTiles";
 import { PRESETS } from "../src/core/terrains";
-import { WEB_DETAIL_MIN_LOD, WEB_MIRROR_MIN_LOD, detailTilePath, mirroredTilePath, webHeightsPath } from "../src/core/webMirror";
+import { webHeightsPath } from "../src/core/webMirror";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const out = join(root, "out", "web");
@@ -126,65 +124,16 @@ async function buildModMaps(): Promise<void> {
   const expected = JSON.parse(await readFile(join(root, "src", "core", "web-mod-maps.json"), "utf8")) as typeof index;
   for (const [id, v] of Object.entries(index)) {
     const e = expected[id];
-    if (!e || e.width !== v.width || e.height !== v.height) {
+    if (!e) {
+      console.log(`  карту ${id} пропущено: її нема в src/core/web-mod-maps.json`);
+      continue;
+    }
+    if (e.width !== v.width || e.height !== v.height) {
       throw new Error(`Карта ${id}: розміри в архіві (${v.width}x${v.height}) не збігаються з src/core/web-mod-maps.json`);
     }
     await cp(join(dir, "mod-maps", id), join(out, "maps", id), { recursive: true });
   }
   console.log(`карти модів: ${Object.keys(index).length} терен(ів)`);
-}
-
-/**
- * Дзеркальні тайли (tiles/) і, окремо, деталізовані (tiles-hd/: їх немає в APK). Обидва беруться з reforger.recoil.org
- * і кешуються в .web-cache. WEB_SKIP_HD=1 пропускає деталізовані.
- */
-async function buildTiles(): Promise<void> {
-  const jobs: { id: string; fromLod: number; toLod: number; path: (lod: number, x: number, y: number) => string; label: string }[] = [];
-  for (const [id, minLod] of Object.entries(WEB_MIRROR_MIN_LOD)) {
-    jobs.push({ id, fromLod: PRESETS.find((p) => p.id === id)?.tiles?.maxLod ?? 0, toLod: minLod, path: (l, x, y) => mirroredTilePath(id, l, x, y), label: "tiles" });
-  }
-  if (process.env.WEB_SKIP_HD !== "1") {
-    for (const [id, minLod] of Object.entries(WEB_DETAIL_MIN_LOD)) {
-      jobs.push({ id, fromLod: (WEB_MIRROR_MIN_LOD[id] ?? 1) - 1, toLod: minLod, path: (l, x, y) => detailTilePath(id, l, x, y), label: "tiles-hd" });
-    }
-  }
-  for (const job of jobs) {
-    const { id, toLod: minLod } = job;
-    const preset = PRESETS.find((p) => p.id === id);
-    if (!preset?.tiles) continue;
-    const list = onlineTileList(preset.sizeX, preset.sizeZ, job.fromLod, minLod);
-    let next = 0;
-    let have = 0;
-    let missing = 0;
-    const worker = async (): Promise<void> => {
-      for (;;) {
-        const i = next++;
-        if (i >= list.length) return;
-        const c = list[i];
-        const rel = job.path(c.lod, c.x, c.y);
-        const cached = join(cache, rel);
-        let ok = existsSync(cached);
-        if (!ok) {
-          const buf = await fetchBuffer(tileUrl(preset.tiles!.base, c.lod, c.x, c.y));
-          if (buf) {
-            await ensureDir(cached);
-            await writeFile(cached, buf);
-            ok = true;
-          }
-        }
-        if (!ok) {
-          missing++;
-          continue;
-        }
-        const dest = join(out, rel);
-        await ensureDir(dest);
-        await copyFile(cached, dest);
-        have++;
-      }
-    };
-    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-    console.log(`${job.label} ${id} (LOD ${minLod}..${job.fromLod}): ${have} з ${list.length}${missing ? `, відсутні: ${missing}` : ""}`);
-  }
 }
 
 if (!existsSync(join(out, "index.html"))) {
@@ -194,8 +143,6 @@ if (!existsSync(join(out, "index.html"))) {
 await mkdir(cache, { recursive: true });
 await buildHeights();
 await buildModMaps();
-if (process.env.WEB_SKIP_TILES === "1") console.log("тайли пропущено (WEB_SKIP_TILES=1)");
-else await buildTiles();
 // на Pages без Jekyll: файли з підкресленням і так не потрібні, але вимикаємо обробку явно
 await writeFile(join(out, ".nojekyll"), "");
 console.log("готово: out/web");

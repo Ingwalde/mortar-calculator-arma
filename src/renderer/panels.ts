@@ -56,6 +56,7 @@ import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { NOTICES_TEXT } from "./licenses";
+import { ruinedBuildingIcon, targetIcon } from "./icons";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
@@ -122,7 +123,8 @@ export function renderMarksList(): void {
     const badge = document.createElement("div");
     badge.className = "badge b-" + m.type;
     const bs = document.createElement("span");
-    bs.textContent = { mortar: t("badgeMortar"), target: t("badgeTarget"), point: t("badgePoint") }[m.type];
+    if (m.type === "target") bs.appendChild(targetIcon());
+    else bs.textContent = { mortar: t("badgeMortar"), point: t("badgePoint") }[m.type];
     badge.appendChild(bs);
     const info = document.createElement("div");
     info.className = "info";
@@ -132,12 +134,21 @@ export function renderMarksList(): void {
     name.textContent = m.name || typeLabel(m.type);
     const sub = document.createElement("div");
     sub.className = "sub";
-    sub.textContent =
-      (S.sel.folder === ALL_FOLDERS ? "[" + (m.folder || t("noFolder")) + "]   " : "") +
-      (m.type === "mortar" ? weaponName(m.w) + "   " : "") +
-      gridRef(m.x, m.z) +
-      "   X " + fmtM(m.x) + "  Z " + fmtM(m.z) +
-      (m.h !== null && isFinite(m.h) ? "   h " + fmtM(m.h) : "");
+    const part = (cls: string, text: string): HTMLSpanElement => {
+      const el = document.createElement("span");
+      el.className = cls;
+      el.textContent = text;
+      return el;
+    };
+    const tags = document.createElement("div");
+    tags.className = "tags";
+    if (S.sel.folder === ALL_FOLDERS) tags.appendChild(part("tag", m.folder || t("noFolder")));
+    if (m.type === "mortar") tags.appendChild(part("tag", weaponName(m.w)));
+    const coords = document.createElement("div");
+    coords.className = "coords-line";
+    coords.append(part("gref", gridRef(m.x, m.z)), part("c", "X " + fmtM(m.x)), part("c", "Z " + fmtM(m.z)));
+    if (m.h !== null && isFinite(m.h)) coords.appendChild(part("c", "h " + fmtM(m.h)));
+    sub.append(...(tags.childElementCount ? [tags] : []), coords);
     info.append(name, sub);
     info.onclick = () => selectMarker(m.id, true);
     info.onkeydown = (e) => {
@@ -152,18 +163,21 @@ export function renderMarksList(): void {
     editBtn.textContent = t("editBtn");
     editBtn.onclick = () => openMarkerDialog(m);
     li.append(badge, info);
+    const acts = document.createElement("div");
+    acts.className = "acts";
     if (m.type !== "mortar") {
       // швидка позначка «зруйновано» (і повернення назад) без відкриття діалогу
       const dBtn = document.createElement("button");
       dBtn.className = "btn small icon-only destroy-btn";
-      dBtn.textContent = m.destroyed ? "↺" : "✕";
+      dBtn.appendChild(ruinedBuildingIcon());
       dBtn.title = m.destroyed ? t("restoreBtn") : t("destroyBtn");
       dBtn.setAttribute("aria-label", dBtn.title);
       dBtn.setAttribute("aria-pressed", String(!!m.destroyed));
       dBtn.onclick = () => toggleDestroyed(m.id);
-      li.append(dBtn);
+      acts.append(dBtn);
     }
-    li.append(copyBtn, editBtn);
+    acts.append(copyBtn, editBtn);
+    li.append(acts);
     ul.appendChild(li);
   }
 }

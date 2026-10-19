@@ -101,7 +101,8 @@ ul.list li.logcard{display:block;padding:12px 14px}
 .logact{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 ul.list li.sel{background:color-mix(in srgb,var(--mortar) 16%,transparent)}
 .badge{flex:0 0 28px;height:28px;display:grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;font-size:14px}
-.b-mortar{background:var(--mortar)}.b-target{background:var(--target);border-radius:8px;transform:rotate(45deg)}.b-target span{transform:rotate(-45deg)}
+.b-mortar{background:var(--mortar)}.b-target{background:var(--target);border-radius:8px;transform:rotate(45deg)}.b-target span{transform:rotate(-45deg);display:grid;place-items:center}
+.b-target svg{width:16px;height:16px}
 .b-point{background:var(--point)}
 li .info{flex:1;min-width:0;cursor:pointer}
 li .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -315,8 +316,9 @@ input[type=checkbox],input[type=radio],progress{accent-color:var(--accent)}
 
 /* ---------- зруйновані мітки ---------- */
 #list li.destroyed .name{text-decoration:line-through;opacity:.65}
+#list li.destroyed .destroy-btn{color:var(--target)}
 #list li.destroyed .badge{opacity:.55;filter:grayscale(.8)}
-.destroy-btn{font-size:15px;line-height:1}
+.destroy-btn svg{width:19px;height:19px}
 .destroy-btn[aria-pressed="true"]{background:color-mix(in srgb,var(--target) 22%,transparent)}
 
 /* ---------- розкид ---------- */
@@ -361,6 +363,8 @@ dialog.settings[open]{display:flex;flex-direction:column}
 [data-hidden-platform]{display:none!important}
 @media (max-width:640px){
   dialog.settings{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;border:0}
+  /* відступ під рядок стану й виріз: інакше кнопка закриття й пошук опиняються під ним */
+  .set-head{padding-top:calc(14px + max(env(safe-area-inset-top,0px),var(--safe-t,0px),12px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   .set-body{flex-direction:column}
   .set-nav{flex:0 0 auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}
   .set-nav button{white-space:nowrap;flex:0 0 auto}
@@ -402,3 +406,13 @@ dialog.settings[open]{display:flex;flex-direction:column}
 .about-licenses{margin:8px 0 4px;border-top:1px solid var(--line);padding-top:10px}
 .about-licenses summary{cursor:pointer;font-weight:600;font-size:14px}
 .about-licenses pre{white-space:pre-wrap;word-break:break-word;font:12px/1.5 ui-monospace,Consolas,monospace;color:var(--muted);max-height:40vh;overflow:auto;margin:10px 0 0}
+/* список міток: назва, сітка й координати окремими рядками, кнопки не стискають текст */
+#list li{flex-wrap:wrap;container-type:inline-size}
+#list li .info{flex:1 1 160px}
+#list li .acts{display:flex;gap:8px;align-items:center;margin-left:auto}
+@container (max-width:400px){#list li .acts{flex-basis:100%;justify-content:flex-end}}
+#list .tags{display:flex;gap:6px;flex-wrap:wrap;margin:3px 0 1px}
+#list .tag{font-size:11px;font-weight:600;letter-spacing:.02em;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--muted)}
+#list .coords-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-top:3px}
+#list .gref{font-weight:700;font-size:15px;letter-spacing:.04em;color:var(--ink);font-variant-numeric:tabular-nums}
+#list .c{font-size:12.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
