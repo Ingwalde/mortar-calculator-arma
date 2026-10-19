@@ -495,3 +495,21 @@ dialog.settings[open]{display:flex;flex-direction:column}
 .set-link svg{flex:0 0 auto;width:18px;height:18px;color:var(--muted);transition:transform .15s ease,color .15s ease}
 .set-link:hover svg{transform:translateX(3px);color:var(--ink)}
 .set-hero.set-hide,.set-link.set-hide{display:none}
+
+/* однакова ширина смуги вкладок і вмісту: під смугу прокрутки панелі завжди резервується місце, а смуга вкладок його враховує */
+:root{--sbw:10px}
+@media (pointer:coarse){:root{--sbw:0px}}
+.pane{scrollbar-gutter:stable}
+.tabs{margin-right:calc(16px + var(--sbw))}
+@media (max-width:760px){.tabs{margin-left:12px;margin-right:calc(12px + var(--sbw))}}
+
+/* поля введення: текстові області не виходять за картку; звичайні галочки в стилі застосунку (перемикачі лишаються окремо) */
+textarea{box-sizing:border-box;max-width:100%}
+label:not(.set-switch)>input[type=checkbox]{-webkit-appearance:none;appearance:none;flex:0 0 auto;position:relative;width:20px;height:20px;margin:0;border-radius:6px;cursor:pointer;
+  border:1.5px solid color-mix(in srgb,var(--ink) 38%,transparent);background:transparent;transition:background .15s ease,border-color .15s ease}
+label:not(.set-switch)>input[type=checkbox]::after{content:"";position:absolute;left:5px;top:3px;width:7px;height:4px;border-left:2.4px solid var(--on-accent);border-bottom:2.4px solid var(--on-accent);
+  transform:rotate(-45deg) scale(0);transition:transform .15s ease}
+label:not(.set-switch)>input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+label:not(.set-switch)>input[type=checkbox]:checked::after{transform:rotate(-45deg) scale(1)}
+label:not(.set-switch)>input[type=checkbox]:hover{border-color:var(--accent)}
+label:not(.set-switch)>input[type=checkbox]:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:2px}

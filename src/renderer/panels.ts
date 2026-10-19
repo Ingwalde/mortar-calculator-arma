@@ -1407,6 +1407,9 @@ function initAboutDialog(): void {
   $<HTMLButtonElement>("aboutBtn").onclick = () => {
     renderAbout();
     dlg.showModal();
+    // фокус на нижніх елементах прокручує діалог униз: повертаємо початок тексту
+    dlg.scrollTop = 0;
+    (document.activeElement as HTMLElement | null)?.blur?.();
   };
   $<HTMLButtonElement>("aboutClose").onclick = () => dlg.close();
   // Клік по затемненню поза вікном теж закриває.

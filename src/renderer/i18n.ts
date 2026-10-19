@@ -108,7 +108,7 @@ const DICT: Dict = {
   fieldX: { uk: "X, м (схід)", en: "X, m (east)" },
   fieldZ: { uk: "Z, м (північ)", en: "Z, m (north)" },
   fieldHeight: { uk: "Висота, м", en: "Height, m" },
-  heightOptional: { uk: "необов'язково", en: "optional" },
+  heightOptional: { uk: "авто", en: "auto" },
   heightDetermining: { uk: "визначається…", en: "detecting…" },
   heightUnknown: { uk: "невідомо — вкажіть вручну", en: "unknown — enter manually" },
   fieldFolder: { uk: "Папка / місія", en: "Folder / mission" },
