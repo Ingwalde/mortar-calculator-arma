@@ -54,6 +54,12 @@ class FakeCtx {
   createConvolver() {
     return new FakeNode();
   }
+  createWaveShaper() {
+    const n = new FakeNode() as FakeNode & { curve: unknown; oversample: string };
+    n.curve = null;
+    n.oversample = "none";
+    return n;
+  }
   createBuffer(_c: number, len: number) {
     return { getChannelData: () => new Float32Array(len) };
   }
