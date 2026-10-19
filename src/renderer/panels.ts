@@ -1178,7 +1178,7 @@ $<HTMLButtonElement>("wipe").onclick = async () => {
   }
 };
 /** Застосовує колірну тему інтерфейсу: атрибут на <html> (палітра), колір рядка стану й стан кнопок. Карта лишається природною. */
-const THEME_BAR_COLOR: Record<ThemeName, string> = { green: "#161c18", red: "#1b1514", blue: "#121821" };
+const THEME_BAR_COLOR: Record<ThemeName, string> = { green: "#161c18", red: "#1c1716", blue: "#16181c" };
 function applyTheme(): void {
   const r = getRoot();
   const el = document.documentElement;
