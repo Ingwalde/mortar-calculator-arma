@@ -84,7 +84,7 @@ async function buildHeights(): Promise<void> {
 }
 
 /** Карти модових теренів: архів зі службового релізу web-assets (готується scripts/make-web-mod-maps.mjs). */
-const MOD_MAPS_URL = "https://github.com/Ingwalde/mortar-calculator-arma/releases/download/web-assets/mod-maps.tar.gz";
+const MOD_MAPS_URL = "https://github.com/Ingwalde/mortar-tablet/releases/download/web-assets/mod-maps.tar.gz";
 
 async function buildModMaps(): Promise<void> {
   if (process.env.WEB_SKIP_MOD_MAPS === "1") {

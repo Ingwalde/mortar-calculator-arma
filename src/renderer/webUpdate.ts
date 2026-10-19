@@ -8,7 +8,7 @@ import { isTrustedReleaseUrl, updateFrom, type ReleaseLike } from "@core/appVers
 import { t } from "./i18n";
 import { isNativeApp, isStandalone } from "./platform";
 
-const REPO = "Ingwalde/mortar-calculator-arma";
+const REPO = "Ingwalde/mortar-tablet";
 const CHECK_EVERY_MS = 12 * 60 * 60 * 1000;
 const LS_CHECKED = "mortar.upd.checked";
 const LS_DISMISSED = "mortar.upd.dismissed";

@@ -99,11 +99,11 @@ describe("shareLink: зруйновані мітки", () => {
 
 describe("shareLink: безпека", () => {
   it("isOwnShareUrl приймає лише нашу веб-версію", () => {
-    expect(isOwnShareUrl("https://ingwalde.github.io/mortar-calculator-arma/#s=abc")).toBe(true);
-    expect(isOwnShareUrl("https://ingwalde.github.io/mortar-calculator-arma/")).toBe(true);
-    expect(isOwnShareUrl("http://ingwalde.github.io/mortar-calculator-arma/#s=abc")).toBe(false);
-    expect(isOwnShareUrl("https://evil.example/mortar-calculator-arma/#s=abc")).toBe(false);
-    expect(isOwnShareUrl("https://ingwalde.github.io.evil.example/mortar-calculator-arma/#s=abc")).toBe(false);
+    expect(isOwnShareUrl("https://ingwalde.github.io/mortar-tablet/#s=abc")).toBe(true);
+    expect(isOwnShareUrl("https://ingwalde.github.io/mortar-tablet/")).toBe(true);
+    expect(isOwnShareUrl("http://ingwalde.github.io/mortar-tablet/#s=abc")).toBe(false);
+    expect(isOwnShareUrl("https://evil.example/mortar-tablet/#s=abc")).toBe(false);
+    expect(isOwnShareUrl("https://ingwalde.github.io.evil.example/mortar-tablet/#s=abc")).toBe(false);
     expect(isOwnShareUrl("https://ingwalde.github.io/other/#s=abc")).toBe(false);
     expect(isOwnShareUrl("мотлох")).toBe(false);
   });

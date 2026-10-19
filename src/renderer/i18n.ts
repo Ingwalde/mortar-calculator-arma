@@ -254,7 +254,7 @@ const DICT: Dict = {
   themeBlue: { uk: "Синя", en: "Blue" },
   settingsAria: { uk: "Налаштування", en: "Settings" },
   settingsTitle: { uk: "Налаштування", en: "Settings" },
-  settingsSearch: { uk: "Пошук у налаштуваннях", en: "Search settings" },
+  settingsSearch: { uk: "Пошук", en: "Search" },
   settingsNoResults: { uk: "Нічого не знайдено.", en: "Nothing found." },
   secView: { uk: "Вигляд", en: "Appearance" },
   secSound: { uk: "Звук і відгук", en: "Sound and feedback" },

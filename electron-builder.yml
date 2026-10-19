@@ -45,7 +45,7 @@ win:
 publish:
   provider: github
   owner: Ingwalde
-  repo: mortar-calculator-arma
+  repo: mortar-tablet
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

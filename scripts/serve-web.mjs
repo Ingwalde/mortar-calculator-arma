@@ -1,11 +1,11 @@
-// Статичний сервер out/web на підшляху, як GitHub Pages: http://localhost:4173/mortar-calculator-arma/
+// Статичний сервер out/web на підшляху, як GitHub Pages: http://localhost:4173/mortar-tablet/
 //   npm run build:web && node scripts/serve-web.mjs
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { join, extname, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("../out/web", import.meta.url));
-const SUB = "/mortar-calculator-arma/";
+const SUB = "/mortar-tablet/";
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".jpg": "image/jpeg", ".gz": "application/gzip" };
 createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");

@@ -1,6 +1,6 @@
 // Сторінка завантаження: підставляє файли найновіших релізів (ПК-інсталятор, portable, Android APK)
 // і підсвічує головну кнопку під платформу відвідувача. Без JS і без API лишаються посилання на сторінку релізів.
-const REPO = "Ingwalde/mortar-calculator-arma";
+const REPO = "Ingwalde/mortar-tablet";
 const RELEASES = `https://github.com/${REPO}/releases`;
 const $ = (id) => document.getElementById(id);
 

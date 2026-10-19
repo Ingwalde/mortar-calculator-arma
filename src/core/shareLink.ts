@@ -7,7 +7,7 @@
 import { serializeExport, type ExchangeDoc, type XMarker, type XMarkerType } from "./markerExchange";
 
 /** Адреса веб-версії, у яку веде посилання (PWA на GitHub Pages). */
-export const SHARE_BASE = "https://ingwalde.github.io/mortar-calculator-arma/";
+export const SHARE_BASE = "https://ingwalde.github.io/mortar-tablet/";
 /** Довше посилання вже не вміщається в QR, який легко зчитується камерою телефона. */
 export const MAX_QR_URL_LENGTH = 1100;
 

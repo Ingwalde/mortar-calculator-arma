@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { apkUrlOf, isNewerVersion, isTrustedReleaseUrl, parseVersion, updateFrom } from "./appVersion";
 
-const R = "https://github.com/Ingwalde/mortar-calculator-arma/releases";
+const R = "https://github.com/Ingwalde/mortar-tablet/releases";
 
 describe("appVersion", () => {
   it("розбирає версії з префіксом v і без", () => {
@@ -38,11 +38,11 @@ describe("appVersion", () => {
 
   it("довіряє лише https github.com у межах нашого репозиторію", () => {
     expect(isTrustedReleaseUrl(`${R}/download/v1.0.0/a.apk`)).toBe(true);
-    expect(isTrustedReleaseUrl("http://github.com/Ingwalde/mortar-calculator-arma/releases")).toBe(false);
-    expect(isTrustedReleaseUrl("https://evil.example/Ingwalde/mortar-calculator-arma/releases")).toBe(false);
+    expect(isTrustedReleaseUrl("http://github.com/Ingwalde/mortar-tablet/releases")).toBe(false);
+    expect(isTrustedReleaseUrl("https://evil.example/Ingwalde/mortar-tablet/releases")).toBe(false);
     expect(isTrustedReleaseUrl("https://github.com/other/repo/releases")).toBe(false);
-    expect(isTrustedReleaseUrl("https://github.com.evil.example/Ingwalde/mortar-calculator-arma/x")).toBe(false);
-    expect(isTrustedReleaseUrl("https://user:pw@github.com/Ingwalde/mortar-calculator-arma/x")).toBe(false);
+    expect(isTrustedReleaseUrl("https://github.com.evil.example/Ingwalde/mortar-tablet/x")).toBe(false);
+    expect(isTrustedReleaseUrl("https://user:pw@github.com/Ingwalde/mortar-tablet/x")).toBe(false);
     expect(isTrustedReleaseUrl("javascript:alert(1)")).toBe(false);
     expect(isTrustedReleaseUrl("не url")).toBe(false);
   });

@@ -25,7 +25,7 @@ export interface ReleaseLike {
 }
 
 /** Репозиторій, з релізів якого приймаємо посилання оновлень. */
-export const RELEASE_REPO = "Ingwalde/mortar-calculator-arma";
+export const RELEASE_REPO = "Ingwalde/mortar-tablet";
 
 /**
  * Посилання годиться для відкриття, лише якщо це https на github.com у межах нашого репозиторію.

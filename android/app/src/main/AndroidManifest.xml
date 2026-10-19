@@ -27,7 +27,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="ingwalde.github.io" android:pathPrefix="/mortar-calculator-arma" />
+                <data android:scheme="https" android:host="ingwalde.github.io" android:pathPrefix="/mortar-tablet" />
             </intent-filter>
 
         </activity>

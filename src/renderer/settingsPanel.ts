@@ -164,8 +164,8 @@ function renderShells(): void {
     const allowed = new Set(allowedShells(r.shells, w, VALID_SHELLS));
     for (const key of VALID_SHELLS[w]) {
       const label = document.createElement("label");
-      label.className = "row";
-      label.style.cssText = "gap:8px;cursor:pointer;margin:4px 0";
+      label.className = "set-switch";
+      label.style.margin = "10px 0";
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.checked = allowed.has(key);
@@ -179,12 +179,12 @@ function renderShells(): void {
       };
       const span = document.createElement("span");
       span.textContent = hooks?.shellLabel(key) ?? key;
-      label.append(cb, span);
+      label.append(span, cb);
       box.appendChild(label);
     }
     const defRow = document.createElement("label");
-    defRow.className = "row";
-    defRow.style.cssText = "gap:8px;margin:8px 0 12px";
+    defRow.className = "set-field";
+    defRow.style.cssText = "margin:12px 0 18px";
     const defTxt = document.createElement("span");
     defTxt.textContent = t("setShellDefault");
     const sel = document.createElement("select");
