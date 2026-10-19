@@ -467,9 +467,6 @@ dialog.settings[open]{display:flex;flex-direction:column}
 .tabs.has-slide button[aria-selected="true"],.set-nav.has-slide button[aria-pressed="true"],.seg.has-slide button[aria-pressed="true"]{background:none}
 .set-nav.has-slide>.slide-ind{border-radius:12px}
 .seg.has-slide>.slide-ind{border-radius:9px}
-.theme-grid.has-slide>.slide-ind.ring{z-index:2;background:none;border:2px solid var(--accent);border-radius:14px;box-sizing:border-box;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
-.theme-grid.has-slide .themechip[aria-pressed="true"]{border-color:var(--line);box-shadow:none}
-.themechip{transition:border-color .2s ease,background .2s ease}
 @keyframes paneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .pane:not([hidden]),.set-sec:not([hidden]){animation:paneIn .24s ease both}
 @media (max-width:640px){.set-nav.has-slide>.slide-ind{border-radius:999px}}
@@ -515,3 +512,6 @@ label:not(.set-switch)>input[type=checkbox]:hover{border-color:var(--accent)}
 label:not(.set-switch)>input[type=checkbox]:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:2px}
 .themechip:focus:not(:focus-visible){outline:none}
 .themechip:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+/* вибір теми: активна кнопка плавно змінює рамку, фон і ореол (без слайда) */
+.themechip{transition:border-color .28s ease,background-color .28s ease,box-shadow .28s ease,color .28s ease}
+.themechip[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);box-shadow:0 0 0 1px var(--accent),0 0 14px color-mix(in srgb,var(--accent) 28%,transparent)}

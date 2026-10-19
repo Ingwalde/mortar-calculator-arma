@@ -247,7 +247,6 @@ export function initSettings(h: SettingsHooks): void {
   }
 
   slideIndicator($("setNav"), { active: 'button[aria-pressed="true"]' });
-  slideIndicator(root.querySelector<HTMLElement>(".theme-grid"), { active: '.themechip[aria-pressed="true"]', ring: true });
   $("settingsBtn").onclick = () => openSettings();
   $("setClose").onclick = () => closeSettings();
   root.addEventListener("click", (e) => {
