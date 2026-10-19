@@ -41,9 +41,6 @@
   --accent:#4da3ff;--on-accent:#02101f;
   --pl-settlement:#b4d6ff;--pl-military:#4da3ff;--pl-transport:#8ec3ff;--pl-industry:#c4dcff;--pl-water:#5f9be0;--pl-nature:#7fb8ff;
 }
-/* карта (знімки) малюється на канві: за потреби переводимо її в монохромну гаму теми */
-:root[data-theme="red"][data-tint="1"] #cv{filter:grayscale(1) sepia(1) hue-rotate(-52deg) saturate(3.4) brightness(.7) contrast(1.1)}
-:root[data-theme="blue"][data-tint="1"] #cv{filter:grayscale(1) sepia(1) hue-rotate(178deg) saturate(3) brightness(.7) contrast(1.1)}
 :root[data-theme="red"] #splash{background:#0b0303}
 :root[data-theme="blue"] #splash{background:#050b14}
 html{height:100%;overscroll-behavior:none}

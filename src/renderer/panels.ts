@@ -1177,7 +1177,7 @@ $<HTMLButtonElement>("wipe").onclick = async () => {
     renderAll();
   }
 };
-/** Застосовує колірну тему: атрибути на <html> (палітра й тонування карти), колір рядка стану й стан кнопок. */
+/** Застосовує колірну тему інтерфейсу: атрибут на <html> (палітра), колір рядка стану й стан кнопок. Карта лишається природною. */
 const THEME_BAR_COLOR: Record<ThemeName, string> = { green: "#161c18", red: "#0b0303", blue: "#050b14" };
 function applyTheme(): void {
   const r = getRoot();
@@ -1185,18 +1185,11 @@ function applyTheme(): void {
   // зелена — типова палітра (за системною світлою/темною); червона й синя — власні темні
   if (r.theme === "green") delete el.dataset.theme;
   else el.dataset.theme = r.theme;
-  if (r.theme !== "green" && r.tintMap) el.dataset.tint = "1";
-  else delete el.dataset.tint;
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (meta) meta.content = THEME_BAR_COLOR[r.theme];
   $("themeBtn").setAttribute("aria-pressed", String(r.theme !== "green"));
   for (const b of document.querySelectorAll<HTMLButtonElement>("#themePop [data-theme-pick]")) {
     b.setAttribute("aria-pressed", String(b.dataset.themePick === r.theme));
-  }
-  const tint = document.getElementById("themeTint") as HTMLInputElement | null;
-  if (tint) {
-    tint.checked = r.tintMap;
-    tint.disabled = r.theme === "green";
   }
 }
 $<HTMLButtonElement>("themeBtn").onclick = () => {
@@ -1211,11 +1204,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>("#themePop [data-th
     scheduleSave();
   };
 }
-$<HTMLInputElement>("themeTint").onchange = (e) => {
-  getRoot().tintMap = (e.target as HTMLInputElement).checked;
-  applyTheme();
-  scheduleSave();
-};
+
 
 function applyShotSettings(): void {
   const r = getRoot();

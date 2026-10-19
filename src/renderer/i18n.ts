@@ -253,7 +253,6 @@ const DICT: Dict = {
   themeGreen: { uk: "Зелена", en: "Green" },
   themeRed: { uk: "Червона", en: "Red" },
   themeBlue: { uk: "Синя", en: "Blue" },
-  themeTint: { uk: "Карта в кольорі теми", en: "Tint the map to the theme" },
   storageHeading: { uk: "Завантажені дані", en: "Downloaded data" },
   storageHint: {
     uk: "Кеш онлайн-тайлів, імпортовані карти й висоти займають місце на диску. Тут видно, скільки, і можна видалити окремо для кожного терену.",
