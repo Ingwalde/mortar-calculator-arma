@@ -26,17 +26,26 @@
   --accent:#6ee7a8;--on-accent:#0d1a10;
   --pl-transport:#f0c060;
 }
-/* Нічний (червоний) режим: монохромна червона палітра, що не засліплює після темряви */
-:root[data-theme="night"]{
+/* Колірні теми: червона (не засліплює вночі) і синя. Зелена — типова палітра вище. */
+:root[data-theme="red"]{
   --bg:#0b0303;--surface:#140606;--raised:#1c0a0a;--line:#3d1414;--ink:#ff7a6b;--muted:#b4574c;
   --mortar:#ffa38f;--target:#ff5f4f;--point:#ffc2a8;--grid:rgba(255,110,95,.40);--gridfine:rgba(255,110,95,.12);
   --mapblank:#120505;--focus:#ff8f80;
   --accent:#ff5a48;--on-accent:#1a0302;
   --pl-settlement:#ff9a8a;--pl-military:#ff5a48;--pl-transport:#ff9a70;--pl-industry:#ffb6a0;--pl-water:#d0605a;--pl-nature:#ff8a78;
 }
-/* карта (знімки) малюється на канві: переводимо її в червону монохромну гаму */
-:root[data-theme="night"] #cv{filter:grayscale(1) sepia(1) hue-rotate(-52deg) saturate(3.4) brightness(.44) contrast(1.12)}
-:root[data-theme="night"] #splash{background:#0b0303}
+:root[data-theme="blue"]{
+  --bg:#050b14;--surface:#0a1422;--raised:#0f1c2e;--line:#1f3552;--ink:#9ccaff;--muted:#6490bd;
+  --mortar:#9ad4ff;--target:#5aa9ff;--point:#c4dcff;--grid:rgba(120,180,255,.40);--gridfine:rgba(120,180,255,.12);
+  --mapblank:#07101c;--focus:#7fb8ff;
+  --accent:#4da3ff;--on-accent:#02101f;
+  --pl-settlement:#b4d6ff;--pl-military:#4da3ff;--pl-transport:#8ec3ff;--pl-industry:#c4dcff;--pl-water:#5f9be0;--pl-nature:#7fb8ff;
+}
+/* карта (знімки) малюється на канві: за потреби переводимо її в монохромну гаму теми */
+:root[data-theme="red"][data-tint="1"] #cv{filter:grayscale(1) sepia(1) hue-rotate(-52deg) saturate(3.4) brightness(.7) contrast(1.1)}
+:root[data-theme="blue"][data-tint="1"] #cv{filter:grayscale(1) sepia(1) hue-rotate(178deg) saturate(3) brightness(.7) contrast(1.1)}
+:root[data-theme="red"] #splash{background:#0b0303}
+:root[data-theme="blue"] #splash{background:#050b14}
 html{height:100%;overscroll-behavior:none}
 body{margin:0;height:100%;background:var(--bg);color:var(--ink);
   font-family:"IBM Plex Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
@@ -348,5 +357,10 @@ input[type=checkbox],input[type=radio],progress{accent-color:var(--accent)}
 .spread-grid .field{margin:0}
 .spread-grid input{width:100%}
 
-#nightBtn svg{width:18px;height:18px}
-#nightBtn[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 24%,transparent)}
+#themeBtn svg{width:18px;height:18px}
+#themeBtn[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 24%,transparent)}
+#themePop{right:440px;top:150px}
+@media (max-width:820px){#themePop{right:60px;top:calc(64px + var(--safe-t))}}
+.themechip{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.themechip i{width:14px;height:14px;border-radius:50%;display:inline-block}
+.themechip[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}

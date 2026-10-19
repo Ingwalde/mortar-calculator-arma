@@ -23,7 +23,8 @@ import {
   switchTerrain,
   uid,
   type Marker,
-  type MarkerType
+  type MarkerType,
+  type ThemeName
 } from "./state";
 import {
   aimBuilding,
@@ -1175,25 +1176,49 @@ $<HTMLButtonElement>("wipe").onclick = async () => {
     renderAll();
   }
 };
-function applyNight(): void {
-  const on = getRoot().night;
-  if (on) document.documentElement.dataset.theme = "night";
-  else if (document.documentElement.dataset.theme === "night") delete document.documentElement.dataset.theme;
-  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (meta) meta.content = on ? "#0b0303" : "#161c18";
-  $("nightBtn").setAttribute("aria-pressed", String(on));
-}
-$<HTMLButtonElement>("nightBtn").onclick = () => {
+/** Застосовує колірну тему: атрибути на <html> (палітра й тонування карти), колір рядка стану й стан кнопок. */
+const THEME_BAR_COLOR: Record<ThemeName, string> = { green: "#161c18", red: "#0b0303", blue: "#050b14" };
+function applyTheme(): void {
   const r = getRoot();
-  r.night = !r.night;
-  applyNight();
+  const el = document.documentElement;
+  // зелена — типова палітра (за системною світлою/темною); червона й синя — власні темні
+  if (r.theme === "green") delete el.dataset.theme;
+  else el.dataset.theme = r.theme;
+  if (r.theme !== "green" && r.tintMap) el.dataset.tint = "1";
+  else delete el.dataset.tint;
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (meta) meta.content = THEME_BAR_COLOR[r.theme];
+  $("themeBtn").setAttribute("aria-pressed", String(r.theme !== "green"));
+  for (const b of document.querySelectorAll<HTMLButtonElement>("#themePop [data-theme-pick]")) {
+    b.setAttribute("aria-pressed", String(b.dataset.themePick === r.theme));
+  }
+  const tint = document.getElementById("themeTint") as HTMLInputElement | null;
+  if (tint) {
+    tint.checked = r.tintMap;
+    tint.disabled = r.theme === "green";
+  }
+}
+$<HTMLButtonElement>("themeBtn").onclick = () => {
+  const pop = $("themePop");
+  pop.hidden = !pop.hidden;
+  $("themeBtn").setAttribute("aria-expanded", String(!pop.hidden));
+};
+for (const b of document.querySelectorAll<HTMLButtonElement>("#themePop [data-theme-pick]")) {
+  b.onclick = () => {
+    getRoot().theme = b.dataset.themePick as ThemeName;
+    applyTheme();
+    scheduleSave();
+  };
+}
+$<HTMLInputElement>("themeTint").onchange = (e) => {
+  getRoot().tintMap = (e.target as HTMLInputElement).checked;
+  applyTheme();
   scheduleSave();
-  toast(t(r.night ? "nightOn" : "nightOff"));
 };
 
 function applyShotSettings(): void {
   const r = getRoot();
-  applyNight();
+  applyTheme();
   setRingsVisible(r.showRings);
   ($("ringsToggle") as HTMLInputElement).checked = r.showRings;
   ($("lightToggle") as HTMLInputElement).checked = isLightMode();

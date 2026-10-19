@@ -90,6 +90,29 @@ function playSilentClip(): void {
   }
 }
 
+/** Тракт звуку: компресор, щоб гуркіт не різав слух, головний регулятор і коротка «кімнатна» луна. */
+function buildGraph(c: BaseAudioContext): { master: GainNode; reverbSend: GainNode } {
+  const comp = c.createDynamicsCompressor();
+  comp.threshold.value = -22;
+  comp.ratio.value = 5;
+  const m = c.createGain();
+  m.gain.value = muted ? 0 : MASTER_GAIN;
+  m.connect(comp).connect(c.destination);
+
+  const verb = c.createConvolver();
+  const len = Math.floor(c.sampleRate * 1.4);
+  const ir = c.createBuffer(2, len, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
+  }
+  verb.buffer = ir;
+  const send = c.createGain();
+  send.gain.value = 0.28;
+  send.connect(verb).connect(m);
+  return { master: m, reverbSend: send };
+}
+
 function context(): AudioContext | null {
   primeAudioSession();
   try {
@@ -97,25 +120,9 @@ function context(): AudioContext | null {
     if (!Ctor) return null;
     if (!ctx) {
       ctx = new Ctor();
-      // загальний тракт: компресор, щоб гуркіт не різав слух, + коротка луна
-      const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -22;
-      comp.ratio.value = 5;
-      master = ctx.createGain();
-      master.gain.value = muted ? 0 : MASTER_GAIN;
-      master.connect(comp).connect(ctx.destination);
-
-      const verb = ctx.createConvolver();
-      const len = Math.floor(ctx.sampleRate * 1.4);
-      const ir = ctx.createBuffer(2, len, ctx.sampleRate);
-      for (let ch = 0; ch < 2; ch++) {
-        const d = ir.getChannelData(ch);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
-      }
-      verb.buffer = ir;
-      reverbSend = ctx.createGain();
-      reverbSend.gain.value = 0.28;
-      reverbSend.connect(verb).connect(master);
+      const g = buildGraph(ctx);
+      master = g.master;
+      reverbSend = g.reverbSend;
     }
     if (ctx.state === "suspended") void ctx.resume();
     return ctx;
@@ -148,8 +155,25 @@ function connectOut(c: AudioContext, node: AudioNode, wet = 0.5): void {
   }
 }
 
-/** Низький «падаючий» тон (гуркіт/тунк): синус з швидким спадом висоти й затуханням. */
-function thump(c: AudioContext, at: number, f0: number, f1: number, len: number, gain: number): void {
+/** Крива м'якого обмеження (tanh): з чистого тону робить гармоніки, чутні й на динаміках, що не беруть низів. */
+const shaperCurves = new Map<number, Float32Array<ArrayBuffer>>();
+function shaperCurve(drive: number): Float32Array<ArrayBuffer> {
+  let c = shaperCurves.get(drive);
+  if (!c) {
+    const n = 1024;
+    c = new Float32Array(n);
+    const norm = Math.tanh(drive);
+    for (let i = 0; i < n; i++) c[i] = Math.tanh(drive * ((i / (n - 1)) * 2 - 1)) / norm;
+    shaperCurves.set(drive, c);
+  }
+  return c;
+}
+
+/**
+ * Низький «падаючий» тон (гуркіт/тунк): синус з швидким спадом висоти й затуханням.
+ * `drive` > 0 додає гармоніки: сам тон нижче ~150 Гц на динаміках телефона й ноутбука майже не чути.
+ */
+function thump(c: AudioContext, at: number, f0: number, f1: number, len: number, gain: number, drive = 0): void {
   const osc = c.createOscillator();
   const g = c.createGain();
   osc.type = "sine";
@@ -159,7 +183,15 @@ function thump(c: AudioContext, at: number, f0: number, f1: number, len: number,
   g.gain.exponentialRampToValueAtTime(gain, at + 0.012);
   g.gain.exponentialRampToValueAtTime(0.0001, at + len);
   osc.connect(g);
-  connectOut(c, g, 0.35);
+  if (drive > 0) {
+    const sh = c.createWaveShaper();
+    sh.curve = shaperCurve(drive);
+    sh.oversample = "2x";
+    g.connect(sh);
+    connectOut(c, sh, 0.35);
+  } else {
+    connectOut(c, g, 0.35);
+  }
   track(osc);
   osc.start(at);
   osc.stop(at + len + 0.05);
@@ -203,8 +235,8 @@ function whistle(c: AudioContext, at: number, len: number): void {
   f.frequency.exponentialRampToValueAtTime(820, at + len);
   const g = c.createGain();
   g.gain.setValueAtTime(0.0001, at);
-  g.gain.linearRampToValueAtTime(0.012, at + Math.min(1.2, len * 0.3));
-  g.gain.linearRampToValueAtTime(0.045, at + len * 0.92);
+  g.gain.linearRampToValueAtTime(0.025, at + Math.min(1.2, len * 0.3));
+  g.gain.linearRampToValueAtTime(0.09, at + len * 0.92);
   g.gain.linearRampToValueAtTime(0.0001, at + len);
   src.connect(f).connect(g);
   connectOut(c, g, 0.3);
@@ -227,17 +259,23 @@ function scheduleFlight(c: AudioContext, launchPerfMs: number, flightSec: number
   const t0 = Math.max(c.currentTime + 0.01, launchAt);
   if (includeLaunch) {
     // постріл: глухий «тунк» + короткий низький «видих»
-    thump(c, t0, 120, 38, 0.32, 0.7);
-    burst(c, t0, 0.28, 0.45, { type: "lowpass", f0: 1400, f1: 180, q: 0.6 }, 0.6);
+    thump(c, t0, 120, 38, 0.32, 0.5);
+    // середня частина: гармоніки гулу й «видих» у діапазоні 250–700 Гц — чутні на телефоні
+    thump(c, t0, 240, 90, 0.26, 0.55, 5);
+    burst(c, t0, 0.28, 0.5, { type: "bandpass", f0: 700, f1: 260, q: 0.8 }, 0.5);
+    burst(c, t0, 0.28, 0.4, { type: "lowpass", f0: 1400, f1: 180, q: 0.6 }, 0.6);
+    burst(c, t0, 0.05, 0.3, { type: "highpass", f0: 2600, f1: 1800, q: 0.7 }, 0.15);
   }
   const hit = Math.max(c.currentTime + 0.05, includeLaunch ? Math.max(t0 + 0.5, impactAt) : impactAt);
   const flyStart = includeLaunch ? t0 + 0.5 : c.currentTime + 0.02;
   const fly = hit - flyStart - 0.3;
   if (fly > 1.5) whistle(c, flyStart, fly);
   // влучання: гуркіт, тріск і довгий затухаючий хвіст
-  thump(c, hit, 78, 24, 1.1, 0.95);
-  burst(c, hit, 1.5, 0.75, { type: "lowpass", f0: 900, f1: 70, q: 0.5 }, 0.8);
-  burst(c, hit, 0.07, 0.3, { type: "highpass", f0: 2400, f1: 1800, q: 0.7 }, 0.2);
+  thump(c, hit, 78, 24, 1.1, 0.45);
+  thump(c, hit, 170, 55, 0.7, 0.75, 4);
+  burst(c, hit, 1.5, 0.4, { type: "lowpass", f0: 900, f1: 70, q: 0.5 }, 0.8);
+  burst(c, hit, 1.0, 0.85, { type: "bandpass", f0: 600, f1: 160, q: 0.7 }, 0.7);
+  burst(c, hit, 0.09, 0.55, { type: "highpass", f0: 2400, f1: 1800, q: 0.7 }, 0.2);
 }
 
 /** Короткий «тунк» для перевірки звуку: лунає при ввімкненні звуку кнопкою (це ж і розблоковує аудіо на телефоні). */
@@ -301,4 +339,30 @@ if (typeof document !== "undefined") {
   window.addEventListener("pagehide", onHidden);
   // iOS інколи повертає застосунок подією pageshow, а не visibilitychange
   window.addEventListener("pageshow", () => void onVisible());
+}
+
+/**
+ * Рендерить постріл і влучання в буфер (OfflineAudioContext) для перевірки: рівні, момент влучання, хвіст, відсутність тиші/кліпінгу.
+ * Користується тими ж функціями розкладу, що й живий звук. Доступно в консолі як window.__mortarAudioTest(flightSec) за адресою з ?audiotest.
+ */
+export async function renderShotForTest(flightSec: number, sampleRate = 22050): Promise<{ sampleRate: number; data: Float32Array }> {
+  const tail = 3.5;
+  const off = new OfflineAudioContext(1, Math.ceil((flightSec + tail) * sampleRate), sampleRate);
+  const saved = { master, reverbSend };
+  const g = buildGraph(off);
+  master = g.master;
+  reverbSend = g.reverbSend;
+  try {
+    scheduleFlight(off as unknown as AudioContext, performance.now(), flightSec, true);
+    const buf = await off.startRendering();
+    return { sampleRate, data: buf.getChannelData(0).slice() };
+  } finally {
+    master = saved.master;
+    reverbSend = saved.reverbSend;
+    stopAll();
+  }
+}
+
+if (typeof window !== "undefined" && typeof location !== "undefined" && location.search.includes("audiotest")) {
+  (window as unknown as { __mortarAudioTest?: typeof renderShotForTest }).__mortarAudioTest = renderShotForTest;
 }

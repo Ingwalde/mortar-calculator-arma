@@ -6,6 +6,9 @@ import { clampPlacesScale, normalizePlacesLevel, type PlaceTier } from "@core/pl
 import { webModMap } from "@core/webMirror";
 import { defaultSpread, normalizeSpread, type SpreadSettings } from "@core/spread";
 
+export type ThemeName = "green" | "red" | "blue";
+export const THEMES: ThemeName[] = ["green", "red", "blue"];
+
 export type MarkerType = "mortar" | "target" | "point";
 
 export interface Marker {
@@ -95,8 +98,10 @@ export interface RootState {
   showRings: boolean;
   /** Звук пострілу й влучання. */
   soundShots: boolean;
-  /** Нічний (червоний) режим інтерфейсу й карти — налаштування пристрою. */
-  night: boolean;
+  /** Колірна тема інтерфейсу (зелена — типова); налаштування пристрою. */
+  theme: ThemeName;
+  /** Тонувати карту в колір теми (для червоної й синьої). */
+  tintMap: boolean;
   /** Розкид снарядів навколо цілі (налаштування користувача, локальне для пристрою). */
   spread: SpreadSettings;
   lang: Lang;
@@ -131,7 +136,7 @@ function allTerrainMetas(root: RootState): Array<{ id: string; sizeX: number; si
 }
 
 export function blankRoot(): RootState {
-  const root: RootState = { v: 1, showPlaces: true, placesScale: 1, placesLevel: 3, showRings: true, soundShots: true, night: false, spread: defaultSpread(), lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
+  const root: RootState = { v: 1, showPlaces: true, placesScale: 1, placesLevel: 3, showRings: true, soundShots: true, theme: "green", tintMap: true, spread: defaultSpread(), lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
   for (const p of PRESETS) root.data[p.id] = blankTerrain(p.sizeX, p.sizeZ);
   return root;
 }
@@ -251,7 +256,9 @@ export function normalizeRoot(raw: unknown): RootState {
   root.showRings = r.showRings !== false;
   root.soundShots = r.soundShots !== false;
   root.spread = normalizeSpread(r.spread);
-  root.night = r.night === true;
+  // старе поле night (нічний режим 0.13) -> червона тема
+  root.theme = THEMES.includes(r.theme as ThemeName) ? (r.theme as ThemeName) : r.night === true ? "red" : "green";
+  root.tintMap = r.tintMap !== false;
   root.lang = r.lang === "en" ? "en" : "uk";
   root.cur = allTerrainMetas(root).some((m) => m.id === r.cur) ? (r.cur as string) : DEFAULT_TERRAIN_ID;
   return root;
@@ -389,7 +396,8 @@ export function applyExternalState(raw: unknown): ExternalApply {
   next.showRings = prev.showRings;
   next.soundShots = prev.soundShots;
   next.spread = prev.spread;
-  next.night = prev.night;
+  next.theme = prev.theme;
+  next.tintMap = prev.tintMap;
   lastSummary = summarizeChanges(prev, next);
   for (const id of Object.keys(next.data)) {
     if (prev.data[id]) next.data[id].sel = prev.data[id].sel;
