@@ -26,23 +26,14 @@
   --accent:#6ee7a8;--on-accent:#0d1a10;
   --pl-transport:#f0c060;
 }
-/* Колірні теми: червона (не засліплює вночі) і синя. Зелена — типова палітра вище. */
-:root[data-theme="red"]{
-  --bg:#0b0303;--surface:#140606;--raised:#1c0a0a;--line:#3d1414;--ink:#ff7a6b;--muted:#b4574c;
-  --mortar:#ffa38f;--target:#ff5f4f;--point:#ffc2a8;--grid:rgba(255,110,95,.40);--gridfine:rgba(255,110,95,.12);
-  --mapblank:#120505;--focus:#ff8f80;
-  --accent:#ff5a48;--on-accent:#1a0302;
-  --pl-settlement:#ff9a8a;--pl-military:#ff5a48;--pl-transport:#ff9a70;--pl-industry:#ffb6a0;--pl-water:#d0605a;--pl-nature:#ff8a78;
+/* Колірні теми змінюють лише акцент (кнопки, активні вкладки, виділення): фон, текст і мітки лишаються звичайними.
+   Зелена — типова палітра вище; для світлої системної теми акцент темніший, для темної — світліший. */
+:root[data-theme="red"]{--accent:#c8402f;--on-accent:#fff5f3;--focus:#c8402f}
+:root[data-theme="blue"]{--accent:#2f6fd0;--on-accent:#f3f8ff;--focus:#2f6fd0}
+@media (prefers-color-scheme:dark){
+  :root[data-theme="red"]{--accent:#ff6b5a;--on-accent:#1a0302;--focus:#ff9a8c}
+  :root[data-theme="blue"]{--accent:#5aa9ff;--on-accent:#02101f;--focus:#8cc4ff}
 }
-:root[data-theme="blue"]{
-  --bg:#050b14;--surface:#0a1422;--raised:#0f1c2e;--line:#1f3552;--ink:#9ccaff;--muted:#6490bd;
-  --mortar:#9ad4ff;--target:#5aa9ff;--point:#c4dcff;--grid:rgba(120,180,255,.40);--gridfine:rgba(120,180,255,.12);
-  --mapblank:#07101c;--focus:#7fb8ff;
-  --accent:#4da3ff;--on-accent:#02101f;
-  --pl-settlement:#b4d6ff;--pl-military:#4da3ff;--pl-transport:#8ec3ff;--pl-industry:#c4dcff;--pl-water:#5f9be0;--pl-nature:#7fb8ff;
-}
-:root[data-theme="red"] #splash{background:#0b0303}
-:root[data-theme="blue"] #splash{background:#050b14}
 html{height:100%;overscroll-behavior:none}
 body{margin:0;height:100%;background:var(--bg);color:var(--ink);
   font-family:"IBM Plex Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;

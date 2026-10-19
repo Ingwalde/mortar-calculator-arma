@@ -1178,15 +1178,12 @@ $<HTMLButtonElement>("wipe").onclick = async () => {
   }
 };
 /** Застосовує колірну тему інтерфейсу: атрибут на <html> (палітра), колір рядка стану й стан кнопок. Карта лишається природною. */
-const THEME_BAR_COLOR: Record<ThemeName, string> = { green: "#161c18", red: "#0b0303", blue: "#050b14" };
 function applyTheme(): void {
   const r = getRoot();
   const el = document.documentElement;
   // зелена — типова палітра (за системною світлою/темною); червона й синя — власні темні
   if (r.theme === "green") delete el.dataset.theme;
   else el.dataset.theme = r.theme;
-  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (meta) meta.content = THEME_BAR_COLOR[r.theme];
   $("themeBtn").setAttribute("aria-pressed", String(r.theme !== "green"));
   for (const b of document.querySelectorAll<HTMLButtonElement>("#themePop [data-theme-pick]")) {
     b.setAttribute("aria-pressed", String(b.dataset.themePick === r.theme));
