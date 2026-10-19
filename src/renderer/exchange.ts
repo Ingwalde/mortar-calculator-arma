@@ -13,7 +13,7 @@ import {
   type XMarkerType
 } from "@core/markerExchange";
 import { MAX_QR_URL_LENGTH, buildShareUrl, encodeShare, extractSharePayload, shareToExchangeText } from "@core/shareLink";
-import { $, ask, toast } from "./dom";
+import { $, ask, showModalNoKeyboard, toast } from "./dom";
 import { t } from "./i18n";
 import { ALL_FOLDERS, currentMeta, getCurrent, getFolderNames, getRoot, scheduleSave, uid, type Marker } from "./state";
 
@@ -206,7 +206,7 @@ function openImportDialog(prefill = ""): void {
   $<HTMLInputElement>("imNewName").value = "";
   $("imNewRow").hidden = true;
   refreshImport();
-  if (!dlg.open) dlg.showModal();
+  if (!dlg.open) showModalNoKeyboard(dlg);
 }
 
 /**
@@ -246,7 +246,7 @@ export function initExchange(hooks: Hooks): void {
     sel.value = [...sel.options].some((o) => o.value === cur) ? cur : ALL_FOLDERS;
     $<HTMLButtonElement>("exShare").hidden = typeof navigator.share !== "function";
     refreshExport();
-    exDlg.showModal();
+    showModalNoKeyboard(exDlg);
   };
   $<HTMLSelectElement>("exFolder").onchange = refreshExport;
   for (const id of ["exTarget", "exPoint", "exMortar"]) $<HTMLInputElement>(id).onchange = refreshExport;

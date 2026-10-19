@@ -45,7 +45,7 @@ import {
   setTapHandlers,
   syncImageSize
 } from "./mapView";
-import { $, ask, toast } from "./dom";
+import { $, ask, showModalNoKeyboard, toast } from "./dom";
 import { ensureHeights, ensureMapImage, getAutoHeight, startMapImportUi } from "./mapImport";
 import { heightAt, onHeightsLoaded } from "./terrainHeight";
 import { onLangChange, t } from "./i18n";
@@ -312,7 +312,7 @@ export function openMarkerDialog(marker?: Marker, preset?: DialogPreset): void {
   $<HTMLButtonElement>("fDel").hidden = !marker;
   $<HTMLInputElement>("fDestroyed").checked = !!marker?.destroyed;
   $("fDestroyedRow").hidden = d.type === "mortar";
-  dlg.showModal();
+  showModalNoKeyboard(dlg);
 
   if (!marker && d.h === null && isFinite(d.x) && isFinite(d.z)) {
     const requestX = d.x;

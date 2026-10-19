@@ -22,6 +22,18 @@ export interface AskField {
   value?: string;
 }
 
+/**
+ * Відкриває модальний діалог. На телефоні (сенсорний екран) браузер сам ставить фокус на перше поле,
+ * і вискакує клавіатура: знімаємо цей фокус, поле вибирається дотиком.
+ */
+export function showModalNoKeyboard(dlg: HTMLDialogElement): void {
+  dlg.showModal();
+  if (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches) {
+    const a = document.activeElement as HTMLElement | null;
+    if (a && dlg.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) a.blur();
+  }
+}
+
 /** Модальне діалогове вікно замість window.confirm/prompt. */
 export function ask(title: string, text: string, yesLabel?: string, fields?: AskField[]): Promise<Record<string, string> | null> {
   return new Promise((resolve) => {
