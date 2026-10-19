@@ -26,13 +26,30 @@
   --accent:#6ee7a8;--on-accent:#0d1a10;
   --pl-transport:#f0c060;
 }
-/* Колірні теми змінюють лише акцент (кнопки, активні вкладки, виділення): фон, текст і мітки лишаються звичайними.
-   Зелена — типова палітра вище; для світлої системної теми акцент темніший, для темної — світліший. */
-:root[data-theme="red"]{--accent:#c8402f;--on-accent:#fff5f3;--focus:#c8402f}
-:root[data-theme="blue"]{--accent:#2f6fd0;--on-accent:#f3f8ff;--focus:#2f6fd0}
+/* Колірні теми — цілісні палітри: тло, поверхні, лінії, текст і акцент підібрані разом (не монохромний фільтр).
+   Мітки (міномет — синій, ціль — помаранчевий, точка — фіолетовий) і назви пунктів лишаються звичайними в усіх темах.
+   Зелена — типова палітра вище. Спочатку світлі варіанти (системна світла тема), далі темні. */
+:root[data-theme="red"]{
+  --bg:#efe7e4;--surface:#f8f2f0;--raised:#ffffff;--line:#d8c8c4;--ink:#2a1d1b;--muted:#7a625e;
+  --mapblank:#e6dbd7;--grid:rgba(42,29,27,.42);--gridfine:rgba(42,29,27,.14);
+  --accent:#c4402f;--on-accent:#fff6f4;--focus:#c4402f;--pl-nature:#2f8a55;
+}
+:root[data-theme="blue"]{
+  --bg:#e4eaf1;--surface:#eff4f9;--raised:#ffffff;--line:#c4d0de;--ink:#1b2530;--muted:#5a6b7f;
+  --mapblank:#dbe3ec;--grid:rgba(27,37,48,.42);--gridfine:rgba(27,37,48,.14);
+  --accent:#2c6fd4;--on-accent:#f3f8ff;--focus:#2c6fd4;--pl-nature:#2f8a55;
+}
 @media (prefers-color-scheme:dark){
-  :root[data-theme="red"]{--accent:#ff6b5a;--on-accent:#1a0302;--focus:#ff9a8c}
-  :root[data-theme="blue"]{--accent:#5aa9ff;--on-accent:#02101f;--focus:#8cc4ff}
+  :root[data-theme="red"]{
+    --bg:#1b1514;--surface:#241d1c;--raised:#2d2423;--line:#45353a;--ink:#ede5e1;--muted:#a69692;
+    --mapblank:#1f1817;--grid:rgba(237,229,225,.42);--gridfine:rgba(237,229,225,.12);
+    --accent:#ff6b57;--on-accent:#1d0905;--focus:#ff9a8a;--pl-nature:#7fd8a0;
+  }
+  :root[data-theme="blue"]{
+    --bg:#121821;--surface:#1a2331;--raised:#222e3f;--line:#33445b;--ink:#e0e7ef;--muted:#93a4ba;
+    --mapblank:#151c27;--grid:rgba(224,231,239,.42);--gridfine:rgba(224,231,239,.12);
+    --accent:#5aa9ff;--on-accent:#04101f;--focus:#8cc4ff;--pl-nature:#7fd8a0;
+  }
 }
 html{height:100%;overscroll-behavior:none}
 body{margin:0;height:100%;background:var(--bg);color:var(--ink);
