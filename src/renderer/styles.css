@@ -1,55 +1,24 @@
+/* Три колірні теми (зелена — типова, червона, синя) — завжди темні; системна світла/темна тема не використовується.
+   Червона й синя побудовані як зелена: ті самі співвідношення тонів, лише інший колірний тон. */
 :root{
-  --bg:#e8eae1;--surface:#f5f6f0;--raised:#ffffff;--line:#c7ccbd;--ink:#1d2721;--muted:#5a675d;
-  --mortar:#27628f;--target:#b9481a;--point:#5e4f8c;--grid:rgba(29,39,33,.42);--gridfine:rgba(29,39,33,.14);
-  --mapblank:#dfe3d6;--focus:#27628f;
-  --accent:#1f8f5f;--on-accent:#f5f6f0;
-  --pl-settlement:var(--ink);--pl-military:var(--target);--pl-transport:#a86a00;--pl-industry:var(--point);--pl-water:var(--mortar);--pl-nature:var(--accent);
+  --bg:#161c18;--surface:#1f2721;--raised:#27302a;--line:#37433b;--ink:#e3e1d4;--muted:#98a399;
+  --mortar:#7db0d8;--target:#f0975a;--point:#b2a3d8;--grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);
+  --mapblank:#1b221d;--focus:#7db0d8;
+  --accent:#6ee7a8;--on-accent:#0d1a10;
+  --pl-settlement:var(--ink);--pl-military:var(--target);--pl-transport:#f0c060;--pl-industry:var(--point);--pl-water:var(--mortar);--pl-nature:var(--accent);
   --glass:color-mix(in srgb,var(--surface) 62%,transparent);
   --glass-strong:color-mix(in srgb,var(--surface) 86%,transparent);
   --glass-border:color-mix(in srgb,var(--ink) 12%,transparent);
   /* Відступи safe-area застосовують самі шапка, панель і тости — не додаємо їх ще й тут, інакше вони подвоюються. */
   box-sizing:border-box;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#161c18;--surface:#1f2721;--raised:#27302a;--line:#37433b;--ink:#e3e1d4;--muted:#98a399;
-    --mortar:#7db0d8;--target:#f0975a;--point:#b2a3d8;--grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);
-    --mapblank:#1b221d;--focus:#7db0d8;
-    --accent:#6ee7a8;--on-accent:#0d1a10;
-    --pl-transport:#f0c060;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#161c18;--surface:#1f2721;--raised:#27302a;--line:#37433b;--ink:#e3e1d4;--muted:#98a399;
-  --mortar:#7db0d8;--target:#f0975a;--point:#b2a3d8;--grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);
-  --mapblank:#1b221d;--focus:#7db0d8;
-  --accent:#6ee7a8;--on-accent:#0d1a10;
-  --pl-transport:#f0c060;
-}
-/* Колірні теми побудовані так само, як зелена: ті ж співвідношення тонів (тло, поверхні, лінії, приглушений текст, акцент),
-   лише інший колірний тон. Мітки (міномет, ціль, точка), сітка й підписи пунктів — як у зеленої; ліси лишаються зеленими.
-   Спочатку світлі варіанти (системна світла тема), далі темні. */
 :root[data-theme="red"]{
-  --bg:#eae2e1;--surface:#f6f1f0;--raised:#ffffff;--line:#ccbfbd;--ink:#271e1d;--muted:#675c5a;
-  --grid:rgba(39,30,29,.42);--gridfine:rgba(39,30,29,.14);--mapblank:#e3d8d6;
-  --accent:#8f261f;--on-accent:#f6f1f0;--pl-nature:#1f8f5f;
+  --bg:#1c1716;--surface:#27201f;--raised:#302827;--line:#433937;--muted:#a39998;
+  --mapblank:#221c1b;--accent:#e7766e;--on-accent:#1a0f0d;--pl-nature:#6ee7a8;
 }
 :root[data-theme="blue"]{
-  --bg:#e1e5ea;--surface:#f0f3f6;--raised:#ffffff;--line:#bdc3cc;--ink:#1d2127;--muted:#5a5f67;
-  --grid:rgba(29,33,39,.42);--gridfine:rgba(29,33,39,.14);--mapblank:#d6dbe3;
-  --accent:#1f508f;--on-accent:#f0f3f6;--pl-nature:#1f8f5f;
-}
-@media (prefers-color-scheme:dark){
-  :root[data-theme="red"]{
-    --bg:#1c1716;--surface:#27201f;--raised:#302827;--line:#433937;--ink:#e3e1d4;--muted:#a39998;
-    --grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);--mapblank:#221c1b;
-    --accent:#e7766e;--on-accent:#1a0f0d;--pl-nature:#6ee7a8;
-  }
-  :root[data-theme="blue"]{
-    --bg:#16181c;--surface:#1f2227;--raised:#272b30;--line:#373c43;--ink:#e3e1d4;--muted:#989da3;
-    --grid:rgba(227,225,212,.42);--gridfine:rgba(227,225,212,.12);--mapblank:#1b1e22;
-    --accent:#6ea2e7;--on-accent:#0d121a;--pl-nature:#6ee7a8;
-  }
+  --bg:#16181c;--surface:#1f2227;--raised:#272b30;--line:#373c43;--muted:#989da3;
+  --mapblank:#1b1e22;--accent:#6ea2e7;--on-accent:#0d121a;--pl-nature:#6ee7a8;
 }
 html{height:100%;overscroll-behavior:none}
 body{margin:0;height:100%;background:var(--bg);color:var(--ink);
@@ -319,9 +288,7 @@ progress::-moz-progress-bar{background:var(--accent);border-radius:999px}
 #exportDlg textarea,#importDlg textarea{width:100%;font:12px/1.35 ui-monospace,Consolas,monospace}
 
 /* ---------- смуги прокрутки та повзунки в стилі застосунку ---------- */
-:root{color-scheme:light;--sb-thumb:color-mix(in srgb,var(--ink) 24%,transparent);--sb-thumb-hover:color-mix(in srgb,var(--ink) 44%,transparent)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark}}
-:root[data-theme="dark"]{color-scheme:dark}
+:root{color-scheme:dark;--sb-thumb:color-mix(in srgb,var(--ink) 24%,transparent);--sb-thumb-hover:color-mix(in srgb,var(--ink) 44%,transparent)}
 /* Chromium/Electron/Safari: тонка заокруглена смуга без стрілок і без білої доріжки */
 ::-webkit-scrollbar{width:10px;height:10px;background:transparent}
 ::-webkit-scrollbar-track{background:transparent}
