@@ -12,6 +12,7 @@ import { isRemote, isStandalone } from "./platform";
 import { setShotVolume, playTestSound } from "./shotAudio";
 import { getRoot, scheduleSave, VALID_SHELLS } from "./state";
 import { setKeepAwake } from "./wakeLock";
+import { canVibrate, isIosHaptics, vibrate } from "./haptics";
 import { setLightMode } from "./mapView";
 
 export interface SettingsHooks {
@@ -280,10 +281,14 @@ export function initSettings(h: SettingsHooks): void {
   $<HTMLInputElement>("vibToggle").onchange = (e) => {
     getRoot().vibration = (e.target as HTMLInputElement).checked;
     scheduleSave();
-    if (getRoot().vibration) navigator.vibrate?.(30);
+    if (getRoot().vibration) vibrate(30);
   };
-  if (typeof navigator.vibrate !== "function") {
+  if (!canVibrate()) {
     $<HTMLInputElement>("vibToggle").disabled = true;
+    $("vibHint").hidden = false;
+  } else if (isIosHaptics()) {
+    $("vibHint").dataset.i18n = "setVibrationIos";
+    $("vibHint").textContent = t("setVibrationIos");
     $("vibHint").hidden = false;
   }
   $<HTMLInputElement>("awakeToggle").onchange = (e) => {

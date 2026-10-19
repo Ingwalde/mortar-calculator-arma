@@ -269,6 +269,7 @@ const DICT: Dict = {
   setVolume: { uk: "Гучність", en: "Volume" },
   setSoundTest: { uk: "Перевірити звук", en: "Test sound" },
   setVibration: { uk: "Вібрація при пострілі", en: "Vibrate on shot" },
+  setVibrationIos: { uk: "На iPhone замість вібрації короткий тактильний відгук (потрібен iOS 17.4 або новіший).", en: "On iPhone this is a short haptic tap instead of vibration (needs iOS 17.4 or newer)." },
   setVibrationNone: { uk: "Цей пристрій не підтримує вібрацію.", en: "This device does not support vibration." },
   setAwake: { uk: "Не гасити екран, поки застосунок відкрито", en: "Keep the screen on while the app is open" },
   setSpread: { uk: "Розкид снарядів", en: "Shell dispersion" },

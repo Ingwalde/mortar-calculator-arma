@@ -57,6 +57,7 @@ import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
+import { vibrate as haptic } from "./haptics";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
@@ -224,7 +225,7 @@ async function copyText(text: string): Promise<void> {
 
 /** Вібрація, якщо вона ввімкнена в налаштуваннях і підтримується пристроєм. */
 function vibrate(ms: number): void {
-  if (getRoot().vibration) navigator.vibrate?.(ms);
+  if (getRoot().vibration) haptic(ms);
 }
 
 // ---------- marker dialog ----------
