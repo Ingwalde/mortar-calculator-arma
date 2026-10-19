@@ -161,6 +161,7 @@ self.addEventListener("fetch", (event) => {
     p.startsWith("/tile/") ||
     p.startsWith("/api/heights/") ||
     p.startsWith("/tiles/") ||
+    p.startsWith("/tiles-hd/") ||
     p.startsWith("/maps/") ||
     p.startsWith("/heights/")
   ) {

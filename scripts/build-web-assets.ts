@@ -12,7 +12,7 @@ import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { onlineTileList, tileUrl } from "../src/core/onlineTiles";
 import { PRESETS } from "../src/core/terrains";
-import { WEB_MIRROR_MIN_LOD, mirroredTilePath, webHeightsPath } from "../src/core/webMirror";
+import { WEB_DETAIL_MIN_LOD, WEB_MIRROR_MIN_LOD, detailTilePath, mirroredTilePath, webHeightsPath } from "../src/core/webMirror";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const out = join(root, "out", "web");
@@ -134,11 +134,25 @@ async function buildModMaps(): Promise<void> {
   console.log(`карти модів: ${Object.keys(index).length} терен(ів)`);
 }
 
+/**
+ * Дзеркальні тайли (tiles/) і, окремо, деталізовані (tiles-hd/: їх немає в APK). Обидва беруться з reforger.recoil.org
+ * і кешуються в .web-cache. WEB_SKIP_HD=1 пропускає деталізовані.
+ */
 async function buildTiles(): Promise<void> {
+  const jobs: { id: string; fromLod: number; toLod: number; path: (lod: number, x: number, y: number) => string; label: string }[] = [];
   for (const [id, minLod] of Object.entries(WEB_MIRROR_MIN_LOD)) {
+    jobs.push({ id, fromLod: PRESETS.find((p) => p.id === id)?.tiles?.maxLod ?? 0, toLod: minLod, path: (l, x, y) => mirroredTilePath(id, l, x, y), label: "tiles" });
+  }
+  if (process.env.WEB_SKIP_HD !== "1") {
+    for (const [id, minLod] of Object.entries(WEB_DETAIL_MIN_LOD)) {
+      jobs.push({ id, fromLod: (WEB_MIRROR_MIN_LOD[id] ?? 1) - 1, toLod: minLod, path: (l, x, y) => detailTilePath(id, l, x, y), label: "tiles-hd" });
+    }
+  }
+  for (const job of jobs) {
+    const { id, toLod: minLod } = job;
     const preset = PRESETS.find((p) => p.id === id);
     if (!preset?.tiles) continue;
-    const list = onlineTileList(preset.sizeX, preset.sizeZ, preset.tiles.maxLod, minLod);
+    const list = onlineTileList(preset.sizeX, preset.sizeZ, job.fromLod, minLod);
     let next = 0;
     let have = 0;
     let missing = 0;
@@ -147,7 +161,7 @@ async function buildTiles(): Promise<void> {
         const i = next++;
         if (i >= list.length) return;
         const c = list[i];
-        const rel = mirroredTilePath(id, c.lod, c.x, c.y);
+        const rel = job.path(c.lod, c.x, c.y);
         const cached = join(cache, rel);
         let ok = existsSync(cached);
         if (!ok) {
@@ -169,7 +183,7 @@ async function buildTiles(): Promise<void> {
       }
     };
     await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-    console.log(`тайли ${id} (LOD ≥ ${minLod}): ${have} з ${list.length}${missing ? `, відсутні: ${missing}` : ""}`);
+    console.log(`${job.label} ${id} (LOD ${minLod}..${job.fromLod}): ${have} з ${list.length}${missing ? `, відсутні: ${missing}` : ""}`);
   }
 }
 

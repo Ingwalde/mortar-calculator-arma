@@ -200,6 +200,11 @@ html.no-splash #splash{display:none}
           <p class="hint" style="font-size:12px" data-i18n="lanSecurity"></p>
         </div></details>
 
+        <details class="card" data-card="storage" id="storageCard"><summary><span data-i18n="storageHeading">Завантажені дані</span></summary><div class="card-body">
+        <p class="hint" data-i18n="storageHint">Кеш онлайн-тайлів, імпортовані карти й висоти займають місце на диску. Тут видно, скільки, і можна видалити окремо для кожного терену.</p>
+        <div class="row"><button class="btn" id="storageOpen" data-i18n="storageOpenBtn">Відкрити менеджер</button></div>
+        </div></details>
+
         <details class="card" data-card="backup"><summary><span data-i18n="backupHeading">Резервна копія</span></summary><div class="card-body">
         <p class="hint" data-i18n="backupHint">Мітки зберігаються автоматично. Тут можна скопіювати їх як текст або вставити раніше скопійовані.</p>
         <textarea id="json" rows="4" data-i18n-placeholder="jsonPlaceholder" placeholder="Вставте JSON, щоб імпортувати"></textarea>
@@ -255,6 +260,7 @@ html.no-splash #splash{display:none}
   <p class="hint" id="offlineProgText" hidden></p>
   <p class="hint" id="offlineSaved"></p>
   <p class="hint" id="offlineUsage"></p>
+  <div id="offlineList" class="storage-list" hidden></div>
   <div class="dlg-actions" style="justify-content:space-between;flex-wrap:wrap">
     <button type="button" class="btn danger" id="offlineClear" data-i18n="offlineClearBtn">Видалити збережене</button>
     <span style="display:flex;gap:8px">
@@ -262,6 +268,15 @@ html.no-splash #splash{display:none}
       <button type="button" class="btn primary" id="offlineSave" data-i18n="offlineSaveBtn">Зберегти карту</button>
       <button type="button" class="btn" id="offlineClose" data-i18n="closeBtn">Закрити</button>
     </span>
+  </div>
+</dialog>
+<dialog id="storageDlg">
+  <h3 data-i18n="storageTitle">Завантажені дані</h3>
+  <div id="storageList" class="storage-list"></div>
+  <p class="hint" id="storageTotal"></p>
+  <div class="dlg-actions">
+    <button type="button" class="btn" id="storageRefresh" data-i18n="storageRefreshBtn">Оновити</button>
+    <button type="button" class="btn primary" id="storageClose" data-i18n="closeBtn">Закрити</button>
   </div>
 </dialog>
 <dialog id="aboutDlg">

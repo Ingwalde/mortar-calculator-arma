@@ -364,3 +364,10 @@ input[type=checkbox],input[type=radio],progress{accent-color:var(--accent)}
 .themechip{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
 .themechip i{width:14px;height:14px;border-radius:50%;display:inline-block}
 .themechip[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+
+/* ---------- менеджер завантажених даних ---------- */
+#storageDlg{width:min(520px,calc(100vw - 24px));max-height:min(82vh,680px);overflow:auto}
+.storage-list{display:flex;flex-direction:column;gap:12px;margin:8px 0}
+.storage-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.storage-head{font-weight:700;margin-bottom:6px}
+.storage-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;font-size:14px}

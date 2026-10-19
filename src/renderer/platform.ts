@@ -6,7 +6,7 @@
 import type { MortarApi } from "../preload/index";
 import { tileUrl } from "@core/onlineTiles";
 import { findPreset } from "@core/terrains";
-import { isMirroredTile, mirroredTilePath, modMapTilePath, webHeightsPath, webModMap } from "@core/webMirror";
+import { modMapTilePath, siteTilePath, webHeightsPath, webModMap } from "@core/webMirror";
 
 /** Автономна веб-версія (PWA на Pages / APK): без ПК, стан лише на пристрої. Підставляється збіркою. */
 export const isStandalone: boolean = typeof __STANDALONE__ !== "undefined" && __STANDALONE__;
@@ -252,6 +252,7 @@ function createWebApi(): MortarApi {
       cancelPrefetch: async () => undefined,
       onPrefetchProgress: () => () => undefined
     },
+    storage: { list: async () => [], remove: async () => undefined },
     heights: {
       importFromUrl: noImport,
       async read(terrainId) {
@@ -364,7 +365,9 @@ function markShortViewport(): void {
 export function onlineTileSrc(terrainId: string, lod: number, x: number, y: number): string {
   if (isStandalone) {
     // грубі рівні — зі свого сайту (кешуються офлайн), глибші — напряму з reforger.recoil.org
-    if (isMirroredTile(terrainId, lod)) return mirroredTilePath(terrainId, lod, x, y);
+    // свій сайт: дзеркальні, а в PWA ще й деталізовані (кешуються офлайн); решта — напряму з reforger.recoil.org
+    const own = siteTilePath(terrainId, lod, x, y, isNativeApp);
+    if (own) return own;
     const base = findPreset(terrainId)?.tiles?.base;
     if (base) return tileUrl(base, lod, x, y);
   }

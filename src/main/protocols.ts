@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { findPreset } from "../core/terrains";
+import { bundledMap } from "../core/bundledMaps";
 import { tileUrl } from "../core/onlineTiles";
 
 /** Викликати ДО app.whenReady() — реєструє схеми як привілейовані (fetch/CORS з рендерера). */
@@ -78,16 +79,25 @@ export interface PyramidTile {
  * Тайл імпортованої піраміди (sharp .tile google layout: {z}/{row}/{col}.webp). Старі піраміди з JPEG
  * (.jpg) теж читаються — до конвертації scripts/convert-pyramids-webp.mjs.
  */
+/** Каталог вбудованої з застосунком піраміди (resources/maps/<id>; у зібраному застосунку — всередині app.asar). */
+export function bundledPyramidDir(terrainId: string): string {
+  return join(app.getAppPath(), "resources", "maps", terrainId);
+}
+
 export async function getPyramidTile(terrainId: string, z: string, row: string, col: string): Promise<PyramidTile | null> {
   // terrainId/z/row/col приходять з URL (в т.ч. з LAN) — лише прості сегменти, без виходу з каталогу піраміди.
   for (const seg of [terrainId, z, row, col]) if (!/^[A-Za-z0-9_-]+$/.test(seg)) return null;
-  const base = join(pyramidDir(terrainId), z, row, col);
-  for (const [ext, type] of [
-    [".webp", "image/webp"],
-    [".jpg", "image/jpeg"]
-  ] as const) {
-    const filePath = base + ext;
-    if (existsSync(filePath)) return { data: await readFile(filePath), type };
+  // власний імпорт користувача має пріоритет, далі — карта, що йде разом із застосунком
+  const dirs = [pyramidDir(terrainId), ...(bundledMap(terrainId) ? [bundledPyramidDir(terrainId)] : [])];
+  for (const dir of dirs) {
+    const base = join(dir, z, row, col);
+    for (const [ext, type] of [
+      [".webp", "image/webp"],
+      [".jpg", "image/jpeg"]
+    ] as const) {
+      const filePath = base + ext;
+      if (existsSync(filePath)) return { data: await readFile(filePath), type };
+    }
   }
   return null;
 }

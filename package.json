@@ -18,7 +18,7 @@
     "smoke": "node scripts/smoke-packaged.mjs",
     "build:web": "vite build --config vite.web.config.ts && tsx scripts/build-web-assets.ts",
     "preview:web": "vite preview --config vite.web.config.ts --outDir out/web --port 4173",
-    "android:sync": "npm run build:web && node scripts/sync-android-version.mjs && cap sync android",
+    "android:sync": "npm run build:web && node -e \"require('fs').rmSync('out/web/tiles-hd', { recursive: true, force: true })\" && node scripts/sync-android-version.mjs && cap sync android",
     "pack": "electron-vite build && electron-builder --win --dir",
     "check": "npm run typecheck && vitest run && npm run pack && npm run smoke",
     "dist:setup": "electron-vite build && electron-builder --win nsis",

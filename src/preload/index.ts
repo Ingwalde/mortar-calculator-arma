@@ -15,6 +15,15 @@ export interface MapImportResult {
   croppedHeight?: number;
 }
 
+export interface StorageEntry {
+  id: string;
+  tilesBytes: number;
+  tilesFiles: number;
+  mapBytes: number;
+  mapFiles: number;
+  heightsBytes: number;
+}
+
 export interface LanInfo {
   enabled: boolean;
   port: number;
@@ -92,6 +101,10 @@ const api = {
       ipcRenderer.on("tiles:prefetchProgress", listener);
       return () => ipcRenderer.removeListener("tiles:prefetchProgress", listener);
     }
+  },
+  storage: {
+    list: (): Promise<StorageEntry[]> => ipcRenderer.invoke("storage:list"),
+    remove: (terrainId: string, kind: "tiles" | "map" | "heights"): Promise<void> => ipcRenderer.invoke("storage:remove", terrainId, kind)
   },
   heights: {
     importFromUrl: (terrainId: string, url: string): Promise<{ rows: number; cols: number }> =>

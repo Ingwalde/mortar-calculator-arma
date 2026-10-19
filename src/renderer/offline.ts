@@ -5,7 +5,9 @@
  */
 import { planPyramid } from "@core/tilePyramid";
 import { onlineTileList } from "@core/onlineTiles";
-import { mirroredTilePath, modMapTilePath, webHeightsPath, webMirrorMinLod } from "@core/webMirror";
+import { detailTilePath, isMirroredTile, mirroredTilePath, modMapTilePath, webDetailMinLod, webHeightsPath, webMirrorMinLod } from "@core/webMirror";
+import { PRESETS } from "@core/terrains";
+import { getRoot } from "./state";
 import { $, toast } from "./dom";
 import { t } from "./i18n";
 import { currentMeta, getCurrent } from "./state";
@@ -39,23 +41,29 @@ async function loadAvgBytes(id: string): Promise<void> {
   }
 }
 
-/** Автономна версія: зберігаємо дзеркальні тайли зі свого сайту (глибші рівні — лише онлайн). */
+/** Середній розмір тайла зі свого сайту (дзеркальні й деталізовані JPEG), для оцінки обсягу. */
+const SITE_TILE_BYTES = 22 * 1024;
+
+/** Автономна версія: тайли зі свого сайту — дзеркальні й (у PWA) деталізовані; глибше — лише онлайн. */
 function standaloneOptions(): OfflineOption[] {
   const meta = currentMeta();
   const tiles = meta.preset?.tiles;
   const minMirror = webMirrorMinLod(meta.id);
   if (!tiles || minMirror === undefined) return [];
+  // у Android-застосунку деталізованих рівнів нема (діалог там прихований, але логіка лишається правильною)
+  const detail = isNativeApp ? undefined : webDetailMinLod(meta.id);
+  const finest = Math.min(minMirror, detail ?? minMirror);
   const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
-  const lods = [...new Set([Math.min(tiles.maxLod, 3), Math.min(tiles.maxLod, 2), minMirror])]
-    .filter((l) => l >= minMirror && l <= tiles.maxLod)
-    .sort((a, b) => b - a);
+  const lods = [3, 2, 1, 0].filter((l) => l >= finest && l <= tiles.maxLod);
+  const sitePath = (lod: number, x: number, y: number): string =>
+    isMirroredTile(meta.id, lod) ? mirroredTilePath(meta.id, lod, x, y) : detailTilePath(meta.id, lod, x, y);
   return lods.map((lod, i) => {
-    const urls = onlineTileList(meta.sizeX, meta.sizeZ, tiles.maxLod, lod).map((c) => mirroredTilePath(meta.id, c.lod, c.x, c.y));
+    const urls = onlineTileList(meta.sizeX, meta.sizeZ, tiles.maxLod, lod).map((c) => sitePath(c.lod, c.x, c.y));
     return {
       key: `w${lod}`,
       label: names[i] ?? names[names.length - 1],
       urls: [...urls, webHeightsPath(meta.id)],
-      bytes: urls.length * ONLINE_TILE_BYTES
+      bytes: urls.length * SITE_TILE_BYTES
     };
   });
 }
@@ -127,7 +135,7 @@ function terrainPrefixes(id: string): string[] {
   if (isStandalone) {
     // сайт може лежати на підшляху (GitHub Pages): ключі кешу — повні шляхи
     const root = new URL("./", document.baseURI).pathname;
-    return [`${root}tiles/${id}/`, `${root}maps/${id}/`, `${root}heights/${id}`];
+    return [`${root}tiles/${id}/`, `${root}tiles-hd/${id}/`, `${root}maps/${id}/`, `${root}heights/${id}`];
   }
   return [`/localtile/${id}/`, `/tile/${id}/`, `/api/heights/${id}`];
 }
@@ -215,8 +223,8 @@ async function pcDownload(minLod: number): Promise<void> {
   }
 }
 
-async function clearTerrain(): Promise<void> {
-  const id = currentMeta().id;
+async function clearTerrain(terrainId?: string): Promise<void> {
+  const id = terrainId ?? currentMeta().id;
   try {
     const cache = await caches.open(TILES_CACHE);
     const prefixes = terrainPrefixes(id);
@@ -228,6 +236,91 @@ async function clearTerrain(): Promise<void> {
   }
   toast(t("offlineCleared"));
   void refresh();
+}
+
+/** Видаляє з кешу все збережене для всіх теренів. */
+async function clearAllSaved(): Promise<void> {
+  try {
+    const cache = await caches.open(TILES_CACHE);
+    for (const req of await cache.keys()) await cache.delete(req);
+  } catch {
+    // кеш недоступний
+  }
+  toast(t("offlineCleared"));
+  void refresh();
+}
+
+const TERRAIN_FROM_PATH = /(?:^|\/)(?:tiles|tiles-hd|maps|localtile|tile)\/([A-Za-z0-9_-]+)\//;
+const HEIGHTS_FROM_PATH = /(?:^|\/)(?:api\/heights|heights)\/([A-Za-z0-9_-]+)/;
+
+/** Збережене на пристрої за теренами: кількість файлів і розмір (з content-length, інакше оцінка). */
+async function savedByTerrain(): Promise<Map<string, { files: number; bytes: number }>> {
+  const out = new Map<string, { files: number; bytes: number }>();
+  if (!("caches" in window)) return out;
+  try {
+    const cache = await caches.open(TILES_CACHE);
+    const keys = await cache.keys();
+    const owner = (req: Request): string | null => {
+      const p = new URL(req.url).pathname;
+      return TERRAIN_FROM_PATH.exec(p)?.[1] ?? HEIGHTS_FROM_PATH.exec(p)?.[1] ?? null;
+    };
+    for (let i = 0; i < keys.length; i += 100) {
+      await Promise.all(
+        keys.slice(i, i + 100).map(async (req) => {
+          const id = owner(req);
+          if (!id) return;
+          const res = await cache.match(req);
+          const len = Number(res?.headers.get("content-length"));
+          const e = out.get(id) ?? { files: 0, bytes: 0 };
+          e.files++;
+          e.bytes += Number.isFinite(len) && len > 0 ? len : SITE_TILE_BYTES;
+          out.set(id, e);
+        })
+      );
+    }
+  } catch {
+    // кеш недоступний
+  }
+  return out;
+}
+
+function terrainTitle(id: string): string {
+  return PRESETS.find((p) => p.id === id)?.name ?? getRoot().customTerrains.find((c) => c.id === id)?.name ?? id;
+}
+
+/** Список збереженого на пристрої (PWA): за теренами, з кнопками видалення. */
+async function renderSavedList(): Promise<void> {
+  const box = $("offlineList");
+  const stats = await savedByTerrain();
+  box.textContent = "";
+  box.hidden = stats.size === 0;
+  if (!stats.size) return;
+  const title = document.createElement("div");
+  title.className = "storage-head";
+  title.textContent = t("offlineListTitle");
+  box.appendChild(title);
+  for (const [id, s] of [...stats.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const row = document.createElement("div");
+    row.className = "storage-row";
+    const txt = document.createElement("span");
+    txt.textContent = `${terrainTitle(id)}: ${fmtMb(s.bytes)} ${t("unitMb")} · ${s.files} ${t("storageFiles")}`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn small danger";
+    btn.textContent = t("deleteBtn");
+    btn.onclick = () => void clearTerrain(id);
+    row.append(txt, btn);
+    box.appendChild(row);
+  }
+  if (stats.size > 1) {
+    const all = document.createElement("button");
+    all.type = "button";
+    all.className = "btn small danger";
+    all.style.marginTop = "6px";
+    all.textContent = t("offlineClearAll");
+    all.onclick = () => void clearAllSaved();
+    box.appendChild(all);
+  }
 }
 
 /** Варіанти деталізації для ПК: лише онлайн-тайли (імпортована карта вже на диску). */
@@ -297,6 +390,7 @@ async function refresh(): Promise<void> {
   $<HTMLButtonElement>("offlineSave").disabled = !hasMap || !secure;
   $("offlineNoMap").hidden = hasMap;
 
+  void renderSavedList();
   const n = await cachedCount(terrainPrefixes(meta.id));
   $("offlineSaved").textContent = t("offlineSaved", { n });
   $<HTMLButtonElement>("offlineClear").disabled = n === 0;

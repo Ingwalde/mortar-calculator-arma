@@ -144,9 +144,16 @@ describe("LAN server", () => {
       const reader = res.body!.getReader();
       const dec = new TextDecoder();
       return {
+        // повне SSE-повідомлення (до порожнього рядка): шматки можуть склеюватись або ділитись залежно від навантаження
         async next(): Promise<string> {
-          const { value } = await reader.read();
-          return dec.decode(value);
+          let buf = "";
+          for (;;) {
+            const { value, done } = await reader.read();
+            if (value) buf += dec.decode(value, { stream: true });
+            const events = buf.split("\n\n").filter((e) => e.trim().length > 0);
+            if (buf.endsWith("\n\n") && events.length) return events[events.length - 1];
+            if (done) return buf;
+          }
         },
         close: () => ac.abort()
       };

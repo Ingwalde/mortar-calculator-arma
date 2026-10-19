@@ -4,6 +4,7 @@ import type { WeaponId } from "@core/ballistics";
 import type { Lang } from "./i18n";
 import { clampPlacesScale, normalizePlacesLevel, type PlaceTier } from "@core/places";
 import { webModMap } from "@core/webMirror";
+import { bundledMap } from "@core/bundledMaps";
 import { defaultSpread, normalizeSpread, type SpreadSettings } from "@core/spread";
 
 export type ThemeName = "green" | "red" | "blue";
@@ -246,6 +247,11 @@ export function normalizeRoot(raw: unknown): RootState {
     if (typeof __STANDALONE__ !== "undefined" && __STANDALONE__) {
       const wm = webModMap(meta.id);
       if (wm) root.data[meta.id].map = { kind: "pyramid", width: wm.width, height: wm.height };
+    } else {
+      // ПК: карта, що постачається із застосунком, коли власного імпорту нема
+      const bm = bundledMap(meta.id);
+      const cur = root.data[meta.id].map;
+      if (bm && (!cur || cur.kind === "none")) root.data[meta.id].map = { kind: "pyramid", width: bm.width, height: bm.height };
     }
   }
 

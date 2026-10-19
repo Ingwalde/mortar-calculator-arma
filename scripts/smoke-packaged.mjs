@@ -93,6 +93,10 @@ try {
   check(store.status === 404 || store.status === 200, "стан (/api/store) відповідає");
   const stat = await get("/api/tilestat/everon", cookie);
   check(stat.status === 200 && stat.text.includes("avgBytes"), "оцінка тайлів (/api/tilestat)");
+  // вбудована карта Novyinovka віддається зі свіжої папки даних (без власного імпорту): тайл читається з app.asar
+  const bt = await fetch(`${base}/localtile/novyinovka/5/10/10`, { headers: cookie });
+  const btBuf = Buffer.from(await bt.arrayBuffer());
+  check(bt.status === 200 && (bt.headers.get("content-type") ?? "").includes("image/webp") && btBuf.length > 500, "вбудована карта Novyinovka (тайл з app.asar)");
   const hRes = await fetch(`${base}/api/heights/bystrany`, { headers: cookie });
   const hBuf = hRes.ok ? Buffer.from(await hRes.arrayBuffer()) : null;
   check(!!hBuf && hBuf.length > 1_000_000 && hBuf.readInt32LE(0) > 100, "вбудовані висоти (стиснені) розпаковуються");

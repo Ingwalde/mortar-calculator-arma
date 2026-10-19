@@ -1,4 +1,5 @@
 import { currentMeta, getCurrent, scheduleSave, type TerrainMeta } from "./state";
+import { bundledMap } from "@core/bundledMaps";
 import { resetView } from "./mapView";
 import { $, toast } from "./dom";
 import type { MapImportProgress } from "../preload/index";
@@ -140,7 +141,9 @@ export function startMapImportUi(onDone: () => void): void {
 
   $<HTMLButtonElement>("clearMap").onclick = async () => {
     const meta = currentMeta();
-    getCurrent().map = { kind: "none" };
+    // вбудована карта (якщо є) повертається замість порожньої сітки
+    const bm = bundledMap(meta.id);
+    getCurrent().map = bm ? { kind: "pyramid", width: bm.width, height: bm.height } : { kind: "none" };
     forgetHeights(meta.id);
     scheduleSave();
     resetView();

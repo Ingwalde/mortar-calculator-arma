@@ -53,6 +53,7 @@ import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { initExchange } from "./exchange";
+import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted } from "./shotAudio";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
@@ -1514,6 +1515,7 @@ export function initPanels(): void {
   applyShotSettings();
   initOffline();
   initUpdater();
+  if (!isRemote) initStoragePanel({ onMapChanged: () => { resetView(); renderAll(); } });
   initExchange({
     renderAll,
     switchTerrain: (id) => {

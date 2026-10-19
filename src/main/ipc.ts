@@ -8,6 +8,7 @@ import { buildTilePyramid, ImportCancelledError, type ImportProgress } from "./t
 import { downloadFile } from "./tiles/download";
 import { convertHeightData, heightsPath, readHeights } from "./tiles/heights";
 import { ensureOnlineTile, pyramidDir } from "./protocols";
+import { STORAGE_KINDS, listStorage, removeStorage, type StorageKind } from "./tiles/storage";
 import {
   approveImagePath,
   consumeApprovedImagePath,
@@ -141,6 +142,13 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
     if (!isSafeId(terrainId)) throw new Error("Некоректний терен");
     await rm(pyramidDir(terrainId), { recursive: true, force: true });
     await rm(heightsPath(terrainId), { force: true });
+  });
+
+  // менеджер завантажених даних: список із розмірами й видалення за видом (id і вид перевіряються)
+  ipcMain.handle("storage:list", () => listStorage());
+  ipcMain.handle("storage:remove", async (_e, terrainId: string, kind: string) => {
+    if (!isSafeId(terrainId) || !STORAGE_KINDS.includes(kind as StorageKind)) throw new Error("Некоректні параметри");
+    await removeStorage(terrainId, kind as StorageKind);
   });
 
   ipcMain.handle("heights:importFromUrl", (_e, terrainId: string, url: string) => {
