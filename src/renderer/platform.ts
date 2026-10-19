@@ -337,7 +337,7 @@ if (isRemote) {
   if ("serviceWorker" in navigator && window.isSecureContext && import.meta.env.PROD && !isNativeApp) {
     // відносний шлях: сайт може лежати на підшляху (GitHub Pages), service worker береться з тієї ж папки
     // ревізія збірки в межах однієї версії: міняє адресу service worker-а, щоб клієнти отримали виправлену оболонку
-    void navigator.serviceWorker.register(`sw.js?v=${__APP_VERSION__}-r3`).catch(() => undefined);
+    void navigator.serviceWorker.register(`sw.js?v=${__APP_VERSION__}`).catch(() => undefined);
     void navigator.storage?.persist?.().catch(() => undefined);
   }
   window.addEventListener("online", () => void probe?.().then((ok) => ok && setOnline(true)));
