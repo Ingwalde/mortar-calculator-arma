@@ -9,7 +9,12 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let reverbSend: GainNode | null = null;
 let muted = false;
+let volume = 1;
 const MASTER_GAIN = 0.55;
+
+function masterLevel(): number {
+  return muted ? 0 : MASTER_GAIN * volume;
+}
 
 /** Усі запущені/заплановані джерела: при згортанні застосунку їх треба зупинити. */
 const live = new Set<AudioScheduledSourceNode>();
@@ -34,7 +39,13 @@ const flights: { launchPerf: number; flightSec: number }[] = [];
 /** Вимкнення звуку посеред польоту глушить і вже заплановане влучання. */
 export function setShotMuted(m: boolean): void {
   muted = m;
-  if (ctx && master) master.gain.setTargetAtTime(m ? 0 : MASTER_GAIN, ctx.currentTime, 0.03);
+  if (ctx && master) master.gain.setTargetAtTime(masterLevel(), ctx.currentTime, 0.03);
+}
+
+/** Гучність 0..1 (з налаштувань); множиться на внутрішній рівень тракту. */
+export function setShotVolume(v: number): void {
+  volume = Math.min(1, Math.max(0, v));
+  if (ctx && master) master.gain.setTargetAtTime(masterLevel(), ctx.currentTime, 0.03);
 }
 
 /**
@@ -96,7 +107,7 @@ function buildGraph(c: BaseAudioContext): { master: GainNode; reverbSend: GainNo
   comp.threshold.value = -22;
   comp.ratio.value = 5;
   const m = c.createGain();
-  m.gain.value = muted ? 0 : MASTER_GAIN;
+  m.gain.value = masterLevel();
   m.connect(comp).connect(c.destination);
 
   const verb = c.createConvolver();

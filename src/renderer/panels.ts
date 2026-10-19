@@ -2,7 +2,8 @@ import { clampPlacesScale, normalizePlacesLevel } from "@core/places";
 import { fmtM, gridRef, parseGrid, parseGridCorner } from "@core/geometry";
 import { PRESETS, findPreset } from "@core/terrains";
 import { TABLES, bearing, shellRange, solve, type WeaponId } from "@core/ballistics";
-import { MAX_SPREAD_PCT, gameRangeSpread, normalizeSpread, spreadRadii } from "@core/spread";
+import { gameRangeSpread, spreadRadii } from "@core/spread";
+import { allowedShells, pickShell } from "@core/settings";
 import { nearestPlace } from "@core/places";
 import {
   addCustomTerrain,
@@ -24,7 +25,8 @@ import {
   uid,
   type Marker,
   type MarkerType,
-  type ThemeName
+  type ThemeName,
+  VALID_SHELLS
 } from "./state";
 import {
   aimBuilding,
@@ -48,13 +50,14 @@ import { ensureHeights, ensureMapImage, getAutoHeight, startMapImportUi } from "
 import { heightAt, onHeightsLoaded } from "./terrainHeight";
 import { onLangChange, t } from "./i18n";
 import { initImmersive, initSheet } from "./sheet";
-import { initWakeLock } from "./wakeLock";
+import { initWakeLock, setKeepAwake } from "./wakeLock";
+import { closeSettings, initSettings, openSettings } from "./settingsPanel";
 import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
-import { playShot, playTestSound, setShotMuted } from "./shotAudio";
+import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
 import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
@@ -192,16 +195,21 @@ async function copyText(text: string): Promise<void> {
     toast(t("copied"));
   } catch {
     if (isRemote) {
-      // На телефоні вкладки «Карта» (з полем резервної копії) нема — показуємо текст у діалозі.
+      // На телефоні поля резервної копії нема — показуємо текст у діалозі.
       await ask(t("copyManualTitle"), "", t("closeBtn"), [{ key: "v", label: t("copyManualLabel"), value: text }]);
       return;
     }
     const box = $<HTMLTextAreaElement>("json");
     box.value = text;
-    showTab("setup");
+    openSettings("backup");
     box.select();
     toast(t("copyFromField"));
   }
+}
+
+/** Вібрація, якщо вона ввімкнена в налаштуваннях і підтримується пристроєм. */
+function vibrate(ms: number): void {
+  if (getRoot().vibration) navigator.vibrate?.(ms);
 }
 
 // ---------- marker dialog ----------
@@ -449,88 +457,25 @@ function currentSpreadRadii(w: WeaponId, dist: number): { a: number; b: number; 
 }
 setDrawCallbacks({ spread: spreadSpec });
 
-/** Блок «Розкид» у вкладці розрахунку: вмикач і два числа (% дальності) для поточної гармати. */
+/** Підсумок розкиду у вкладці розрахунку; вмикання й значення — в налаштуваннях. */
 function buildSpreadBox(w: WeaponId, dist: number): HTMLElement {
   const root = getRoot();
   const box = document.createElement("div");
   box.className = "spread-box";
-  const head = document.createElement("label");
-  head.className = "row";
-  head.style.cssText = "gap:8px;cursor:pointer;margin:14px 0 6px;font-weight:600";
-  const on = document.createElement("input");
-  on.type = "checkbox";
-  on.checked = root.spread.on;
-  const title = document.createElement("span");
-  title.textContent = t("spreadShow");
-  head.append(on, title);
-
-  const autoRow = document.createElement("label");
-  autoRow.className = "row";
-  autoRow.style.cssText = "gap:8px;cursor:pointer;margin:0 0 8px";
-  const autoCb = document.createElement("input");
-  autoCb.type = "checkbox";
-  autoCb.checked = root.spread.auto;
-  const autoTxt = document.createElement("span");
-  autoTxt.textContent = t("spreadAuto");
-  autoRow.append(autoCb, autoTxt);
-
-  const grid = document.createElement("div");
-  grid.className = "spread-grid";
   const note = document.createElement("p");
   note.className = "hint";
-  note.style.margin = "6px 0 0";
-  const field = (label: string, key: "len" | "wid"): HTMLInputElement => {
-    const wrap = document.createElement("div");
-    wrap.className = "field";
-    const lb = document.createElement("label");
-    lb.textContent = label;
-    const inp = document.createElement("input");
-    inp.type = "number";
-    inp.inputMode = "decimal";
-    inp.min = "0";
-    inp.max = String(MAX_SPREAD_PCT);
-    inp.step = "0.1";
-    inp.value = root.spread[w][key] ? String(root.spread[w][key]) : "";
-    inp.placeholder = "0";
-    inp.oninput = () => {
-      const v = parseFloat(inp.value);
-      root.spread[w][key] = Number.isFinite(v) ? v : 0;
-      root.spread = normalizeSpread(root.spread);
-      refresh();
-      scheduleSave();
-      requestDraw();
-    };
-    wrap.append(lb, inp);
-    grid.appendChild(wrap);
-    return inp;
-  };
-  field(t("spreadLen"), "len");
-  field(t("spreadWid"), "wid");
-
-  const refresh = (): void => {
-    const on = root.spread.on;
-    autoRow.hidden = !on;
-    grid.hidden = !on || root.spread.auto;
-    note.hidden = !on;
-    const radii = currentSpreadRadii(w, dist);
-    if (!radii) note.textContent = root.spread.auto ? t("spreadNoData") : t("spreadEmpty");
-    else if (root.spread.auto) note.textContent = t("spreadAutoNow", { a: Math.round(radii.a), c: radii.charge ?? "?" });
-    else note.textContent = t("spreadNow", { a: Math.round(radii.a), b: Math.round(radii.b) });
-  };
-  autoCb.onchange = () => {
-    root.spread.auto = autoCb.checked;
-    refresh();
-    scheduleSave();
-    requestDraw();
-  };
-  on.onchange = () => {
-    root.spread.on = on.checked;
-    refresh();
-    scheduleSave();
-    requestDraw();
-  };
-  box.append(head, autoRow, grid, note);
-  refresh();
+  note.style.margin = "14px 0 6px";
+  const radii = root.spread.on ? currentSpreadRadii(w, dist) : null;
+  if (!root.spread.on) note.textContent = t("spreadOffNote");
+  else if (!radii) note.textContent = root.spread.auto ? t("spreadNoData") : t("spreadEmpty");
+  else if (root.spread.auto) note.textContent = t("spreadAutoNow", { a: Math.round(radii.a), c: radii.charge ?? "?" });
+  else note.textContent = t("spreadNow", { a: Math.round(radii.a), b: Math.round(radii.b) });
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn small";
+  btn.textContent = t("spreadSettingsBtn");
+  btn.onclick = () => openSettings("calc");
+  box.append(note, btn);
   return box;
 }
 
@@ -608,7 +553,11 @@ $<HTMLSelectElement>("selTFolder").onchange = (e) => {
   onFireFolderChanged();
 };
 $<HTMLSelectElement>("selM").onchange = (e) => {
-  getCurrent().sel.m = (e.target as HTMLSelectElement).value;
+  const S = getCurrent();
+  S.sel.m = (e.target as HTMLSelectElement).value;
+  // при виборі міномета підставляється типовий снаряд із налаштувань
+  const w = firePair()?.m.w;
+  if (w) S.sel.shell = pickShell(getRoot().shells, w, VALID_SHELLS);
   scheduleSave();
   fillShellOptions();
   renderFire();
@@ -629,9 +578,9 @@ function fillShellOptions(): void {
   const w: WeaponId = p ? p.m.w : "M252";
   const sel = $<HTMLSelectElement>("selShell");
   sel.textContent = "";
-  for (const k of Object.keys(TABLES[w].shells)) sel.add(new Option(shellName(k), k));
   const S = getCurrent();
-  if (!TABLES[w].shells[S.sel.shell]) S.sel.shell = "HE";
+  S.sel.shell = pickShell(getRoot().shells, w, VALID_SHELLS, S.sel.shell);
+  for (const k of allowedShells(getRoot().shells, w, VALID_SHELLS)) sel.add(new Option(shellName(k), k));
   sel.value = S.sel.shell;
 }
 $<HTMLSelectElement>("selShell").onchange = (e) => {
@@ -663,7 +612,7 @@ export function renderFire(): void {
   const w = p.m.w;
   const weapon = TABLES[w];
   const S = getCurrent();
-  if (!weapon.shells[S.sel.shell]) S.sel.shell = "HE";
+  S.sel.shell = pickShell(getRoot().shells, w, VALID_SHELLS, S.sel.shell);
   const selShell = $<HTMLSelectElement>("selShell");
   if (selShell.options.length === 0 || !weapon.shells[selShell.value] || selShell.dataset.w !== w) {
     fillShellOptions();
@@ -773,7 +722,7 @@ export function renderFire(): void {
       const t0 = launchShot({ x: p.m.x, z: p.m.z }, { x: p.t.x, z: p.t.z }, tof, `${p.m.name} → ${p.t.name}`);
       // звук прив'язано до моменту запуску анімації — влучання збігається з візуальним прильотом
       if (getRoot().soundShots) void playShot(tof, t0);
-      navigator.vibrate?.(30);
+      vibrate(30);
     };
     box.appendChild(shotBtn);
 
@@ -995,8 +944,6 @@ function renderSetup(): void {
   $<HTMLInputElement>("size").value = String(S.calib.size);
   $<HTMLInputElement>("sizeZ").value = String(S.calib.sizeZ);
   $<HTMLButtonElement>("presetSize").textContent = `${meta.name} ${meta.sizeX}×${meta.sizeZ}`;
-  $("placesToggle").hidden = false;
-  ($("placesToggle") as HTMLInputElement).checked = getRoot().showPlaces;
   $<HTMLButtonElement>("downloadImport").hidden = !meta.preset?.mapImage;
   $("mapInfo").hidden = true;
   $("customRow").hidden = !!meta.preset;
@@ -1108,6 +1055,7 @@ function renderCalibBoxes(): void {
     btn.textContent = p ? t("refixBtn") : t("aimBtn");
     btn.onclick = () => {
       calibPick = key;
+      closeSettings(); // карту видно, поки наводимо приціл; після фіксації налаштування відкриються знову
       $("placeBtnLabel").textContent = t("fixPointBtn", { k: key.toUpperCase() });
       toast(t("aimAndFix", { k: key.toUpperCase() }));
     };
@@ -1127,7 +1075,7 @@ function fixCalibAtCenter(key: "a" | "b"): void {
   renderSetup();
   requestDraw();
   toast(t("pointFixed", { k: key.toUpperCase() }));
-  showTab("setup");
+  openSettings("data");
 }
 
 // ---------- backup ----------
@@ -1182,22 +1130,16 @@ const THEME_BAR_COLOR: Record<ThemeName, string> = { green: "#161c18", red: "#1c
 function applyTheme(): void {
   const r = getRoot();
   const el = document.documentElement;
-  // зелена — типова палітра (за системною світлою/темною); червона й синя — власні темні
+  // зелена — типова палітра; червона й синя — hue-зсув від неї, усі темні
   if (r.theme === "green") delete el.dataset.theme;
   else el.dataset.theme = r.theme;
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (meta) meta.content = THEME_BAR_COLOR[r.theme];
-  $("themeBtn").setAttribute("aria-pressed", String(r.theme !== "green"));
-  for (const b of document.querySelectorAll<HTMLButtonElement>("#themePop [data-theme-pick]")) {
+  for (const b of document.querySelectorAll<HTMLButtonElement>("#settingsDlg [data-theme-pick]")) {
     b.setAttribute("aria-pressed", String(b.dataset.themePick === r.theme));
   }
 }
-$<HTMLButtonElement>("themeBtn").onclick = () => {
-  const pop = $("themePop");
-  pop.hidden = !pop.hidden;
-  $("themeBtn").setAttribute("aria-expanded", String(!pop.hidden));
-};
-for (const b of document.querySelectorAll<HTMLButtonElement>("#themePop [data-theme-pick]")) {
+for (const b of document.querySelectorAll<HTMLButtonElement>("#settingsDlg [data-theme-pick]")) {
   b.onclick = () => {
     getRoot().theme = b.dataset.themePick as ThemeName;
     applyTheme();
@@ -1214,6 +1156,8 @@ function applyShotSettings(): void {
   ($("lightToggle") as HTMLInputElement).checked = isLightMode();
   $("soundBtn").setAttribute("aria-pressed", String(r.soundShots));
   setShotMuted(!r.soundShots);
+  setShotVolume(r.soundVolume);
+  setKeepAwake(r.keepAwake);
 }
 // Автоматичне вмикання економного режиму (кадри просіли): оновлюємо перемикач і кажемо про це.
 window.addEventListener("mortar:light", (e) => {
@@ -1247,7 +1191,8 @@ function applyPlacesStyle(): void {
   ($("placesScale") as HTMLInputElement).value = String(Math.round(r.placesScale * 100));
   $("placesScaleVal").textContent = `${Math.round(r.placesScale * 100)}%`;
   ($("placesLevel") as HTMLSelectElement).value = String(r.placesLevel);
-  ($("placesToggle2") as HTMLInputElement).checked = r.showPlaces;
+  ($("placesToggle") as HTMLInputElement).checked = r.showPlaces;
+  setShowPlaces(r.showPlaces);
 }
 $<HTMLInputElement>("placesScale").oninput = (e) => {
   getRoot().placesScale = clampPlacesScale(Number((e.target as HTMLInputElement).value) / 100);
@@ -1264,19 +1209,10 @@ $<HTMLSelectElement>("placesLevel").onchange = (e) => {
 function onPlacesToggle(e: Event): void {
   getRoot().showPlaces = (e.target as HTMLInputElement).checked;
   setShowPlaces(getRoot().showPlaces);
-  ($("placesToggle") as HTMLInputElement).checked = getRoot().showPlaces;
-  ($("placesToggle2") as HTMLInputElement).checked = getRoot().showPlaces;
   scheduleSave();
   requestDraw();
 }
 $<HTMLInputElement>("placesToggle").onchange = onPlacesToggle;
-
-$<HTMLInputElement>("placesToggle2").onchange = onPlacesToggle;
-$<HTMLButtonElement>("placesBtn").onclick = () => {
-  const pop = $("placesPop");
-  pop.hidden = !pop.hidden;
-  $("placesBtn").setAttribute("aria-pressed", String(!pop.hidden));
-};
 
 // ---------- about ----------
 function renderAbout(): void {
@@ -1309,12 +1245,12 @@ function renderStaticHints(): void {
 }
 
 // ---------- tabs ----------
-type TabName = "marks" | "fire" | "log" | "setup";
+type TabName = "marks" | "fire" | "log";
 function showTab(name: TabName): void {
   for (const b of document.querySelectorAll<HTMLButtonElement>(".tabs button")) {
     b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
   }
-  for (const p of ["marks", "fire", "log", "setup"]) $("pane-" + p).hidden = p !== name;
+  for (const p of ["marks", "fire", "log"]) $("pane-" + p).hidden = p !== name;
   if (name === "fire") {
     fillFireSelects();
     fillShellOptions();
@@ -1322,10 +1258,6 @@ function showTab(name: TabName): void {
     renderFire();
   }
   if (name === "log") renderLog();
-  if (name === "setup") {
-    renderSetup();
-    void refreshLanPanel();
-  }
 }
 document.querySelector(".tabs")!.addEventListener("click", (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
@@ -1371,7 +1303,7 @@ $<HTMLSelectElement>("terrainSel").onchange = async (e) => {
     switchTerrain(id);
     fillTerrainSelect();
     onTerrainSwitched();
-    if (!isRemote) showTab("setup");
+    if (!isRemote) openSettings("data");
     toast(t("terrainAdded", { name }));
     return;
   }
@@ -1439,7 +1371,7 @@ function announceExternal(sum: ReturnType<typeof takeExternalSummary>): void {
   if (!parts.length) return;
   const src = t(isRemote ? "extFromPc" : "extFromPhone");
   toast(`${src}: ${parts.join("; ")}`, 4500);
-  navigator.vibrate?.(40);
+  vibrate(40);
 }
 
 export function renderAll(): void {
@@ -1449,7 +1381,7 @@ export function renderAll(): void {
     renderFire();
   }
   if (!$("pane-log").hidden) renderLog();
-  if (!$("pane-setup").hidden) renderSetup();
+  if ($<HTMLDialogElement>("settingsDlg").open) renderSetup();
   requestDraw();
 }
 
@@ -1525,8 +1457,19 @@ export function initPanels(): void {
   initImmersive();
   initAboutDialog();
   initWakeLock();
-  // Імпорт карт і калібрування — тільки в застосунку на ПК; на телефоні вкладки «Карта» нема.
-  if (isRemote) document.querySelector<HTMLElement>('.tabs [data-tab="setup"]')!.hidden = true;
+  initSettings({
+    applyAll: () => {
+      applyShotSettings();
+      applyPlacesStyle();
+      fillShellOptions();
+      $("selShell").removeAttribute("data-w");
+      renderAll();
+    },
+    shellLabel: shellName,
+    weaponLabel: weaponName,
+    renderSetup,
+    refreshLan: () => void refreshLanPanel()
+  });
   window.api.store.onChanged(() => void reloadFromStore());
   renderAll();
 }

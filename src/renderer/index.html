@@ -43,38 +43,8 @@ html.no-splash #splash{display:none}
       <button class="btn icon" id="zin" data-i18n-aria-label="zoomInAria" aria-label="Наблизити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
       <button class="btn icon" id="zout" data-i18n-aria-label="zoomOutAria" aria-label="Віддалити"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
       <button class="btn icon" id="immersiveBtn" aria-pressed="false" data-i18n-aria-label="immersiveAria" aria-label="Карта на весь екран"><svg class="ic-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="ic-shrink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
-      <button class="btn icon" id="placesBtn" aria-pressed="false" data-i18n-aria-label="placesBtnAria" aria-label="Назви пунктів: розмір і важливість"><span style="font-weight:700;font-size:14px;line-height:1">Aa</span></button>
       <button class="btn icon" id="soundBtn" aria-pressed="true" data-i18n-aria-label="soundBtnAria" aria-label="Звук пострілу"><svg class="ic-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.8a7.4 7.4 0 0 1 0 10.4"/></svg><svg class="ic-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
-      <button class="btn icon" id="themeBtn" aria-pressed="false" aria-expanded="false" data-i18n-aria-label="themeBtnAria" aria-label="Колірна тема"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.6-.2-1.1-.6-1.5-.3-.4-.5-.9-.5-1.4 0-1.1.9-2 2-2h2.3A3.8 3.8 0 0 0 21 10.3C21 6.3 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.5" cy="7" r="1"/></svg></button>
       <button class="btn icon" id="fit" data-i18n-aria-label="fitAria" aria-label="Уся карта"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v6h6M20 10V4h-6M4 20l7-7M20 4l-7 7"/></svg></button>
-    </div>
-    <div class="placespop" id="themePop" hidden>
-      <div class="row" style="gap:10px" role="group" data-i18n-aria-label="themeBtnAria" aria-label="Колірна тема">
-        <button type="button" class="themechip" data-theme-pick="green" aria-pressed="true"><i style="background:#6ee7a8"></i><span data-i18n="themeGreen">Зелена</span></button>
-        <button type="button" class="themechip" data-theme-pick="red" aria-pressed="false"><i style="background:#ff5a48"></i><span data-i18n="themeRed">Червона</span></button>
-        <button type="button" class="themechip" data-theme-pick="blue" aria-pressed="false"><i style="background:#4da3ff"></i><span data-i18n="themeBlue">Синя</span></button>
-      </div>
-    </div>
-    <div class="placespop" id="placesPop" hidden>
-      <label class="row" style="gap:8px"><span data-i18n="placesSizeLabel">Розмір назв</span>
-        <input type="range" id="placesScale" min="60" max="200" step="10"> <span id="placesScaleVal" class="hint" style="margin:0;min-width:42px"></span></label>
-      <label class="row" style="gap:8px"><span data-i18n="placesLevelLabel">Показувати</span>
-        <select id="placesLevel">
-          <option value="1" data-i18n="placesLevel1">Лише головні</option>
-          <option value="2" data-i18n="placesLevel2">Головні й звичайні</option>
-          <option value="3" data-i18n="placesLevel3">Усі</option>
-        </select></label>
-      <div class="placeslegend" aria-label="Кольори назв">
-        <span><i style="background:var(--pl-settlement)"></i><b data-i18n="placeKind_settlement">Населені пункти</b></span>
-        <span><i style="background:var(--pl-military)"></i><b data-i18n="placeKind_military">Військові</b></span>
-        <span><i style="background:var(--pl-transport)"></i><b data-i18n="placeKind_transport">Транспорт</b></span>
-        <span><i style="background:var(--pl-industry)"></i><b data-i18n="placeKind_industry">Промисловість</b></span>
-        <span><i style="background:var(--pl-water)"></i><b data-i18n="placeKind_water">Вода, узбережжя</b></span>
-        <span><i style="background:var(--pl-nature)"></i><b data-i18n="placeKind_nature">Місцевість</b></span>
-      </div>
-      <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="lightToggle"> <span data-i18n="lightLabel">Економний режим (плавніше на слабкому телефоні)</span></label>
-      <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="ringsToggle"> <span data-i18n="ringsLabel">Кільця дальності на карті</span></label>
-      <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle2"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
     </div>
     <div class="readout">
       <div class="coords" id="coords"><div class="grid">—</div><div class="m">—</div></div>
@@ -85,7 +55,7 @@ html.no-splash #splash{display:none}
     <div class="hl">
       <h1 data-i18n="appTitle">Планшет мінометника</h1>
       <select id="terrainSel" data-i18n-aria-label="terrainAriaLabel" aria-label="Терен"></select>
-      <button class="btn small" id="langBtn" type="button" data-i18n="langToggle">EN</button>
+      <button class="btn small icon-only" id="settingsBtn" type="button" data-i18n-aria-label="settingsAria" aria-label="Налаштування"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <button class="btn small icon-only" id="offlineBtn" type="button" hidden data-i18n-aria-label="offlineBtnAria" aria-label="Офлайн-режим"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18"/><path d="M12 12v7M9 16l3 3 3-3"/></svg></button>
       <button class="btn small icon-only" id="aboutBtn" type="button" data-i18n-aria-label="aboutAria" aria-label="Про програму"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button>
     </div>
@@ -97,7 +67,6 @@ html.no-splash #splash{display:none}
         <button role="tab" aria-selected="true" data-tab="marks" data-i18n="tabMarks">Мітки</button>
         <button role="tab" aria-selected="false" data-tab="fire" data-i18n="tabFire">Розрахунок</button>
         <button role="tab" aria-selected="false" data-tab="log" data-i18n="tabLog">Журнал</button>
-        <button role="tab" aria-selected="false" data-tab="setup" data-i18n="tabSetup">Карта</button>
       </div>
 
       <section class="pane" id="pane-marks">
@@ -138,8 +107,114 @@ html.no-splash #splash{display:none}
         </div>
       </section>
 
-      <section class="pane" id="pane-setup" hidden>
-        <details class="card" data-card="map" open><summary><span data-i18n="mapImageHeading">Зображення карти</span></summary><div class="card-body">
+
+  </div>
+</div>
+
+<dialog id="settingsDlg" class="settings">
+  <div class="set-head">
+    <h3 data-i18n="settingsTitle">Налаштування</h3>
+    <input type="search" id="setSearch" data-i18n-placeholder="settingsSearch" placeholder="Пошук" autocomplete="off" spellcheck="false">
+    <button type="button" class="btn small icon-only" id="setClose" data-i18n-aria-label="closeBtn" aria-label="Закрити">✕</button>
+  </div>
+  <div class="set-body">
+    <nav class="set-nav" id="setNav" aria-label="Розділи налаштувань">
+      <button type="button" data-sec="view" aria-pressed="true" data-i18n="secView">Вигляд</button>
+      <button type="button" data-sec="sound" aria-pressed="false" data-i18n="secSound">Звук і відгук</button>
+      <button type="button" data-sec="calc" aria-pressed="false" data-i18n="secCalc">Розрахунок</button>
+      <button type="button" data-sec="data" aria-pressed="false" data-i18n="secData">Карти й дані</button>
+      <button type="button" data-sec="net" data-pc aria-pressed="false" data-i18n="secNet">Мережа</button>
+      <button type="button" data-sec="backup" aria-pressed="false" data-i18n="secBackup">Резервні копії</button>
+      <button type="button" data-sec="about" aria-pressed="false" data-i18n="secAbout">Оновлення й про програму</button>
+    </nav>
+    <div class="set-content" id="setContent">
+      <p class="hint" id="setEmpty" hidden data-i18n="settingsNoResults">Нічого не знайдено.</p>
+
+      <section class="set-sec" data-sec="view">
+        <h4 data-i18n="secView">Вигляд</h4>
+        <div class="set-row" data-q="тема колір theme color">
+          <div class="set-label" data-i18n="setTheme">Колірна тема</div>
+          <div class="row" style="gap:10px;flex-wrap:wrap" role="group" data-i18n-aria-label="setTheme" aria-label="Колірна тема">
+            <button type="button" class="themechip" data-theme-pick="green" aria-pressed="true"><i style="background:#6ee7a8"></i><span data-i18n="themeGreen">Зелена</span></button>
+            <button type="button" class="themechip" data-theme-pick="red" aria-pressed="false"><i style="background:#ff5a48"></i><span data-i18n="themeRed">Червона</span></button>
+            <button type="button" class="themechip" data-theme-pick="blue" aria-pressed="false"><i style="background:#4da3ff"></i><span data-i18n="themeBlue">Синя</span></button>
+          </div>
+        </div>
+        <div class="set-row" data-q="мова language">
+          <label class="set-label" for="langSel" data-i18n="setLanguage">Мова</label>
+          <select id="langSel"><option value="uk">Українська</option><option value="en">English</option></select>
+        </div>
+        <div class="set-row" data-q="назви пунктів населені places labels">
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
+          <p class="hint" style="font-size:12px" id="placesHint"></p>
+          <label class="row" style="gap:8px"><span data-i18n="placesSizeLabel">Розмір назв</span>
+            <input type="range" id="placesScale" min="60" max="200" step="10"> <span id="placesScaleVal" class="hint" style="margin:0;min-width:42px"></span></label>
+          <label class="row" style="gap:8px;margin-top:6px"><span data-i18n="placesLevelLabel">Показувати</span>
+            <select id="placesLevel">
+              <option value="1" data-i18n="placesLevel1">Лише головні</option>
+              <option value="2" data-i18n="placesLevel2">Головні й звичайні</option>
+              <option value="3" data-i18n="placesLevel3">Усі</option>
+            </select></label>
+          <div class="placeslegend" aria-label="Кольори назв">
+            <span><i style="background:var(--pl-settlement)"></i><b data-i18n="placeKind_settlement">Населені пункти</b></span>
+            <span><i style="background:var(--pl-military)"></i><b data-i18n="placeKind_military">Військові</b></span>
+            <span><i style="background:var(--pl-transport)"></i><b data-i18n="placeKind_transport">Транспорт</b></span>
+            <span><i style="background:var(--pl-industry)"></i><b data-i18n="placeKind_industry">Промисловість</b></span>
+            <span><i style="background:var(--pl-water)"></i><b data-i18n="placeKind_water">Вода, узбережжя</b></span>
+            <span><i style="background:var(--pl-nature)"></i><b data-i18n="placeKind_nature">Місцевість</b></span>
+          </div>
+        </div>
+        <div class="set-row" data-q="кільця дальності rings range">
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="ringsToggle"> <span data-i18n="ringsLabel">Кільця дальності на карті</span></label>
+        </div>
+        <div class="set-row" data-q="економний режим плавніше слабкий телефон light performance">
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="lightToggle"> <span data-i18n="lightLabel">Економний режим (плавніше на слабкому телефоні)</span></label>
+        </div>
+        <div class="set-actions"><button type="button" class="btn small" data-reset="view" data-i18n="setReset">Скинути розділ</button></div>
+      </section>
+
+      <section class="set-sec" data-sec="sound" hidden>
+        <h4 data-i18n="secSound">Звук і відгук</h4>
+        <div class="set-row" data-q="звук постріл sound shot">
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="soundToggle"> <span data-i18n="setSoundOn">Звук пострілу й влучання</span></label>
+        </div>
+        <div class="set-row" data-q="гучність volume">
+          <label class="row" style="gap:8px"><span data-i18n="setVolume">Гучність</span>
+            <input type="range" id="soundVolume" min="0" max="100" step="5"> <span id="soundVolumeVal" class="hint" style="margin:0;min-width:42px"></span></label>
+          <div class="row" style="margin-top:8px"><button type="button" class="btn small" id="soundTest" data-i18n="setSoundTest">Перевірити звук</button></div>
+        </div>
+        <div class="set-row" data-q="вібрація vibration haptic">
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="vibToggle"> <span data-i18n="setVibration">Вібрація при пострілі</span></label>
+          <p class="hint" style="font-size:12px" id="vibHint" hidden data-i18n="setVibrationNone">Цей пристрій не підтримує вібрацію.</p>
+        </div>
+        <div class="set-row" data-q="екран не гасити wake lock sleep" data-web>
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="awakeToggle"> <span data-i18n="setAwake">Не гасити екран, поки застосунок відкрито</span></label>
+        </div>
+        <div class="set-actions"><button type="button" class="btn small" data-reset="sound" data-i18n="setReset">Скинути розділ</button></div>
+      </section>
+
+      <section class="set-sec" data-sec="calc" hidden>
+        <h4 data-i18n="secCalc">Розрахунок</h4>
+        <div class="set-row" data-q="розкид dispersion spread">
+          <div class="set-label" data-i18n="setSpread">Розкид снарядів</div>
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="spreadOn"> <span data-i18n="spreadShow">Показувати розкид на карті</span></label>
+          <div id="spreadBody">
+            <label class="row" style="gap:8px;cursor:pointer;margin-top:8px"><input type="checkbox" id="spreadAuto"> <span data-i18n="spreadAuto">Оцінка за даними гри (залежить від заряду)</span></label>
+            <div id="spreadManual"></div>
+            <p class="hint" style="font-size:12px" data-i18n="setSpreadHint">Дані гри стосуються лише осколково-фугасних мін. У ручному режимі радіуси задаються у відсотках дальності окремо для кожного міномета.</p>
+          </div>
+        </div>
+        <div class="set-row" data-q="снаряди снаряд shell ammo">
+          <div class="set-label" data-i18n="setShells">Доступні снаряди</div>
+          <p class="hint" style="font-size:12px;margin-top:0" data-i18n="setShellsHint">Вимкнені снаряди не показуються у списку «Снаряд». Типовий снаряд підставляється при виборі міномета.</p>
+          <div id="shellsBody"></div>
+        </div>
+        <div class="set-actions"><button type="button" class="btn small" data-reset="calc" data-i18n="setReset">Скинути розділ</button></div>
+      </section>
+
+      <section class="set-sec" data-sec="data" hidden>
+        <h4 data-i18n="secData">Карти й дані</h4>
+        <details class="card" open data-card="map" open><summary><span data-i18n="mapImageHeading">Зображення карти</span></summary><div class="card-body">
         <p class="hint" data-i18n="mapImageHint">Завантажте скріншот або супутникову карту терену. Без зображення працює порожня сітка — мітки можна ставити за координатами.</p>
         <div class="row">
           <input type="file" id="file" accept="image/*" hidden>
@@ -154,12 +229,7 @@ html.no-splash #splash{display:none}
           <button class="btn small danger" id="delTerrain" data-i18n="delTerrainBtn">Видалити цей терен зі списку</button>
         </div>
 </div></details>
-        <details class="card" data-card="places"><summary><span data-i18n="placesHeading">Назви пунктів</span></summary><div class="card-body">
-        <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
-        <p class="hint" style="font-size:12px" id="placesHint"></p>
-
-        </div></details>
-        <details class="card" data-card="calib"><summary><span data-i18n="coordBindingHeading">Прив'язка координат</span><span class="card-sum" id="calibSummary"></span></summary><div class="card-body">
+        <details class="card" open data-card="calib"><summary><span data-i18n="coordBindingHeading">Прив'язка координат</span><span class="card-sum" id="calibSummary"></span></summary><div class="card-body">
         <div class="seg" role="group" data-i18n-aria-label="coordBindingAria" aria-label="Спосіб прив'язки">
           <button id="modeSize" aria-pressed="true" data-i18n="modeSizeBtn">Уся карта</button>
           <button id="modePts" aria-pressed="false" data-i18n="modePtsBtn">Дві точки</button>
@@ -179,7 +249,20 @@ html.no-splash #splash{display:none}
         </div>
 
         </div></details>
-        <details class="card" id="lanBox" data-card="lan"><summary><span data-i18n="lanHeading">Перегляд з телефона</span><span class="card-sum" id="lanSummary"></span></summary><div class="card-body">
+        <details class="card" open data-card="storage" id="storageCard"><summary><span data-i18n="storageHeading">Завантажені дані</span></summary><div class="card-body">
+        <p class="hint" data-i18n="storageHint">Кеш онлайн-тайлів, імпортовані карти й висоти займають місце на диску. Тут видно, скільки, і можна видалити окремо для кожного терену.</p>
+        <div class="row"><button class="btn" id="storageOpen" data-i18n="storageOpenBtn">Відкрити менеджер</button></div>
+        </div></details>
+        <div class="set-row" data-web data-q="збережені карти офлайн saved offline cache">
+          <div class="set-label" data-i18n="setOfflineTitle">Карти для роботи без інтернету</div>
+          <p class="hint" data-i18n="setOfflineHint">Збережені на пристрої тайли карт і висоти. Тут можна зберегти карту поточного терену, переглянути розмір і видалити.</p>
+          <div class="row"><button type="button" class="btn" id="setOfflineOpen" data-i18n="setOfflineOpen">Відкрити збережені карти</button></div>
+        </div>
+      </section>
+
+      <section class="set-sec" data-sec="net" data-pc hidden>
+        <h4 data-i18n="secNet">Мережа</h4>
+        <details class="card" open id="lanBox" data-card="lan"><summary><span data-i18n="lanHeading">Перегляд з телефона</span><span class="card-sum" id="lanSummary"></span></summary><div class="card-body">
           <p class="hint" data-i18n="lanHint"></p>
           <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="lanToggle"> <span data-i18n="lanToggleLabel">Доступ з локальної мережі</span></label>
           <div id="lanDetails" hidden>
@@ -198,13 +281,11 @@ html.no-splash #splash{display:none}
           <p class="warn" id="lanWarn" hidden></p>
           <p class="hint" style="font-size:12px" data-i18n="lanSecurity"></p>
         </div></details>
+      </section>
 
-        <details class="card" data-card="storage" id="storageCard"><summary><span data-i18n="storageHeading">Завантажені дані</span></summary><div class="card-body">
-        <p class="hint" data-i18n="storageHint">Кеш онлайн-тайлів, імпортовані карти й висоти займають місце на диску. Тут видно, скільки, і можна видалити окремо для кожного терену.</p>
-        <div class="row"><button class="btn" id="storageOpen" data-i18n="storageOpenBtn">Відкрити менеджер</button></div>
-        </div></details>
-
-        <details class="card" data-card="backup"><summary><span data-i18n="backupHeading">Резервна копія</span></summary><div class="card-body">
+      <section class="set-sec" data-sec="backup" hidden>
+        <h4 data-i18n="secBackup">Резервні копії</h4>
+        <details class="card" open data-card="backup"><summary><span data-i18n="backupHeading">Резервна копія</span></summary><div class="card-body">
         <p class="hint" data-i18n="backupHint">Мітки зберігаються автоматично. Тут можна скопіювати їх як текст або вставити раніше скопійовані.</p>
         <textarea id="json" rows="4" data-i18n-placeholder="jsonPlaceholder" placeholder="Вставте JSON, щоб імпортувати"></textarea>
         <div class="row" style="margin-top:8px">
@@ -215,9 +296,21 @@ html.no-splash #splash{display:none}
         </div></details>
       </section>
 
+      <section class="set-sec" data-sec="about" hidden>
+        <h4 data-i18n="secAbout">Оновлення й про програму</h4>
+        <div class="set-row" data-q="версія version">
+          <div class="set-label" id="setVersion"></div>
+        </div>
+        <div class="set-row" data-q="оновлення сповіщення update notify" data-standalone>
+          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="updNoticeToggle"> <span data-i18n="setUpdNotice">Повідомляти про нову версію</span></label>
+        </div>
+        <div class="set-row" data-q="про програму ліцензії подяки about licenses">
+          <div class="row"><button type="button" class="btn" id="setAboutOpen" data-i18n="setAboutOpen">Про програму, перевірка оновлень і ліцензії…</button></div>
+        </div>
+      </section>
+    </div>
   </div>
-</div>
-
+</dialog>
 <dialog id="dlg">
   <form method="dialog" id="dlgForm">
     <h3 id="dlgTitle">Мітка</h3>

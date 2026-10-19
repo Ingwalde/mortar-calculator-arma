@@ -3,6 +3,7 @@
  *  - веб-версія (PWA): service worker сам завантажує нову збірку; коли вона перебрала керування, пропонуємо перезавантажити;
  *  - Android-застосунок: раз на пів доби дивимось останній реліз на GitHub і пропонуємо завантажити APK.
  */
+import { getRoot } from "./state";
 import { isTrustedReleaseUrl, updateFrom, type ReleaseLike } from "@core/appVersion";
 import { t } from "./i18n";
 import { isNativeApp, isStandalone } from "./platform";
@@ -67,6 +68,7 @@ async function openExternal(url: string): Promise<void> {
 }
 
 async function checkRelease(force = false): Promise<void> {
+  if (!getRoot().updateNotice) return;
   const last = Number(lsGet(LS_CHECKED) ?? 0);
   if (!force && Date.now() - last < CHECK_EVERY_MS) return;
   try {
@@ -92,7 +94,7 @@ function watchServiceWorker(): void {
   const hadController = !!sw.controller;
   sw.addEventListener("controllerchange", () => {
     if (!hadController) return;
-    showBanner(t("updReloadText"), t("updReload"), () => location.reload());
+    if (getRoot().updateNotice) showBanner(t("updReloadText"), t("updReload"), () => location.reload());
   });
   const poll = (): void => {
     void sw.getRegistration().then((reg) => reg?.update().catch(() => undefined));

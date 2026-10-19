@@ -1,11 +1,18 @@
 import type { Calib } from "@core/geometry";
 import { PRESETS, findPreset, DEFAULT_TERRAIN_ID, type TerrainPreset } from "@core/terrains";
-import type { WeaponId } from "@core/ballistics";
+import { TABLES, type WeaponId } from "@core/ballistics";
+import { boolSetting, clampVolume, defaultShellSettings, normalizeShellSettings, type ShellSettings, type ValidShells } from "@core/settings";
 import type { Lang } from "./i18n";
 import { clampPlacesScale, normalizePlacesLevel, type PlaceTier } from "@core/places";
 import { webModMap } from "@core/webMirror";
 import { bundledMap } from "@core/bundledMaps";
 import { defaultSpread, normalizeSpread, type SpreadSettings } from "@core/spread";
+
+/** Снаряди кожної гармати з таблиць балістики (для налаштувань доступних снарядів). */
+export const VALID_SHELLS: ValidShells = {
+  M252: Object.keys(TABLES.M252.shells),
+  "2B14": Object.keys(TABLES["2B14"].shells)
+};
 
 export type ThemeName = "green" | "red" | "blue";
 export const THEMES: ThemeName[] = ["green", "red", "blue"];
@@ -101,6 +108,16 @@ export interface RootState {
   soundShots: boolean;
   /** Колірна тема інтерфейсу (зелена — типова); налаштування пристрою. */
   theme: ThemeName;
+  /** Гучність звуку пострілу 0..1. */
+  soundVolume: number;
+  /** Вібрація при пострілі й сповіщеннях. */
+  vibration: boolean;
+  /** Не гасити екран, поки застосунок відкрито (телефон). */
+  keepAwake: boolean;
+  /** Повідомляти про нову версію (Android і веб). */
+  updateNotice: boolean;
+  /** Доступні й типові снаряди для кожного міномета. */
+  shells: ShellSettings;
   /** Розкид снарядів навколо цілі (налаштування користувача, локальне для пристрою). */
   spread: SpreadSettings;
   lang: Lang;
@@ -135,7 +152,7 @@ function allTerrainMetas(root: RootState): Array<{ id: string; sizeX: number; si
 }
 
 export function blankRoot(): RootState {
-  const root: RootState = { v: 1, showPlaces: true, placesScale: 1, placesLevel: 3, showRings: true, soundShots: true, theme: "green", spread: defaultSpread(), lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
+  const root: RootState = { v: 1, showPlaces: true, placesScale: 1, placesLevel: 3, showRings: true, soundShots: true, theme: "green", soundVolume: 1, vibration: true, keepAwake: true, updateNotice: true, shells: defaultShellSettings(VALID_SHELLS), spread: defaultSpread(), lang: "uk", cur: DEFAULT_TERRAIN_ID, customTerrains: [], data: {}, deletedTerrains: {} };
   for (const p of PRESETS) root.data[p.id] = blankTerrain(p.sizeX, p.sizeZ);
   return root;
 }
@@ -260,6 +277,11 @@ export function normalizeRoot(raw: unknown): RootState {
   root.showRings = r.showRings !== false;
   root.soundShots = r.soundShots !== false;
   root.spread = normalizeSpread(r.spread);
+  root.soundVolume = clampVolume(r.soundVolume);
+  root.vibration = boolSetting(r.vibration, true);
+  root.keepAwake = boolSetting(r.keepAwake, true);
+  root.updateNotice = boolSetting(r.updateNotice, true);
+  root.shells = normalizeShellSettings(r.shells, VALID_SHELLS);
   // старе поле night (нічний режим 0.13) -> червона тема
   root.theme = THEMES.includes(r.theme as ThemeName) ? (r.theme as ThemeName) : r.night === true ? "red" : "green";
   root.lang = r.lang === "en" ? "en" : "uk";
@@ -399,6 +421,11 @@ export function applyExternalState(raw: unknown): ExternalApply {
   next.showRings = prev.showRings;
   next.soundShots = prev.soundShots;
   next.spread = prev.spread;
+  next.soundVolume = prev.soundVolume;
+  next.vibration = prev.vibration;
+  next.keepAwake = prev.keepAwake;
+  next.updateNotice = prev.updateNotice;
+  next.shells = prev.shells;
   next.theme = prev.theme;
   lastSummary = summarizeChanges(prev, next);
   for (const id of Object.keys(next.data)) {

@@ -7,16 +7,39 @@
  */
 import NoSleep from "nosleep.js/dist/NoSleep.min.js";
 import { isRemote } from "./platform";
+import { getRoot } from "./state";
+
+let noSleepRef: NoSleep | null = null;
+let allowed = true;
+let resetActive: (() => void) | null = null;
+
+/** Налаштування «Не гасити екран»: вимкнення знімає блокування одразу, вмикання — на найближчому дотику. */
+export function setKeepAwake(on: boolean): void {
+  allowed = on;
+  if (!on) {
+    resetActive?.();
+    try {
+      noSleepRef?.disable();
+    } catch {
+      // немає що вимикати
+    }
+  }
+}
 
 export function initWakeLock(): void {
   if (!isRemote) return;
+  allowed = getRoot().keepAwake;
 
   const noSleep = new NoSleep();
+  noSleepRef = noSleep;
   let active = false;
   let pending = false;
+  resetActive = () => {
+    active = false;
+  };
 
   const enable = async (): Promise<void> => {
-    if (active || pending) return;
+    if (!allowed || active || pending) return;
     pending = true;
     try {
       await noSleep.enable();

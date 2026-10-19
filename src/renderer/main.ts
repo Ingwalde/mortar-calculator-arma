@@ -1,5 +1,5 @@
 import "./platform";
-import { getRoot, loadState, scheduleSave } from "./state";
+import { getRoot, loadState } from "./state";
 import { resetView } from "./mapView";
 import { initPanels } from "./panels";
 import { $, toast } from "./dom";
@@ -7,7 +7,7 @@ import { isOwnShareUrl } from "@core/shareLink";
 import { openIncomingShare } from "./exchange";
 import { isNativeApp } from "./platform";
 import { initWebUpdate } from "./webUpdate";
-import { applyStaticTranslations, getLang, setLang, setLangSilent, t } from "./i18n";
+import { applyStaticTranslations, getLang, onLangChange, setLangSilent, t } from "./i18n";
 
 /** Заставку з іконкою знімаємо, щойно стан завантажено й інтерфейс готовий. */
 function hideSplash(): void {
@@ -43,6 +43,7 @@ async function boot(): Promise<void> {
   applyStaticTranslations();
   resetView();
   initPanels();
+  onLangChange(updateStatus);
   updateStatus();
   hideSplash();
 
@@ -65,13 +66,6 @@ async function boot(): Promise<void> {
   }
   initWebUpdate();
 
-  $<HTMLButtonElement>("langBtn").onclick = () => {
-    const next = getLang() === "uk" ? "en" : "uk";
-    setLang(next);
-    getRoot().lang = next;
-    scheduleSave();
-    updateStatus();
-  };
 }
 
 void boot().catch((e) => {
