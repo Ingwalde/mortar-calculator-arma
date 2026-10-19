@@ -146,7 +146,6 @@ html.no-splash #splash{display:none}
         </div>
         <div class="set-row" data-q="назви пунктів населені places labels">
           <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="placesToggle"> <span data-i18n="showPlacesLabel">Показувати назви пунктів</span></label>
-          <p class="hint" style="font-size:12px" id="placesHint"></p>
           <label class="row" style="gap:8px"><span data-i18n="placesSizeLabel">Розмір назв</span>
             <input type="range" id="placesScale" min="60" max="200" step="10"> <span id="placesScaleVal" class="hint" style="margin:0;min-width:42px"></span></label>
           <label class="row" style="gap:8px;margin-top:6px"><span data-i18n="placesLevelLabel">Показувати</span>
@@ -353,8 +352,7 @@ html.no-splash #splash{display:none}
   <p class="hint" id="offlineSaved"></p>
   <p class="hint" id="offlineUsage"></p>
   <div id="offlineList" class="storage-list" hidden></div>
-  <div class="dlg-actions" style="justify-content:space-between;flex-wrap:wrap">
-    <button type="button" class="btn danger" id="offlineClear" data-i18n="offlineClearBtn">Видалити збережене</button>
+  <div class="dlg-actions" style="justify-content:flex-end;flex-wrap:wrap">
     <span style="display:flex;gap:8px">
       <button type="button" class="btn" id="offlineStop" hidden data-i18n="offlineStopBtn">Зупинити</button>
       <button type="button" class="btn primary" id="offlineSave" data-i18n="offlineSaveBtn">Зберегти карту</button>

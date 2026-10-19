@@ -368,3 +368,34 @@ dialog.settings[open]{display:flex;flex-direction:column}
 }
 .set-row label.row{flex-wrap:nowrap;align-items:flex-start}
 .set-row label.row input[type=checkbox]{margin-top:3px;flex:0 0 auto}
+.about-list{margin:4px 0 12px;padding-left:20px;font-size:14px;color:var(--muted);line-height:1.5}
+.about-list li{margin:6px 0}
+.about-list b{color:var(--ink)}
+
+/* Випадні списки: де браузер підтримує стилізований селект, малюємо власний список у кольорах теми;
+   інакше лишається системний (напр. Safari на iPhone) */
+@supports (appearance: base-select) {
+  select,
+  select::picker(select) { appearance: base-select; }
+  select { cursor: pointer; padding-right: 8px; }
+  select::picker-icon { content: ""; width: 7px; height: 7px; margin-left: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-2px); transition: transform .2s ease; }
+  select:open::picker-icon { transform: rotate(225deg) translateY(-2px); }
+  select:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 1px; }
+  ::picker(select) {
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 14px; padding: 6px;
+    margin-block: 6px; box-shadow: 0 16px 40px rgba(0,0,0,.45);
+    max-height: min(340px, 60vh); overflow: auto;
+  }
+  select option { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 9px; cursor: pointer; color: var(--ink); background: transparent; font: inherit; }
+  select option:hover, select option:focus-visible { background: color-mix(in srgb, var(--ink) 10%, transparent); outline: 0; }
+  select option:checked { background: color-mix(in srgb, var(--accent) 20%, transparent); font-weight: 600; }
+  select option::checkmark { order: 1; margin-left: auto; color: var(--accent); }
+  select optgroup { padding-top: 6px; }
+  select optgroup > label { display: block; padding: 8px 12px 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) {
+    ::picker(select) { opacity: 0; transform: translateY(-4px); transition: opacity .15s ease, transform .15s ease, display .15s allow-discrete, overlay .15s allow-discrete; }
+    ::picker(select):popover-open { opacity: 1; transform: none; }
+    @starting-style { ::picker(select):popover-open { opacity: 0; transform: translateY(-4px); } }
+  }
+}

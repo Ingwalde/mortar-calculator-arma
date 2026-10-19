@@ -355,7 +355,6 @@ function refreshPc(): void {
   $("offlineNoMap").hidden = true;
   $("offlineSaved").hidden = true;
   $("offlineUsage").hidden = true;
-  $<HTMLButtonElement>("offlineClear").hidden = true;
 }
 
 async function refresh(): Promise<void> {
@@ -393,7 +392,6 @@ async function refresh(): Promise<void> {
   void renderSavedList();
   const n = await cachedCount(terrainPrefixes(meta.id));
   $("offlineSaved").textContent = t("offlineSaved", { n });
-  $<HTMLButtonElement>("offlineClear").disabled = n === 0;
 
   let usage = "";
   try {
@@ -442,7 +440,6 @@ export function initOffline(): void {
     if (isRemote) abort?.abort();
     else void window.api.tiles.cancelPrefetch();
   };
-  $<HTMLButtonElement>("offlineClear").onclick = () => void clearTerrain();
   if (isRemote && "serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (dlg.open) void refresh();

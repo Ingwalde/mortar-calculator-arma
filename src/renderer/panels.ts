@@ -1220,28 +1220,12 @@ function renderAbout(): void {
   if (!el) return;
   el.innerHTML = t("aboutHtml");
   mountUpdateBox(el);
-  if (isRemote) {
-    // Діагностика розкладки на телефоні: якщо щось «пливе», ці числа підкажуть, у чому справа.
-    const nav = navigator as Navigator & { standalone?: boolean };
-    const d = document.createElement("p");
-    d.className = "hint";
-    d.style.fontSize = "12px";
-    d.textContent =
-      `viewport ${innerWidth}×${innerHeight}, screen ${screen.width}×${screen.height}, ` +
-      `standalone ${String(nav.standalone)}, app ${Math.round(document.querySelector(".app")!.getBoundingClientRect().height)}`;
-    el.appendChild(d);
-  }
+
 }
 
-// ---------- static hints with embedded links ----------
+// ---------- static hints ----------
 function renderStaticHints(): void {
-  $("fireHint").innerHTML = t("fireHint", {
-    link: '<a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">GeNeFRAG/ArmaReforger</a>'
-  });
-  $("placesHint").innerHTML = t("placesHint", {
-    link1: '<a href="https://github.com/nickludlam/EnfusionMapMaker" target="_blank" rel="noopener">EnfusionMapMaker</a>',
-    link2: '<a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">GeNeFRAG/ArmaReforger</a>'
-  });
+  $("fireHint").textContent = t("fireHint");
 }
 
 // ---------- tabs ----------

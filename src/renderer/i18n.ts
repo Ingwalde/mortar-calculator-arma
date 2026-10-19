@@ -29,7 +29,6 @@ const DICT: Dict = {
   offlineOpt: { uk: "{label}: {n} тайлів, ≈{mb} МБ", en: "{label}: {n} tiles, ≈{mb} MB" },
   offlineSaveBtn: { uk: "Зберегти карту", en: "Save map" },
   offlineStopBtn: { uk: "Зупинити", en: "Stop" },
-  offlineClearBtn: { uk: "Видалити збережене", en: "Delete saved" },
   offlineProgress: { uk: "Збережено {done} з {total}", en: "Saved {done} of {total}" },
   offlineStopped: { uk: "Зупинено: збережено {done}.", en: "Stopped: {done} saved." },
   offlineFailed: { uk: "Не вдалося завантажити — перевірте зв'язок з ПК.", en: "Download failed — check the connection to the PC." },
@@ -158,8 +157,8 @@ const DICT: Dict = {
   fireTableSummary: { uk: "Таблиця стрільби", en: "Firing table" },
   fireLabelCharge: { uk: "Заряд", en: "Charge" },
   fireHint: {
-    uk: "Кут підвищення враховує перевищення цілі, якщо в обох мітках указано висоту. Таблиці: {link}, MIT.",
-    en: "Elevation accounts for target height difference when both marks have a height set. Tables: {link}, MIT."
+    uk: "Кут підвищення враховує перевищення цілі, якщо в обох мітках указано висоту.",
+    en: "Elevation accounts for target height difference when both marks have a height set."
   },
 
   mapImageHeading: { uk: "Зображення карти", en: "Map image" },
@@ -358,10 +357,6 @@ const DICT: Dict = {
   placesLevel1: { uk: "Лише головні", en: "Major only" },
   placesLevel2: { uk: "Головні й звичайні", en: "Major and regular" },
   placesLevel3: { uk: "Усі", en: "All" },
-  placesHint: {
-    uk: "Назви пунктів Everon та Arland: {link1} (APL-SA). Супутникові карти й дані висот: {link2} (MIT).",
-    en: "Everon and Arland place names: {link1} (APL-SA). Satellite maps and height data: {link2} (MIT)."
-  },
   delTerrainBtn: { uk: "Видалити цей терен зі списку", en: "Remove this terrain from the list" },
   coordBindingHeading: { uk: "Прив'язка координат", en: "Coordinate binding" },
   coordBindingAria: { uk: "Спосіб прив'язки", en: "Binding method" },
@@ -464,27 +459,35 @@ const DICT: Dict = {
 
   aboutHtml: {
     uk: `<h2>Про програму</h2>
-    <p class="hint">Планшет мінометника для Arma Reforger. Некомерційний застосунок для особистого й ігрового використання.</p>
-    <h2>Джерела й атрибуція</h2>
-    <p class="hint"><b>EnfusionMapMaker</b> (nickludlam) — назви й координати пунктів Everon/Arland, схема онлайн-тайлів.
-      Ліцензія: <a href="https://github.com/nickludlam/EnfusionMapMaker/blob/main/LICENSE" target="_blank" rel="noopener">APL-SA</a> (некомерційна, з атрибуцією).
-      <a href="https://github.com/nickludlam/EnfusionMapMaker" target="_blank" rel="noopener">github.com/nickludlam/EnfusionMapMaker</a></p>
-    <p class="hint"><b>GeNeFRAG/ArmaReforger</b> — балістичні таблиці M252/2Б14, розміри теренів, супутникові знімки, дані висот.
-      Ліцензія: <a href="https://github.com/GeNeFRAG/ArmaReforger/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>.
-      <a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">github.com/GeNeFRAG/ArmaReforger</a></p>
-    <p class="hint"><b>reforger.recoil.org</b> — джерело онлайн-тайлів Everon, Arland і Kolguyev та контрольних точок Kolguyev.</p>
-    <p class="hint">Моди <b>Gogland</b> (Temppa), <b>Bad Orb</b> (Aphex26), <b>Bystrany</b>, <b>Iron Hold Castle</b>, <b>Chernorus_Kirovograd</b> і <b>Mogadishu</b> (KIOK): назви пунктів, розмір терену й (для тих, де їх нема в каталозі) висоти прочитано з файлів самих модів (Arma Public License).</p>`,
+    <p class="hint">Планшет мінометника для Arma Reforger: розрахунок вогню з мінометів M252 і 2Б14 прямо на карті. Некомерційний застосунок для особистого й ігрового використання.</p>
+    <h2>Що вміє</h2>
+    <ul class="about-list">
+      <li><b>Карта.</b> Everon, Arland, Kolguyev і карти популярних модів; масштабування, сітка з координатами, назви пунктів, кільця дальності, контури будівель. Тап по будівлі наводить на неї приціл.</li>
+      <li><b>Мітки.</b> Міномети, цілі й точки, розкладені по папках-місіях; зруйновані цілі позначаються на карті. Висоти беруться з даних рельєфу.</li>
+      <li><b>Розрахунок.</b> Дальність, азимут у мілах, кут підвищення, заряд (★ — найкращий), час польоту й поправка на висоту. Осколково-фугасний, освітлювальний і димовий снаряди, розкид, журнал стрільби.</li>
+      <li><b>Постріл.</b> Анімація польоту снаряда з гуркотом і влученням, прив'язаними до прильоту.</li>
+      <li><b>Разом із командою.</b> Перегляд і правка з телефона по Wi-Fi (QR-код), обмін мітками посиланням, резервні копії.</li>
+      <li><b>Без інтернету.</b> Збережені карти й висоти, швидкий економний режим для слабких телефонів.</li>
+      <li><b>Скрізь.</b> Windows, сайт (його можна встановити як застосунок) і Android; мови — українська й англійська; три темні колірні теми.</li>
+    </ul>
+    <h2>Налаштування</h2>
+    <p class="hint">Усе налаштовується в розділі ⚙ у шапці: тема, мова, звук і вібрація, доступні снаряди, розкид, карти й дані, мережа.</p>
+    <p class="hint">Назви пунктів, розмір теренів і висоти для модів <b>Gogland</b>, <b>Bad Orb</b>, <b>Bystrany</b>, <b>Iron Hold Castle</b>, <b>Chernorus_Kirovograd</b> і <b>Mogadishu</b> прочитано з файлів самих модів (Arma Public License).</p>`,
     en: `<h2>About</h2>
-    <p class="hint">A mortar tablet for Arma Reforger. Non-commercial app for personal and in-game use.</p>
-    <h2>Sources and attribution</h2>
-    <p class="hint"><b>EnfusionMapMaker</b> (nickludlam) — Everon/Arland place names and coordinates, the online-tile scheme.
-      License: <a href="https://github.com/nickludlam/EnfusionMapMaker/blob/main/LICENSE" target="_blank" rel="noopener">APL-SA</a> (non-commercial, share-alike).
-      <a href="https://github.com/nickludlam/EnfusionMapMaker" target="_blank" rel="noopener">github.com/nickludlam/EnfusionMapMaker</a></p>
-    <p class="hint"><b>GeNeFRAG/ArmaReforger</b> — M252/2B14 ballistic tables, terrain sizes, satellite images, height data.
-      License: <a href="https://github.com/GeNeFRAG/ArmaReforger/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>.
-      <a href="https://github.com/GeNeFRAG/ArmaReforger" target="_blank" rel="noopener">github.com/GeNeFRAG/ArmaReforger</a></p>
-    <p class="hint"><b>reforger.recoil.org</b> — source of Everon, Arland and Kolguyev online tiles and the Kolguyev control points.</p>
-    <p class="hint">Mods <b>Gogland</b> (Temppa), <b>Bad Orb</b> (Aphex26), <b>Bystrany</b>, <b>Iron Hold Castle</b>, <b>Chernorus_Kirovograd</b> and <b>Mogadishu</b> (KIOK): place names, terrain size and (where the catalog has none) heights were read from the mods' own files (Arma Public License).</p>`
+    <p class="hint">A mortar tablet for Arma Reforger: fire solutions for the M252 and 2B14 mortars right on the map. A non-commercial app for personal and in-game use.</p>
+    <h2>What it does</h2>
+    <ul class="about-list">
+      <li><b>Map.</b> Everon, Arland, Kolguyev and popular mod maps; zoom, coordinate grid, place names, range rings, building outlines. Tap a building to aim at it.</li>
+      <li><b>Marks.</b> Mortars, targets and points organised in mission folders; destroyed targets are marked on the map. Heights come from terrain data.</li>
+      <li><b>Solutions.</b> Range, azimuth in mils, elevation, charge (★ is the best), time of flight and height correction. High-explosive, illumination and smoke shells, dispersion, a firing log.</li>
+      <li><b>Shot.</b> A shell flight animation with the boom and impact timed to the landing.</li>
+      <li><b>With your team.</b> View and edit from a phone over Wi-Fi (QR code), share marks by link, backups.</li>
+      <li><b>Offline.</b> Saved maps and heights, plus a light mode for weak phones.</li>
+      <li><b>Everywhere.</b> Windows, the website (installable as an app) and Android; Ukrainian and English; three dark colour themes.</li>
+    </ul>
+    <h2>Settings</h2>
+    <p class="hint">Everything is configured under ⚙ in the header: theme, language, sound and vibration, available shells, dispersion, maps and data, network.</p>
+    <p class="hint">Place names, terrain size and heights for the <b>Gogland</b>, <b>Bad Orb</b>, <b>Bystrany</b>, <b>Iron Hold Castle</b>, <b>Chernorus_Kirovograd</b> and <b>Mogadishu</b> mods were read from the mods' own files (Arma Public License).</p>`
   },
 
   importPhaseDownload: { uk: "Завантаження зображення", en: "Downloading image" },
