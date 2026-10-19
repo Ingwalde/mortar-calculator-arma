@@ -59,6 +59,8 @@ function showSection(sec: string): void {
   if (q) return; // під час пошуку показуємо всі збіги
   for (const s of document.querySelectorAll<HTMLElement>(".set-sec")) s.hidden = s.dataset.sec !== sec || !!s.dataset.hiddenPlatform;
   for (const b of document.querySelectorAll<HTMLButtonElement>("#setNav button")) b.setAttribute("aria-pressed", String(b.dataset.sec === sec));
+  // на телефоні смуга розділів прокручується: активний пункт має лишатись на екрані
+  document.querySelector<HTMLElement>(`#setNav button[data-sec="${sec}"]`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   $("setEmpty").hidden = true;
   $("setContent").scrollTop = 0;
 }
@@ -67,7 +69,7 @@ function showSection(sec: string): void {
 function applySearch(): void {
   const q = $<HTMLInputElement>("setSearch").value.trim().toLowerCase();
   if (!q) {
-    for (const r of document.querySelectorAll<HTMLElement>(".set-row, .set-sec details.card")) r.classList.remove("set-hide");
+    for (const r of document.querySelectorAll<HTMLElement>(".set-row, .set-hero, .set-link, .set-sec details.card")) r.classList.remove("set-hide");
     showSection(activeSection);
     return;
   }
@@ -79,7 +81,7 @@ function applySearch(): void {
       continue;
     }
     let visible = 0;
-    for (const row of sec.querySelectorAll<HTMLElement>(".set-row, details.card")) {
+    for (const row of sec.querySelectorAll<HTMLElement>(".set-row, .set-hero, .set-link, details.card")) {
       if (row.dataset.hiddenPlatform) {
         row.classList.add("set-hide");
         continue;

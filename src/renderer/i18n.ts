@@ -281,6 +281,8 @@ const DICT: Dict = {
   setOfflineHint: { uk: "Збережені на пристрої тайли карт і висоти. Тут можна зберегти карту поточного терену, переглянути розмір і видалити.", en: "Map tiles and heights stored on this device. Save the current terrain, check its size or delete it." },
   setOfflineOpen: { uk: "Відкрити збережені карти", en: "Open saved maps" },
   setUpdNotice: { uk: "Повідомляти про нову версію", en: "Notify about new versions" },
+  setAboutTitle: { uk: "Про програму", en: "About" },
+  setAboutHint: { uk: "Можливості, перевірка оновлень, ліцензії та подяки", en: "Features, update check, licences and credits" },
   setAboutOpen: { uk: "Про програму, перевірка оновлень і ліцензії…", en: "About, update check and licences…" },
   setReset: { uk: "Скинути розділ", en: "Reset section" },
   setResetTitle: { uk: "Скинути розділ?", en: "Reset section?" },

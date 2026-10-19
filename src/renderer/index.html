@@ -305,15 +305,17 @@ html.no-splash #splash{display:none}
 
       <section class="set-sec" data-sec="about" hidden>
         <h4 data-i18n="secAbout">Оновлення й про програму</h4>
-        <div class="set-row" data-q="версія version">
-          <div class="set-label" id="setVersion"></div>
+        <div class="set-hero" data-q="версія version планшет мінометника">
+          <svg class="logo" viewBox="0 0 64 64" width="52" height="52" aria-hidden="true" focusable="false"><rect class="lg-bg" x="2" y="2" width="60" height="60" rx="15"/><circle class="lg-ln" cx="32" cy="32" r="14"/><path class="lg-ln" d="M32 9v9M32 46v9M9 32h9M46 32h9"/><circle class="lg-dot" cx="32" cy="32" r="3.6"/></svg>
+          <div class="set-hero-text"><div class="set-hero-title" data-i18n="appTitle">Планшет мінометника</div><div class="set-hero-ver" id="setVersion"></div></div>
         </div>
         <div class="set-row" data-q="оновлення сповіщення update notify" data-standalone>
           <label class="set-switch"><span data-i18n="setUpdNotice">Повідомляти про нову версію</span><input type="checkbox" id="updNoticeToggle"></label>
         </div>
-        <div class="set-row" data-q="про програму ліцензії подяки about licenses">
-          <div class="row"><button type="button" class="btn" id="setAboutOpen" data-i18n="setAboutOpen">Про програму, перевірка оновлень і ліцензії…</button></div>
-        </div>
+        <button type="button" class="set-link" id="setAboutOpen" data-q="про програму ліцензії подяки about licenses">
+          <span class="set-link-text"><b data-i18n="setAboutTitle">Про програму</b><small data-i18n="setAboutHint">Можливості, перевірка оновлень, ліцензії та подяки</small></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
       </section>
     </div>
   </div>
