@@ -36,7 +36,12 @@ html.no-splash #splash{display:none}
 <div class="app">
   <div class="map" id="mapWrap">
     <canvas id="cv" data-i18n-aria-label="canvasAriaLabel" aria-label="Карта. Перетягуйте, щоб рухати; колесо — масштаб; клік — навести приціл."></canvas>
-    <div class="cross" aria-hidden="true"><span class="dot"></span></div>
+    <canvas id="overlay" aria-hidden="true"></canvas>
+    <div class="cross" aria-hidden="true"><svg viewBox="-32 -32 64 64" width="64" height="64" fill="none" stroke-linecap="round">
+      <g class="cx-halo"><circle r="12"/><path d="M0-17V-28M0 17V28M-17 0H-28M17 0H28M0-5V-8M0 5V8M-5 0H-8M5 0H8"/></g>
+      <g class="cx-main"><circle r="12"/><path d="M0-17V-28M0 17V28M-17 0H-28M17 0H28M0-5V-8M0 5V8M-5 0H-8M5 0H8"/></g>
+      <circle class="cx-dot" r="2.4"/>
+    </svg></div>
     <div class="maploading" id="mapLoading" aria-hidden="true"></div>
     <div class="shotchip" id="shotChip" hidden role="status" aria-live="polite"></div>
     <div class="mapbtns">

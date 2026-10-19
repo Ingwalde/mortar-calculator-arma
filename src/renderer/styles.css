@@ -35,13 +35,14 @@ a{color:inherit}
 .map{position:absolute;inset:0;background:var(--mapblank);overflow:hidden;touch-action:none}
 canvas{display:block;width:100%;height:100%;cursor:grab}
 canvas:active{cursor:grabbing}
-.cross{position:absolute;left:50%;top:calc((100% - var(--covered,0px)) / 2);width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none;
-  filter:drop-shadow(0 0 1.5px rgba(0,0,0,.85)) drop-shadow(0 0 1.5px rgba(0,0,0,.85))}
-.cross::before,.cross::after{content:"";position:absolute;background:var(--target)}
-.cross::before{left:21px;top:0;width:2px;height:44px;clip-path:polygon(0 0,100% 0,100% 38%,0 38%,0 62%,100% 62%,100% 100%,0 100%)}
-.cross::after{top:21px;left:0;height:2px;width:44px;clip-path:polygon(0 0,38% 0,38% 100%,0 100%,0 0,62% 0,100% 0,100% 100%,62% 100%)}
-.cross .dot{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
-  background:var(--target);border:1px solid #fff}
+#overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+#overlay[hidden]{display:none}
+.cross{position:absolute;left:50%;top:calc((100% - var(--covered,0px)) / 2);width:64px;height:64px;margin:-32px 0 0 -32px;pointer-events:none}
+.cross svg{display:block;overflow:visible}
+.cx-halo{stroke:rgba(0,0,0,.55);stroke-width:4.2}
+.cx-main{stroke:#fff;stroke-width:1.7}
+.cx-main circle{stroke:color-mix(in srgb,var(--target) 70%,#fff)}
+.cx-dot{fill:var(--target);stroke:#fff;stroke-width:1.2;paint-order:stroke;filter:drop-shadow(0 0 2px rgba(0,0,0,.7))}
 
 header{position:absolute;left:16px;right:16px;top:16px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:10px 16px;border-radius:18px;background:var(--glass);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);

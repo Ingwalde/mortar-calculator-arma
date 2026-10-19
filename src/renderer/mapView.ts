@@ -22,6 +22,11 @@ import { heightAt, onHeightsLoaded } from "./terrainHeight";
 
 const cv = $<HTMLCanvasElement>("cv");
 const mainCtx = cv.getContext("2d")!;
+/** Окремий шар для підписів і позначок: в економному режимі база малюється у dpr 1, а текст лишається чітким. */
+const ov = $<HTMLCanvasElement>("overlay");
+const overlayCtx = ov.getContext("2d")!;
+let overlayDpr = 1;
+let overlayActive = false;
 /** Поточний контекст малювання: основна канва або буфер базового шару (тайли + сітка). */
 let ctx: CanvasRenderingContext2D = mainCtx;
 
@@ -234,6 +239,9 @@ function resize(): void {
   const r = cv.getBoundingClientRect();
   // На телефоні (3× екран) полотно в 3× важке для перемальовування щокадру; 2× майже не відрізнити, а тече плавніше.
   dpr = lightMode ? 1 : Math.min(window.devicePixelRatio || 1, isRemote ? 2 : 4);
+  // у економному режимі підписи малюємо окремим шаром у повній (до 2×) роздільності: це дешево, а текст не розмивається
+  overlayDpr = Math.min(window.devicePixelRatio || 1, 2);
+  overlayActive = lightMode && overlayDpr > dpr;
   const first = W === 0;
   // Світова точка під центром (під прицілом) лишається на місці, коли розмір карти міняється
   // (бровка панелі, режим на весь екран, зміна вікна) — інакше приціл зсувався б із цілі.
@@ -243,6 +251,11 @@ function resize(): void {
   H = r.height;
   cv.width = Math.round(W * dpr);
   cv.height = Math.round(H * dpr);
+  ov.hidden = !overlayActive;
+  if (overlayActive) {
+    ov.width = Math.round(W * overlayDpr);
+    ov.height = Math.round(H * overlayDpr);
+  }
   if (first) fit();
   else {
     view.ox = W / 2 - cx * view.k;
@@ -850,17 +863,31 @@ function draw(): void {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(baseCanvas, 0, 0);
   }
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  drawRangeRings(c);
-  drawSpread(c);
-  drawFiringLine(c);
-  drawDestroyed();
-  drawAimBuilding(c);
-  drawCalibPoints(c);
-  drawPlaces(c);
-  drawMarkers(c);
-  drawShots(c);
+  const baseDpr = dpr;
+  if (overlayActive) {
+    // шар підписів: чистимо й малюємо в повній роздільності (спрайти тексту беруть dpr звідси)
+    dpr = overlayDpr;
+    ctx = overlayCtx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, ov.width, ov.height);
+  }
+  try {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawRangeRings(c);
+    drawSpread(c);
+    drawFiringLine(c);
+    drawDestroyed();
+    drawAimBuilding(c);
+    drawCalibPoints(c);
+    drawPlaces(c);
+    drawMarkers(c);
+    drawShots(c);
+  } finally {
+    if (overlayActive) {
+      dpr = baseDpr;
+      ctx = mainCtx;
+    }
+  }
   updateReadout();
   // запити скасовуємо лише коли набір потрібних тайлів перераховано в цьому кадрі
   if (renderedBase) cancelStale();
