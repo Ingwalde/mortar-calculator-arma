@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session, shell } from "electron";
+import { app, BrowserWindow, Menu, nativeTheme, session, shell } from "electron";
 import { isAllowedExternalUrl } from "./security";
 import { join } from "node:path";
 import { registerPrivilegedSchemes, registerProtocolHandlers } from "./protocols";
@@ -21,6 +21,9 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
+    // темний заголовок і фон до завантаження сторінки (без білого спалаху); у dev значок береться з build/, у збірці — з exe
+    backgroundColor: "#161c18",
+    ...(isDev ? { icon: join(app.getAppPath(), "build/icon.png") } : {}),
     webPreferences: {
       preload: join(app.getAppPath(), "out/preload/index.cjs"),
       contextIsolation: true,
@@ -65,6 +68,9 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
+  // Застосунок завжди темний: темний системний заголовок вікна, без стандартного меню Electron (File/Edit/View/Window).
+  nativeTheme.themeSource = "dark";
+  if (!isDev && process.platform !== "darwin") Menu.setApplicationMenu(null);
   // Дозволи сторінки: лише запис у буфер обміну (кнопки «Копіювати»); камера, геолокація тощо не потрібні.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
     callback(permission === "clipboard-sanitized-write");
