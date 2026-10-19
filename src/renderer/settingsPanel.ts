@@ -13,6 +13,7 @@ import { setShotVolume, playTestSound } from "./shotAudio";
 import { getRoot, scheduleSave, VALID_SHELLS } from "./state";
 import { setKeepAwake } from "./wakeLock";
 import { canVibrate, isIosHaptics, vibrate } from "./haptics";
+import { slideIndicator } from "./slider";
 import { setLightMode } from "./mapView";
 
 export interface SettingsHooks {
@@ -243,6 +244,8 @@ export function initSettings(h: SettingsHooks): void {
     if (el.dataset.hiddenPlatform) el.hidden = true;
   }
 
+  slideIndicator($("setNav"), { active: 'button[aria-pressed="true"]' });
+  slideIndicator(root.querySelector<HTMLElement>(".theme-grid"), { active: '.themechip[aria-pressed="true"]', ring: true });
   $("settingsBtn").onclick = () => openSettings();
   $("setClose").onclick = () => closeSettings();
   root.addEventListener("click", (e) => {

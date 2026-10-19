@@ -58,6 +58,7 @@ import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
 import { vibrate as haptic } from "./haptics";
+import { slideIndicator } from "./slider";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
@@ -1465,6 +1466,8 @@ export function initPanels(): void {
   initImmersive();
   initAboutDialog();
   initWakeLock();
+  slideIndicator(document.querySelector<HTMLElement>(".tabs"), { active: 'button[aria-selected="true"]' });
+  for (const seg of document.querySelectorAll<HTMLElement>(".seg")) slideIndicator(seg, { active: 'button[aria-pressed="true"]' });
   initSettings({
     applyAll: () => {
       applyShotSettings();

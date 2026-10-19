@@ -47,7 +47,10 @@ header{position:absolute;left:16px;right:16px;top:16px;z-index:20;display:flex;a
   padding:10px 16px;border-radius:18px;background:var(--glass);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);
   border:1px solid var(--glass-border);box-shadow:0 10px 30px rgba(0,0,0,.18)}
 header h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.01em}
-header .logo{flex:0 0 auto;width:30px;height:30px;border-radius:8px;display:block}
+header .logo{flex:0 0 auto;width:30px;height:30px;display:block}
+.lg-bg{fill:var(--surface);stroke:var(--accent);stroke-opacity:.45;stroke-width:1.5}
+.lg-ln{fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linecap:round}
+.lg-dot{fill:var(--target)}
 .hl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
 #terrainSel{background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:20px;padding:7px 12px;min-height:36px;font-weight:600;max-width:40vw}
 #status{font-size:13px;color:var(--muted);text-align:right;white-space:nowrap}
@@ -80,10 +83,13 @@ header .logo{flex:0 0 auto;width:30px;height:30px;border-radius:8px;display:bloc
 .panel{position:absolute;top:88px;right:16px;bottom:16px;width:360px;max-width:calc(100vw - 32px);z-index:10;
   display:flex;flex-direction:column;background:var(--glass);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);
   border:1px solid var(--glass-border);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.18);overflow:hidden}
-.tabs{display:flex;gap:4px;background:color-mix(in srgb,var(--ink) 8%,transparent);border-radius:14px;padding:4px;margin:16px 16px 4px}
-.tabs button{flex:1;border:0;background:none;padding:10px 6px;cursor:pointer;color:var(--muted);font-weight:500;border-radius:11px;font-size:13px;
-  transition:background-color .15s ease,color .15s ease}
-.tabs button[aria-selected="true"]{color:var(--on-accent);background:var(--accent);font-weight:600}
+.tabs{display:flex;gap:4px;background:color-mix(in srgb,var(--ink) 7%,transparent);border:1px solid var(--glass-border);border-radius:16px;padding:4px;margin:16px 16px 6px}
+.tabs button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;padding:9px 4px 8px;cursor:pointer;color:var(--muted);font-weight:600;border-radius:12px;font-size:12.5px;letter-spacing:.005em;
+  transition:background-color .15s ease,color .2s ease}
+.tabs button svg{width:19px;height:19px;flex:0 0 19px}
+.tabs button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabs button:not([aria-selected="true"]):hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.tabs button[aria-selected="true"]{color:var(--on-accent);background:var(--accent)}
 .pane{flex:1;overflow:auto;padding:14px 16px 22px}
 .pane[hidden]{display:none}
 .empty{color:var(--muted);padding:6px 0}
@@ -196,7 +202,7 @@ dialog h3{margin:0 0 10px;font-size:18px}
   .app.dragging .sheet-handle{cursor:grabbing}
   .sheet-handle::after{content:"";position:absolute;left:50%;top:11px;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:var(--muted);opacity:.7}
   .tabs{margin:0 10px 4px}
-  .tabs button{padding:10px 2px;font-size:12px}
+  .tabs button{padding:8px 2px 7px;font-size:12px}
   /* Прокрутка йде аж до низу екрана; нижній відступ дає змогу докрутити останній елемент над домашньою смугою. */
   .pane{padding:10px 12px calc(18px + var(--safe-b))}
   .mapbtns{right:12px;top:calc(64px + var(--safe-t))}
@@ -416,16 +422,20 @@ dialog.settings[open]{display:flex;flex-direction:column}
   select:open::picker-icon { transform: scaleY(-1); }
   select:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 1px; }
   ::picker(select) {
-    background: var(--surface); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 14px; padding: 6px;
-    margin-block: 6px; box-shadow: 0 16px 40px rgba(0,0,0,.45);
-    max-height: min(340px, 60vh); overflow: auto;
+    background: color-mix(in srgb, var(--surface) 88%, var(--ink)); color: var(--ink);
+    border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent); border-radius: 16px; padding: 6px;
+    margin-block: 8px; box-shadow: 0 20px 48px rgba(0,0,0,.55), 0 2px 10px rgba(0,0,0,.35);
+    max-height: min(340px, 60vh); overflow: auto; scrollbar-width: thin;
   }
-  select option { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 9px; cursor: pointer; color: var(--ink); background: transparent;
-    font-family: inherit; font-size: 14.5px; font-weight: 500; letter-spacing: 0; text-transform: none; text-indent: 0; }
-  select option:hover, select option:focus-visible { background: color-mix(in srgb, var(--ink) 10%, transparent); outline: 0; }
-  select option:checked { background: color-mix(in srgb, var(--accent) 20%, transparent); font-weight: 600; }
-  select option::checkmark { order: 1; margin-left: auto; color: var(--accent); }
+  select option { display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 10px 14px; border-radius: 11px; cursor: pointer; color: var(--ink); background: transparent;
+    font-family: inherit; font-size: 14.5px; font-weight: 500; letter-spacing: 0; text-transform: none; text-indent: 0; transition: background .12s ease; }
+  select option + option { margin-top: 2px; }
+  select option:hover { background: color-mix(in srgb, var(--ink) 9%, transparent); }
+  select option:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent); outline-offset: -2px; }
+  select option:checked { background: color-mix(in srgb, var(--accent) 15%, transparent); font-weight: 600; }
+  select option:checked:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+  select option::checkmark { content: ""; order: 1; flex: 0 0 auto; margin-left: auto; width: 16px; height: 16px; background-color: var(--accent);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat; }
   select optgroup { padding: 8px 0 2px; text-indent: 12px; font-family: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   select optgroup + optgroup { margin-top: 4px; border-top: 1px solid var(--line); }
   @media (prefers-reduced-motion: no-preference) {
@@ -447,3 +457,23 @@ dialog.settings[open]{display:flex;flex-direction:column}
 #list .coords-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-top:3px}
 #list .gref{font-weight:700;font-size:15px;letter-spacing:.04em;color:var(--ink);font-variant-numeric:tabular-nums}
 #list .c{font-size:12.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* ---- плавні переходи: ковзний індикатор вкладок і м'яке з'явлення вмісту ---- */
+.has-slide{position:relative}
+.has-slide>.slide-ind{position:absolute;left:0;top:0;z-index:0;pointer-events:none;background:var(--accent);border-radius:11px;
+  transition:transform .32s cubic-bezier(.3,.8,.2,1),width .32s cubic-bezier(.3,.8,.2,1),height .32s cubic-bezier(.3,.8,.2,1),opacity .2s ease}
+.has-slide>:not(.slide-ind){position:relative;z-index:1}
+.has-slide>button{transition:color .25s ease}
+.tabs.has-slide button[aria-selected="true"],.set-nav.has-slide button[aria-pressed="true"],.seg.has-slide button[aria-pressed="true"]{background:none}
+.set-nav.has-slide>.slide-ind{border-radius:12px}
+.seg.has-slide>.slide-ind{border-radius:9px}
+.theme-grid.has-slide>.slide-ind.ring{background:none;border:2px solid var(--accent);border-radius:14px;box-sizing:border-box}
+.theme-grid.has-slide .themechip[aria-pressed="true"]{border-color:var(--line);box-shadow:none}
+.themechip{transition:border-color .2s ease,background .2s ease}
+@keyframes paneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pane:not([hidden]),.set-sec:not([hidden]){animation:paneIn .24s ease both}
+@media (max-width:640px){.set-nav.has-slide>.slide-ind{border-radius:999px}}
+@media (prefers-reduced-motion:reduce){.has-slide>.slide-ind{transition:none}.pane:not([hidden]),.set-sec:not([hidden]){animation:none}}
+.tabs.has-slide>.slide-ind{border-radius:12px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 35%,transparent)}
+.tabs.has-slide button:not([aria-selected="true"]):hover{background:none}
+.set-head .logo{display:block;flex:0 0 auto;width:30px;height:30px}
