@@ -1,21 +1,89 @@
-MIT License
+Mortar Tablet Noncommercial License
+Version 1.0, 20 October 2026
 
 Copyright (c) 2026 Ingwald
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Scope
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This license applies only to the original code and documentation of Mortar
+Tablet (the "Software") for which Ingwald (the "Licensor") owns the copyright
+or has authority to grant this license. It applies to copies distributed with
+this license. All rights not expressly granted are reserved.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Third-party code, libraries, maps, images, datasets, and other materials are
+excluded and remain subject to their respective licenses. See
+THIRD-PARTY-NOTICES.md and the notices accompanying those materials. This
+license neither replaces those licenses nor grants rights in third-party
+materials that the Licensor does not hold.
+
+2. Noncommercial permission
+
+Subject to these terms, you may use, run, study, copy, modify, and distribute
+the Software, in source or executable form, solely for noncommercial purposes.
+You may share it free of charge with individuals and gaming communities,
+including through Discord, websites, and free downloads.
+
+"Noncommercial" means not primarily intended for or directed toward commercial
+advantage or monetary compensation. Private recreation and unpaid community
+gaming are permitted purposes.
+
+3. Commercial restrictions
+
+Without a separate written license from the Licensor, you must not:
+
+- sell, rent, license for a fee, or otherwise charge for the Software or access
+  to it, including modified versions;
+- place the Software or any of its features, updates, or downloads behind a
+  payment, subscription, paid membership, or compulsory donation;
+- monetize the Software through advertising, sponsorship, or paid placement;
+- incorporate the Software into a commercial product or paid service; or
+- otherwise use, modify, or distribute the Software for commercial purposes.
+
+An entirely voluntary donation with no access, feature, service, priority,
+reward, or other benefit in return is not by itself commercial use under this
+license. This exception does not override restrictions on third-party material.
+
+4. Redistribution and modifications
+
+Every distributed copy or substantial portion of the Software must retain this
+license, the copyright notice, and applicable third-party notices. Modified
+copies must identify that they have been modified and must not imply approval
+by the Licensor. The portions covered by this license, including modified
+versions of those portions, must be distributed under these same terms.
+Independent works and third-party components retain their own licenses.
+
+This license does not require you to publish your source code. You may not
+grant recipients commercial rights in the portions covered by this license.
+
+5. Third-party rights and legal exceptions
+
+Nothing in this license limits rights independently granted by a third-party
+license, including rights to modify or replace LGPL-covered components and to
+reverse engineer the combined work for debugging modifications to those
+components. Nothing here restricts uses that applicable law permits without
+the Licensor's permission. No trademark rights or endorsement are granted.
+
+6. Earlier releases
+
+This license does not revoke, replace, or restrict rights already granted for
+earlier copies under the MIT License or any other license. Those copies remain
+usable under their original terms. It does not impose new restrictions on
+material independently obtained under an earlier license.
+
+7. Termination
+
+The permissions granted by this license terminate automatically if you breach
+its conditions. They are reinstated if you remedy the breach within 30 days
+after becoming aware of it, unless this reinstatement provision has previously
+been used by you. The Licensor may also reinstate permissions in writing.
+Sections 1, 3, 5, 6, and 8 survive termination.
+
+8. Disclaimer
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS IS",
+WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.

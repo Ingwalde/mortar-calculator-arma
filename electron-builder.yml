@@ -24,6 +24,9 @@ files:
   - "!out/web/**"
   - resources/**/*
   - package.json
+  - LICENSE
+  - THIRD-PARTY-NOTICES.md
+  - legal/**/*
   # зайве з залежностей: звіти покриття, браузерні збірки, вихідники, документація, типи
   - "!**/node_modules/pngjs/coverage/**"
   - "!**/node_modules/node-forge/dist/**"
@@ -31,11 +34,22 @@ files:
   - "!**/node_modules/sharp/src/**"
   - "!**/node_modules/sharp/install/**"
   - "!**/node_modules/**/{test,tests,__tests__,docs,example,examples,.github}/**"
-  - "!**/node_modules/**/*.{md,markdown,map,ts,tsx,mts,cts,flow,yml,yaml}"
-  - "!**/node_modules/**/{CHANGELOG*,CONTRIBUTING*,README*,.npmignore,.eslintrc*,.travis.yml}"
+  # Preserve LICENSE.md, COPYING, NOTICE and README licensing information.
+  - "!**/node_modules/**/*.{map,ts,tsx,mts,cts,flow,yml,yaml}"
+  - "!**/node_modules/**/{CHANGELOG*,CONTRIBUTING*,.npmignore,.eslintrc*,.travis.yml}"
 asarUnpack:
   - "**/node_modules/sharp/**"
   - "**/node_modules/@img/**"
+extraResources:
+  # Keep legal documents readable without extracting app.asar.
+  - from: legal
+    to: legal
+  - from: LICENSE
+    to: legal/APPLICATION-LICENSE.txt
+  - from: THIRD-PARTY-NOTICES.md
+    to: legal/THIRD-PARTY-NOTICES.md
+  - from: resources/legal/npm-notices.txt
+    to: legal/npm-notices.txt
 win:
   target:
     - target: portable
