@@ -20,7 +20,7 @@
   --bg:#16181c;--surface:#1f2227;--raised:#272b30;--line:#373c43;--muted:#989da3;
   --mapblank:#1b1e22;--accent:#6ea2e7;--on-accent:#0d121a;--pl-nature:#6ee7a8;
 }
-html{height:100%;overscroll-behavior:none}
+html{height:100%;overscroll-behavior:none;touch-action:pan-x pan-y}
 body{margin:0;height:100%;background:var(--bg);color:var(--ink);
   font-family:"IBM Plex Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
   font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
@@ -392,6 +392,8 @@ dialog.settings[open]{display:flex;flex-direction:column}
 .theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .themechip{justify-content:center;gap:9px;padding:13px 10px;border-radius:14px;font-size:14.5px;font-weight:500}
 .themechip i{width:18px;height:18px}
+.themechip i{flex:none}
+.themechip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .set-row .placeslegend{margin-top:2px}
 [data-hidden-platform]{display:none!important}
 @media (max-width:640px){
