@@ -8,3 +8,4 @@ dist/
 /.check-places/
 .claude/settings.local.json
 .web-cache/
+/resources/legal/npm-notices.txt

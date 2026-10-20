@@ -476,7 +476,7 @@ const DICT: Dict = {
     </ul>
     <h2>Налаштування</h2>
     <p class="hint">Усе налаштовується в розділі ⚙ у шапці: тема, мова, звук і вібрація, доступні снаряди, розкид, карти й дані, мережа.</p>
-    <p class="hint">Назви пунктів, розмір теренів і висоти для модів <b>Gogland</b>, <b>Bad Orb</b>, <b>Bystrany</b>, <b>Iron Hold Castle</b>, <b>Chernorus_Kirovograd</b> і <b>Mogadishu</b> прочитано з файлів самих модів (Arma Public License).</p>`,
+    <p class="hint">Назви пунктів, розміри теренів і висоти походять із матеріалів гри та відповідних модів. Автори, ліцензії та статус перевірки прав наведені в розділі «Ліцензії та подяки».</p>`,
     en: `<h2>About</h2>
     <p class="hint">A mortar tablet for Arma Reforger: fire solutions for the M252 and 2B14 mortars right on the map. A non-commercial app for personal and in-game use.</p>
     <h2>What it does</h2>
@@ -491,7 +491,7 @@ const DICT: Dict = {
     </ul>
     <h2>Settings</h2>
     <p class="hint">Everything is configured under ⚙ in the header: theme, language, sound and vibration, available shells, dispersion, maps and data, network.</p>
-    <p class="hint">Place names, terrain size and heights for the <b>Gogland</b>, <b>Bad Orb</b>, <b>Bystrany</b>, <b>Iron Hold Castle</b>, <b>Chernorus_Kirovograd</b> and <b>Mogadishu</b> mods were read from the mods' own files (Arma Public License).</p>`
+    <p class="hint">Place names, terrain sizes and heights originate from the game and the respective mods. Authors, licenses and the status of the rights review are listed under Licences and credits.</p>`
   },
 
   importPhaseDownload: { uk: "Завантаження зображення", en: "Downloading image" },
