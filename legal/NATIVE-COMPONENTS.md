@@ -56,8 +56,9 @@ archive has already been supplied with a release.
    Windows release. Sources of the permissive components are not included; the
    recipes fetch them from pinned URLs.
 3. Verify that users can replace the LGPL shared libraries with compatible
-   modified builds (rebuild procedure: `native/REBUILD-LIBVIPS.md`; the rebuild with
-   a modified library has not been run, see the verification log). `asarUnpack` keeps sharp and `@img` outside the archive,
+   modified builds (rebuild procedure: `native/REBUILD-LIBVIPS.md`; replacement with a
+   rebuilt, modified library verified by the project owner on a separate device on
+   2026-10-20, logs not stored here). `asarUnpack` keeps sharp and `@img` outside the archive,
    but this alone is not a successful replacement test. Check the actual DLL/
    shared-library loading and packaging/signing behavior on the target OS.
 4. Retain Electron's `LICENSE.electron.txt` and `LICENSES.chromium.html` from
@@ -126,3 +127,6 @@ Checked on 2026-10-20 (Windows x64 build host, sharp 0.35.5):
   library is loaded from a replaceable file. It is not a test with a modified
   libvips build and does not close item 2 or the signing question in item 3.
   Unsigned builds were used (no signing certificate is configured).
+- Replacement of `libvips-42.dll` with a library rebuilt from source with a modification was
+  verified by the project owner on a separate device on 2026-10-20; the logs of that check are
+  not stored in this repository.

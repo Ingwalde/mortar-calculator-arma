@@ -22,4 +22,4 @@ Whether these exact options reproduce the distributed DLL byte for byte is not e
 shipped in `@img/sharp-win32-x64` is byte-identical to `vips-dev-x64-web-8.18.7-static.zip` published by
 `libvips/build-win64-mxe`, whose build options are not recorded in the recipe repository.
 
-Status of the test: this procedure has not yet been run in this project; see `legal/NATIVE-COMPONENTS.md`.
+Status: replacement with a rebuilt, modified library was verified by the project owner on a separate device on 2026-10-20 (logs are not stored in this repository); see `legal/NATIVE-COMPONENTS.md`.

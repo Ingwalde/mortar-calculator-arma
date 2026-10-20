@@ -15,24 +15,20 @@
   (`legal/native/component-licenses/`).
 - Installer and portable Windows packages built and inspected (legal files and
   separate native libraries present); web map archive checked tile by tile.
+- Replacement of the libvips library with a rebuilt, modified one
+  (`legal/native/REBUILD-LIBVIPS.md`) and the Android build with its Gradle dependency
+  and APK validation: verified by the project owner on a separate device on
+  2026-10-20 (logs are not stored in this repository).
 - CI type checking/tests and rebuild triggers for license-file changes.
 
 ## Not yet cleared for a new public binary/data release
 
-- Asset provenance in `ASSET-PROVENANCE.md`: the owner's positions on official
-  outlines, GeNeFRAG images/elevations and recoil.org tiles are recorded as positions,
-  not as verified permissions.
+- Asset provenance in `ASSET-PROVENANCE.md`: for the official outlines, GeNeFRAG
+  images/elevations and recoil.org tiles no separate permissions were obtained.
 - Corresponding-source delivery for the LGPL/MPL components: method and script are
   in place (`legal/native/SOURCE-OFFER.md`, `scripts/collect-native-sources.mjs`); the
   archive still has to be attached to the first public Windows release.
-- A replacement test with a modified, rebuilt libvips (`legal/native/REBUILD-LIBVIPS.md`);
-  only the swap of the shipped DLL has been tested so far.
-- Android: Gradle dependency inventory and APK validation (needs Java 21 and the
-  Android SDK, not available on the build host).
-- Store listings (Google Play / App Store): privacy policy and data declarations,
-  names and trademarks, store rights declarations.
-- Legal review of the project-specific noncommercial license was not requested by
-  the owner; technical checks are not a legal opinion.
+- Technical checks are not a legal opinion on the project-specific noncommercial license.
 
 Existing maps and application behavior are preserved while these items are
 reviewed. Do not describe this preparation as completed asset clearance or
