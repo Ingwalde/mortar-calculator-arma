@@ -10,9 +10,9 @@ license declared there, not ownership of every dependency of the mod.
 | Material | Source and attribution | Repository locations | Status and remaining work |
 | --- | --- | --- | --- |
 | Everon / Arland place names and coordinates | [nickludlam/EnfusionMapMaker](https://github.com/nickludlam/EnfusionMapMaker), APL-SA | `src/core/terrains-data.json`, `scripts/extract-terrains.mjs` | Keep APL-SA attribution for the adapted datasets. The upstream files `Web/everon/everon-locations.js` and `Web/arland/arland-locations.js` were last changed in commit `4a95230074` (2025-03-05); the revision used at extraction time was not recorded. The entire JSON file is not exclusively from this source. |
-| Everon / Arland / Kolguyev online tiles | `https://reforger.recoil.org/map-tiles/`, game content by Bohemia Interactive | `src/core/terrains-data.json`, `src/core/onlineTiles.ts` | Web/Android request tiles directly; desktop can cache them. Owner's position (2026-10-20): the tiles are publicly served and their use is treated as allowed. No separate written permission or terms page for caching was located; this records the position, not a verified permission. |
-| Full map images and elevation datasets linked through GeNeFRAG | [GeNeFRAG/ArmaReforger](https://github.com/GeNeFRAG/ArmaReforger), repository declares MIT | `src/core/terrains-data.json`, `src/core/heightGrid.ts`, `scripts/build-web-assets.ts` | Owner's position (2026-10-20): relies on the repository's declared MIT license; no separate investigation of the underlying imagery or elevation sources was made. The MIT notice for the repository is preserved. |
-| Official-map building outlines | Bohemia Interactive game `.topo` files | `src/core/buildings/{everon,arland,kolguyev}.ts` | Converted to BLD1/base64 by `scripts/extract-buildings.mjs`. Owner's position (2026-10-20): not treated as an open item. The outlines are polygon geometry only; no separate redistribution authority was established. |
+| Everon / Arland / Kolguyev online tiles | `https://reforger.recoil.org/map-tiles/`, game content by Bohemia Interactive | `src/core/terrains-data.json`, `src/core/onlineTiles.ts` | Web/Android request tiles directly; desktop can cache them. The tiles are publicly served. No separate written permission or terms page for caching was located. |
+| Full map images and elevation datasets linked through GeNeFRAG | [GeNeFRAG/ArmaReforger](https://github.com/GeNeFRAG/ArmaReforger), repository declares MIT | `src/core/terrains-data.json`, `src/core/heightGrid.ts`, `scripts/build-web-assets.ts` | Used under the repository's declared MIT license, whose notice is preserved. The underlying imagery and elevation sources were not separately investigated. |
+| Official-map building outlines | Bohemia Interactive game `.topo` files | `src/core/buildings/{everon,arland,kolguyev}.ts` | Converted to BLD1/base64 by `scripts/extract-buildings.mjs`. The outlines are polygon geometry only; no separate redistribution authority was established. |
 | Calculation reference code and tables | GeNeFRAG / Gerhard Fröhlich, MIT | `src/core/ballistics.ts`, `src/core/ballistic-data.json`, `test/vendor/BallisticCalculator.reference.cjs` | Preserve the MIT notice. Separately document the provenance of the numerical dataset; do not assume that all isolated numbers/formulas are copyrightable. |
 | Game dispersion parameters | Arma Reforger game prefabs | `src/core/spread.ts` | A few numerical parameters and independently written calculation code, not an extracted image. Record their origin; do not equate these automatically with the legal status of copied maps or databases. |
 
@@ -106,9 +106,8 @@ the intended noncommercial use and distribution.
    dependencies is reflected in the supplied data (height grid and one name only).
    Building outlines of Chernorus_Kirovograd carry only geometry, which is
    recorded above.
-2. Official-map outlines, the GeNeFRAG images/elevations and the recoil.org tiles
-   are recorded as owner's positions in the first table; they are not verified
-   permissions.
+2. For the official-map outlines, the GeNeFRAG images/elevations and the recoil.org
+   tiles the first table records what is known; no separate permissions were obtained.
 3. Extraction versions and the upstream revision of the place-name files are
    recorded above; the web map archive was checked (see the log).
 4. If an item cannot be cleared later, replace or exclude it and verify the
