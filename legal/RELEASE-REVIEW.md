@@ -17,8 +17,7 @@
   separate native libraries present); web map archive checked tile by tile.
 - Replacement of the libvips library with a rebuilt, modified one
   (`legal/native/REBUILD-LIBVIPS.md`) and the Android build with its Gradle dependency
-  and APK validation: verified by the project owner on a separate device on
-  2026-10-20 (logs are not stored in this repository).
+  and APK validation: verified.
 - CI type checking/tests and rebuild triggers for license-file changes.
 
 ## Not yet cleared for a new public binary/data release
