@@ -59,7 +59,7 @@ import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
 import { vibrate as haptic } from "./haptics";
 import { slideIndicator } from "./slider";
-import { beginListRender, initRipple, rollNumbersIn, tweenNumber } from "./motion";
+import { beginListRender, initRipple, reducedMotion, rollElement, rollNumbersIn, tweenNumber } from "./motion";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
@@ -105,11 +105,34 @@ function lastUsedFolder(): string {
 }
 
 // ---------- marks list ----------
+// тексти чисел кожної мітки з попереднього перемальовування: нові рядки докручуються від нуля, змінені — від старих значень
+let markNumPrev = new Map<string, string[]>();
+
+function animateMarkNumbers(ul: HTMLElement): void {
+  const active = !$("pane-marks").hidden && !document.hidden && !reducedMotion();
+  const next = new Map<string, string[]>();
+  for (const li of Array.from(ul.querySelectorAll<HTMLElement>("li[data-id]"))) {
+    const id = li.dataset.id as string;
+    const els = Array.from(li.querySelectorAll<HTMLElement>(".gref, .c"));
+    const texts = els.map((e) => e.textContent ?? "");
+    next.set(id, texts);
+    if (!active) continue;
+    const prev = markNumPrev.get(id);
+    els.forEach((el, k) => {
+      if (!prev) {
+        if (li.classList.contains("anim-in")) rollElement(el);
+      } else if (prev.length === texts.length && prev[k] !== texts[k]) rollElement(el, prev[k]);
+    });
+  }
+  markNumPrev = next;
+}
+
 export function renderMarksList(): void {
   const ul = $("list");
   const done = beginListRender(ul);
   renderMarksListInner();
   done();
+  animateMarkNumbers(ul);
 }
 
 function renderMarksListInner(): void {
@@ -692,7 +715,7 @@ export function renderFire(): void {
   // Горизонтальна наводка — лише в градусах; підвищення лишається в мілах.
   // числа плавно «докручуються» від попередніх значень до нових
   const azV = cell(hero, t("cellAzimuthDeg"), b.deg.toFixed(1), "°");
-  tweenNumber("az", azV.firstChild as Text, rollFromZero ? 0 : numPrev.az, b.deg, (n) => n.toFixed(1), { wrap360: !rollFromZero, ms: rollFromZero ? 1000 : undefined });
+  tweenNumber("az", azV.firstChild as Text, rollFromZero ? 0 : numPrev.az, b.deg, (n) => n.toFixed(1), { wrap360: !rollFromZero, ms: rollFromZero ? 800 : undefined });
   numPrev.az = b.deg;
   const elV = cell(
     hero,
@@ -700,11 +723,11 @@ export function renderFire(): void {
     sols.length ? String(sols[0].elevation) : "—"
   );
   if (sols.length) {
-    tweenNumber("el", elV.firstChild as Text, rollFromZero ? 0 : numPrev.el, sols[0].elevation, (n) => String(Math.round(n)), { ms: rollFromZero ? 1000 : undefined });
+    tweenNumber("el", elV.firstChild as Text, rollFromZero ? 0 : numPrev.el, sols[0].elevation, (n) => String(Math.round(n)), { ms: rollFromZero ? 800 : undefined });
     numPrev.el = sols[0].elevation;
   }
   const rgV = cell(meta, t("cellRange"), fmtM(dist), t("unitM"));
-  tweenNumber("range", rgV.firstChild as Text, rollFromZero ? 0 : numPrev.range, dist, (n) => fmtM(n), { ms: rollFromZero ? 1000 : undefined });
+  tweenNumber("range", rgV.firstChild as Text, rollFromZero ? 0 : numPrev.range, dist, (n) => fmtM(n), { ms: rollFromZero ? 800 : undefined });
   numPrev.range = dist;
   cell(meta, t("cellHeightDiff"), dh === null ? "—" : (dh > 0 ? "+" : "") + fmtM(dh), dh === null ? undefined : t("unitM"));
   meta.style.gridTemplateColumns = "1fr 1fr";
