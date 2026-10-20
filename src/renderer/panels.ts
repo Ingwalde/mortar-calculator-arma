@@ -59,7 +59,7 @@ import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
 import { vibrate as haptic } from "./haptics";
 import { slideIndicator } from "./slider";
-import { beginListRender, initRipple, tweenNumber } from "./motion";
+import { beginListRender, initRipple, rollNumbersIn, tweenNumber } from "./motion";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
@@ -1301,7 +1301,11 @@ function showTab(name: TabName): void {
       rollFromZero = false;
     }
   }
-  if (name === "log") renderLog();
+  if (name === "log") {
+    renderLog();
+    rollNumbersIn($("logList"), ".lv b");
+  }
+  if (name === "marks") rollNumbersIn($("list"), ".gref, .c");
 }
 document.querySelector(".tabs")!.addEventListener("click", (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
