@@ -622,6 +622,8 @@ $<HTMLSelectElement>("selCharge").onchange = (e) => {
 let lastDist: number | null = null;
 /** Попередні значення чисел розрахунку: від них стартує плавна зміна. */
 const numPrev: { az?: number; el?: number; range?: number } = {};
+// при відкритті вкладки «Розрахунки» числа докручуються від нуля, а не з'являються одразу
+let rollFromZero = false;
 
 export function renderFire(): void {
   const box = $("sol");
@@ -690,7 +692,7 @@ export function renderFire(): void {
   // Горизонтальна наводка — лише в градусах; підвищення лишається в мілах.
   // числа плавно «докручуються» від попередніх значень до нових
   const azV = cell(hero, t("cellAzimuthDeg"), b.deg.toFixed(1), "°");
-  tweenNumber("az", azV.firstChild as Text, numPrev.az, b.deg, (n) => n.toFixed(1), { wrap360: true });
+  tweenNumber("az", azV.firstChild as Text, rollFromZero ? 0 : numPrev.az, b.deg, (n) => n.toFixed(1), { wrap360: !rollFromZero, ms: rollFromZero ? 700 : undefined });
   numPrev.az = b.deg;
   const elV = cell(
     hero,
@@ -698,11 +700,11 @@ export function renderFire(): void {
     sols.length ? String(sols[0].elevation) : "—"
   );
   if (sols.length) {
-    tweenNumber("el", elV.firstChild as Text, numPrev.el, sols[0].elevation, (n) => String(Math.round(n)));
+    tweenNumber("el", elV.firstChild as Text, rollFromZero ? 0 : numPrev.el, sols[0].elevation, (n) => String(Math.round(n)), { ms: rollFromZero ? 700 : undefined });
     numPrev.el = sols[0].elevation;
   }
   const rgV = cell(meta, t("cellRange"), fmtM(dist), t("unitM"));
-  tweenNumber("range", rgV.firstChild as Text, numPrev.range, dist, (n) => fmtM(n));
+  tweenNumber("range", rgV.firstChild as Text, rollFromZero ? 0 : numPrev.range, dist, (n) => fmtM(n), { ms: rollFromZero ? 700 : undefined });
   numPrev.range = dist;
   cell(meta, t("cellHeightDiff"), dh === null ? "—" : (dh > 0 ? "+" : "") + fmtM(dh), dh === null ? undefined : t("unitM"));
   meta.style.gridTemplateColumns = "1fr 1fr";
@@ -1292,7 +1294,12 @@ function showTab(name: TabName): void {
     fillFireSelects();
     fillShellOptions();
     $("selShell").removeAttribute("data-w");
-    renderFire();
+    rollFromZero = true;
+    try {
+      renderFire();
+    } finally {
+      rollFromZero = false;
+    }
   }
   if (name === "log") renderLog();
 }
@@ -1500,6 +1507,8 @@ export function initPanels(): void {
   slideIndicator(document.querySelector<HTMLElement>(".tabs"), { active: 'button[aria-selected="true"]' });
   for (const seg of document.querySelectorAll<HTMLElement>(".seg")) slideIndicator(seg, { active: 'button[aria-pressed="true"]' });
   initRipple();
+  // iOS: щипок по інтерфейсу (не по карті) не має масштабувати сторінку
+  for (const ev of ["gesturestart", "gesturechange", "gestureend"]) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
   initSettings({
     applyAll: () => {
       applyShotSettings();
