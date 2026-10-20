@@ -99,10 +99,13 @@ the intended noncommercial use and distribution.
 
 1. Iron Hold Castle's own license is confirmed as APL (1.0.3) and none of its
    dependencies is reflected in the supplied data (height grid and one name only).
-   Decide what to do with the Novyinovka map image, which may depict trenches from
-   its APL-ND dependency: keep it as is, replace it with an image rendered like the
-   other mod terrains, or exclude it from a public release. Building outlines of
-   Chernorus_Kirovograd carry only geometry, which is recorded above.
+   Novyinovka map image: the owner decided on 2026-10-20 to keep the image as it is
+   for now. This is not a clearance. The image depicts trench objects from its
+   APL-ND dependency (see the data table) and the question stays open; the
+   alternatives are an image rendered like the other mod terrains, or excluding
+   Novyinovka from a public release. The notice in `THIRD-PARTY-NOTICES.md` states
+   this. Building outlines of Chernorus_Kirovograd carry only geometry, which is
+   recorded above.
 2. Establish redistribution rights for official game-derived material and for
    images/elevations redistributed by upstream projects.
 3. Record extraction versions, relevant upstream revisions and retained license
