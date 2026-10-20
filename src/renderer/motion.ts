@@ -41,60 +41,82 @@ const NUM_RE = /\d+(?:[\s  ]\d{3}(?!\d))*(?:[.,]\d+)?/g;
 const rollIds = new WeakMap<Element, number>();
 let rollSeq = 0;
 
+interface NumPart {
+  start: number;
+  raw: string;
+  value: number;
+  dec: number;
+  decSep: string;
+  pad: number;
+  sep: string;
+}
+
+function parseNumbers(text: string): NumPart[] {
+  const parts: NumPart[] = [];
+  for (const m of text.matchAll(NUM_RE)) {
+    const raw = m[0];
+    const dm = raw.match(/([.,])(\d+)$/);
+    const intPart = dm ? raw.slice(0, raw.length - dm[0].length) : raw;
+    const sepM = intPart.match(/[\s  ]/);
+    parts.push({
+      start: m.index ?? 0,
+      raw,
+      value: parseFloat(raw.replace(/[\s  ]/g, "").replace(",", ".")),
+      dec: dm ? dm[2].length : 0,
+      decSep: dm ? dm[1] : ".",
+      pad: !sepM && !dm && intPart.length > 1 && intPart.startsWith("0") ? intPart.length : 0,
+      sep: sepM ? sepM[0] : ""
+    });
+  }
+  return parts;
+}
+
 /**
- * Числа в готовому тексті елемента (сітка «0300 0300», «X 3 000», «123.4°», «+12 м») «докручуються» від нуля до значення.
- * Формат зберігається: кількість знаків після коми, роздільник тисяч, ведучі нулі. Текст довкола чисел не змінюється.
+ * Числа в готовому тексті елемента (сітка «0300 0300», «X 3 000», «123.4°», «+12 м») плавно змінюються від значень
+ * `fromText` (за його відсутності — від нуля) до тих, що в тексті. Формат зберігається: кількість знаків після коми,
+ * роздільник тисяч, ведучі нулі. Текст довкола чисел не змінюється.
  */
+export function rollElement(el: HTMLElement, fromText?: string, ms = 800): void {
+  const node = el.firstChild;
+  if (!(node instanceof Text)) return;
+  // повторний запуск посеред анімації бере вихідний текст, а не проміжний
+  const text = el.dataset.rollText ?? node.data;
+  el.dataset.rollText = text;
+  const parts = parseNumbers(text);
+  if (!parts.length) return;
+  const fromParts = fromText !== undefined ? parseNumbers(fromText) : [];
+  const from = fromParts.length === parts.length ? fromParts.map((p) => p.value) : parts.map(() => 0);
+  if (fromText !== undefined && from.every((v, k) => v === parts[k].value)) return;
+  const render = (u: number): string => {
+    let out = "";
+    let at = 0;
+    parts.forEach((p, k) => {
+      out += text.slice(at, p.start);
+      at = p.start + p.raw.length;
+      const v = from[k] + (p.value - from[k]) * u;
+      let body = p.dec ? v.toFixed(p.dec).replace(".", p.decSep) : String(Math.round(v));
+      if (p.pad) body = body.padStart(p.pad, "0");
+      else if (p.sep) {
+        const [i, d] = body.split(p.decSep);
+        body = i.replace(/\B(?=(\d{3})+(?!\d))/g, p.sep) + (d !== undefined ? p.decSep + d : "");
+      }
+      out += body;
+    });
+    return out + text.slice(at);
+  };
+  let id = rollIds.get(el);
+  if (id === undefined) {
+    id = ++rollSeq;
+    rollIds.set(el, id);
+  }
+  tweenNumber(`roll${id}`, node, 0, 1, render, { ms });
+  node.data = render(0);
+}
+
+/** Усі елементи за селектором: числа докручуються від нуля (відкриття вкладки). */
 export function rollNumbersIn(root: HTMLElement, selector: string, ms = 800): void {
   if (reducedMotion() || document.hidden) return;
-  for (const el of Array.from(root.querySelectorAll<HTMLElement>(selector))) {
-    const node = el.firstChild;
-    if (!(node instanceof Text)) continue;
-    // повторний запуск посеред анімації бере вихідний текст, а не проміжний
-    const text = el.dataset.rollText ?? node.data;
-    el.dataset.rollText = text;
-    const parts: { start: number; raw: string; value: number; dec: number; decSep: string; pad: number; sep: string }[] = [];
-    for (const m of text.matchAll(NUM_RE)) {
-      const raw = m[0];
-      const dm = raw.match(/([.,])(\d+)$/);
-      const intPart = dm ? raw.slice(0, raw.length - dm[0].length) : raw;
-      const sepM = intPart.match(/[\s  ]/);
-      parts.push({
-        start: m.index ?? 0,
-        raw,
-        value: parseFloat(raw.replace(/[\s  ]/g, "").replace(",", ".")),
-        dec: dm ? dm[2].length : 0,
-        decSep: dm ? dm[1] : ".",
-        pad: !sepM && !dm && intPart.length > 1 && intPart.startsWith("0") ? intPart.length : 0,
-        sep: sepM ? sepM[0] : ""
-      });
-    }
-    if (!parts.length) continue;
-    const render = (u: number): string => {
-      let out = "";
-      let at = 0;
-      for (const p of parts) {
-        out += text.slice(at, p.start);
-        at = p.start + p.raw.length;
-        const v = p.value * u;
-        let body = p.dec ? v.toFixed(p.dec).replace(".", p.decSep) : String(Math.round(v));
-        if (p.pad) body = body.padStart(p.pad, "0");
-        else if (p.sep) {
-          const [i, d] = body.split(p.decSep);
-          body = i.replace(/\B(?=(\d{3})+(?!\d))/g, p.sep) + (d !== undefined ? p.decSep + d : "");
-        }
-        out += body;
-      }
-      return out + text.slice(at);
-    };
-    let id = rollIds.get(el);
-    if (id === undefined) {
-      id = ++rollSeq;
-      rollIds.set(el, id);
-    }
-    tweenNumber(`roll${id}`, node, 0, 1, render, { ms });
-    node.data = render(0);
-  }
+  for (const el of Array.from(root.querySelectorAll<HTMLElement>(selector))) rollElement(el, undefined, ms);
 }
 
 /**

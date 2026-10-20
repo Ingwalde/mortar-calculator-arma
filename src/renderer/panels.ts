@@ -59,7 +59,7 @@ import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
 import { vibrate as haptic } from "./haptics";
 import { slideIndicator } from "./slider";
-import { beginListRender, initRipple, rollNumbersIn, tweenNumber } from "./motion";
+import { beginListRender, initRipple, reducedMotion, rollElement, rollNumbersIn, tweenNumber } from "./motion";
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
@@ -105,11 +105,34 @@ function lastUsedFolder(): string {
 }
 
 // ---------- marks list ----------
+// тексти чисел кожної мітки з попереднього перемальовування: нові рядки докручуються від нуля, змінені — від старих значень
+let markNumPrev = new Map<string, string[]>();
+
+function animateMarkNumbers(ul: HTMLElement): void {
+  const active = !$("pane-marks").hidden && !document.hidden && !reducedMotion();
+  const next = new Map<string, string[]>();
+  for (const li of Array.from(ul.querySelectorAll<HTMLElement>("li[data-id]"))) {
+    const id = li.dataset.id as string;
+    const els = Array.from(li.querySelectorAll<HTMLElement>(".gref, .c"));
+    const texts = els.map((e) => e.textContent ?? "");
+    next.set(id, texts);
+    if (!active) continue;
+    const prev = markNumPrev.get(id);
+    els.forEach((el, k) => {
+      if (!prev) {
+        if (li.classList.contains("anim-in")) rollElement(el);
+      } else if (prev.length === texts.length && prev[k] !== texts[k]) rollElement(el, prev[k]);
+    });
+  }
+  markNumPrev = next;
+}
+
 export function renderMarksList(): void {
   const ul = $("list");
   const done = beginListRender(ul);
   renderMarksListInner();
   done();
+  animateMarkNumbers(ul);
 }
 
 function renderMarksListInner(): void {

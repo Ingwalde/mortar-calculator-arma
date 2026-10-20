@@ -5,6 +5,8 @@
  */
 import { slideIndicator } from "./slider";
 import { reducedMotion } from "./motion";
+import { vibrate } from "./haptics";
+import { getRoot } from "./state";
 
 const touchOnly = (): boolean => typeof matchMedia === "function" && matchMedia("(hover: none) and (pointer: coarse)").matches;
 
@@ -22,7 +24,7 @@ function fireChange(sel: HTMLSelectElement): void {
   sel.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function closeSheet(): void {
+function closeSheet(fromPx = 0): void {
   if (!sheet || !sheet.open || closing) return;
   const d = sheet;
   if (reducedMotion()) {
@@ -40,7 +42,7 @@ function closeSheet(): void {
     closing = false;
     if (d.open) d.close();
   };
-  const a = panel.animate([{ transform: "none" }, { transform: "translateY(100%)" }], { duration: 200, easing: "ease-in", fill: "forwards" });
+  const a = panel.animate([{ transform: fromPx ? `translateY(${fromPx}px)` : "none" }, { transform: "translateY(100%)" }], { duration: 200, easing: "ease-in", fill: "forwards" });
   a.onfinish = done;
   a.oncancel = done;
   setTimeout(done, 400);
@@ -79,7 +81,7 @@ function openSheet(sel: HTMLSelectElement): void {
   x.className = "selsheet-x";
   x.setAttribute("aria-label", "×");
   x.textContent = "×";
-  x.onclick = closeSheet;
+  x.onclick = () => closeSheet();
   head.append(title, x);
   const list = document.createElement("div");
   list.className = "selsheet-list";
@@ -103,6 +105,7 @@ function openSheet(sel: HTMLSelectElement): void {
     b.onclick = () => {
       const changed = sel.value !== o.value;
       sel.value = o.value;
+      if (getRoot().vibration) vibrate(10);
       closeSheet();
       if (changed) fireChange(sel);
     };
@@ -120,6 +123,41 @@ function openSheet(sel: HTMLSelectElement): void {
     }
   }
   panel.append(grab, head, list);
+  // свайп вниз за верхню частину (смужку й заголовок) закриває панель
+  let startY = 0;
+  let dy = 0;
+  let dragging = false;
+  const top = [grab, head];
+  for (const zone of top) {
+    zone.style.touchAction = "none";
+    zone.addEventListener("pointerdown", (e) => {
+      if ((e.target as HTMLElement).closest(".selsheet-x")) return;
+      dragging = true;
+      startY = e.clientY;
+      dy = 0;
+      try {
+        zone.setPointerCapture(e.pointerId);
+      } catch {
+        // без захоплення вказівника свайп усе одно працює, поки палець над зоною
+      }
+    });
+    zone.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      dy = Math.max(0, e.clientY - startY);
+      panel.style.transform = `translateY(${dy}px)`;
+    });
+    const end = (): void => {
+      if (!dragging) return;
+      dragging = false;
+      if (dy > 80) closeSheet(dy);
+      else {
+        panel.style.transform = "";
+        if (dy > 0 && typeof panel.animate === "function") panel.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 180, easing: "ease-out" });
+      }
+    };
+    zone.addEventListener("pointerup", end);
+    zone.addEventListener("pointercancel", end);
+  }
   d.appendChild(panel);
   if (!d.open) d.showModal();
   void d.offsetHeight;

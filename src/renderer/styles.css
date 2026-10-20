@@ -315,9 +315,10 @@ input[type=checkbox],input[type=radio],progress{accent-color:var(--accent)}
 /* ---------- QR обміну й сповіщення про оновлення ---------- */
 .qrbox{margin-top:10px;text-align:center}
 .qrbox img{display:block;margin:0 auto;border-radius:12px;background:#fff;padding:6px;max-width:100%;height:auto}
-.upd{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:8px;max-width:min(94vw,520px);padding:8px 8px 8px 14px;border-radius:16px;background:var(--glass-strong);border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.28);font-size:14px}
+.upd{width:max-content;position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:8px;max-width:min(94vw,520px);padding:8px 8px 8px 14px;border-radius:16px;background:var(--glass-strong);border:1px solid var(--glass-border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.28);font-size:14px}
 .upd span{flex:1 1 auto;min-width:0}
 .upd .btn{flex:0 0 auto}
+@media (max-width:640px){.upd{top:calc(70px + var(--safe-t,0px))}}
 
 /* ---------- зруйновані мітки ---------- */
 #list li.destroyed .name{text-decoration:line-through;opacity:.65}
