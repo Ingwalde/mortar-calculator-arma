@@ -29,14 +29,21 @@ function closeSheet(): void {
     d.close();
     return;
   }
+  const panel = d.querySelector<HTMLElement>(".selsheet-panel");
+  if (!panel || typeof panel.animate !== "function") {
+    d.close();
+    return;
+  }
   closing = true;
   d.classList.remove("in");
   const done = (): void => {
     closing = false;
     if (d.open) d.close();
   };
-  d.addEventListener("transitionend", done, { once: true });
-  setTimeout(done, 260);
+  const a = panel.animate([{ transform: "none" }, { transform: "translateY(100%)" }], { duration: 200, easing: "ease-in", fill: "forwards" });
+  a.onfinish = done;
+  a.oncancel = done;
+  setTimeout(done, 400);
 }
 
 function ensureSheet(): HTMLDialogElement {
@@ -115,16 +122,26 @@ function openSheet(sel: HTMLSelectElement): void {
   panel.append(grab, head, list);
   d.appendChild(panel);
   if (!d.open) d.showModal();
-  requestAnimationFrame(() => {
-    d.classList.add("in");
-    (selectedBtn as HTMLElement | null)?.scrollIntoView({ block: "center" });
-  });
+  void d.offsetHeight;
+  d.classList.add("in");
+  // виїзд знизу: через Web Animations, щоб він працював і там, де CSS-перехід одразу після showModal() пропускається (Safari)
+  if (!reducedMotion() && typeof panel.animate === "function") {
+    panel.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 280, easing: "cubic-bezier(.2,.8,.2,1)" });
+  }
+  requestAnimationFrame(() => (selectedBtn as HTMLElement | null)?.scrollIntoView({ block: "center" }));
 }
 
 function wrapTrigger(sel: HTMLSelectElement): void {
   const wrap = document.createElement("span");
   wrap.className = "selbox";
-  if (getComputedStyle(sel).display === "block" || sel.closest(".field")) wrap.classList.add("block");
+  const cs = getComputedStyle(sel);
+  if (cs.display === "block" || sel.closest(".field")) wrap.classList.add("block");
+  // обгортка бере на себе розміщення списку у батьківському рядку (flex, max-width), інакше шапка «з'їжджає»
+  if (parseFloat(cs.flexGrow) > 0) {
+    wrap.classList.add("grow");
+    wrap.style.flex = cs.flex;
+  }
+  if (cs.maxWidth !== "none") wrap.style.maxWidth = cs.maxWidth;
   sel.parentNode?.insertBefore(wrap, sel);
   wrap.appendChild(sel);
   sel.classList.add("sel-touch");

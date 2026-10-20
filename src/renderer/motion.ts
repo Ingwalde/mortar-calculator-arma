@@ -45,7 +45,7 @@ let rollSeq = 0;
  * Числа в готовому тексті елемента (сітка «0300 0300», «X 3 000», «123.4°», «+12 м») «докручуються» від нуля до значення.
  * Формат зберігається: кількість знаків після коми, роздільник тисяч, ведучі нулі. Текст довкола чисел не змінюється.
  */
-export function rollNumbersIn(root: HTMLElement, selector: string, ms = 1000): void {
+export function rollNumbersIn(root: HTMLElement, selector: string, ms = 800): void {
   if (reducedMotion() || document.hidden) return;
   for (const el of Array.from(root.querySelectorAll<HTMLElement>(selector))) {
     const node = el.firstChild;

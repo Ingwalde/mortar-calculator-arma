@@ -692,7 +692,7 @@ export function renderFire(): void {
   // Горизонтальна наводка — лише в градусах; підвищення лишається в мілах.
   // числа плавно «докручуються» від попередніх значень до нових
   const azV = cell(hero, t("cellAzimuthDeg"), b.deg.toFixed(1), "°");
-  tweenNumber("az", azV.firstChild as Text, rollFromZero ? 0 : numPrev.az, b.deg, (n) => n.toFixed(1), { wrap360: !rollFromZero, ms: rollFromZero ? 1000 : undefined });
+  tweenNumber("az", azV.firstChild as Text, rollFromZero ? 0 : numPrev.az, b.deg, (n) => n.toFixed(1), { wrap360: !rollFromZero, ms: rollFromZero ? 800 : undefined });
   numPrev.az = b.deg;
   const elV = cell(
     hero,
@@ -700,11 +700,11 @@ export function renderFire(): void {
     sols.length ? String(sols[0].elevation) : "—"
   );
   if (sols.length) {
-    tweenNumber("el", elV.firstChild as Text, rollFromZero ? 0 : numPrev.el, sols[0].elevation, (n) => String(Math.round(n)), { ms: rollFromZero ? 1000 : undefined });
+    tweenNumber("el", elV.firstChild as Text, rollFromZero ? 0 : numPrev.el, sols[0].elevation, (n) => String(Math.round(n)), { ms: rollFromZero ? 800 : undefined });
     numPrev.el = sols[0].elevation;
   }
   const rgV = cell(meta, t("cellRange"), fmtM(dist), t("unitM"));
-  tweenNumber("range", rgV.firstChild as Text, rollFromZero ? 0 : numPrev.range, dist, (n) => fmtM(n), { ms: rollFromZero ? 1000 : undefined });
+  tweenNumber("range", rgV.firstChild as Text, rollFromZero ? 0 : numPrev.range, dist, (n) => fmtM(n), { ms: rollFromZero ? 800 : undefined });
   numPrev.range = dist;
   cell(meta, t("cellHeightDiff"), dh === null ? "—" : (dh > 0 ? "+" : "") + fmtM(dh), dh === null ? undefined : t("unitM"));
   meta.style.gridTemplateColumns = "1fr 1fr";
