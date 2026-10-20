@@ -15,10 +15,10 @@
 
 ## Not yet cleared for a new public binary/data release
 
-- Asset provenance issues in `ASSET-PROVENANCE.md`: the Novyinovka map image, which
-  depicts trench objects from an APL-ND dependency (kept as is by the owner's
-  decision; not cleared), official extracted material and the separate web map
-  archive.
+- Asset provenance issues in `ASSET-PROVENANCE.md`: official extracted material and
+  the separate web map archive. The Novyinovka map image, which depicts trench
+  objects from an APL-ND dependency, was closed by the owner's own assessment (see
+  `ASSET-PROVENANCE.md`); that is a recorded position, not an independent clearance.
 - Complete native notices, corresponding-source delivery and a working LGPL
   library-replacement test described in `NATIVE-COMPONENTS.md`.
 - Final Windows installer/portable validation and Android Gradle dependency and
