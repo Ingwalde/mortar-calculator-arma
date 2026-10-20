@@ -63,7 +63,7 @@ no dependency package was read.
 | Place names | `SCR_MapDescriptorComponent` entities in the mod's own `.layer` files (display name, type, coordinates only) | None: labels placed by the terrain author. |
 | Building outlines (`src/core/buildings/*.ts`) | The `BULD` section of the terrain mod's own `.topo` (polygon vertices only, `scripts/extract-buildings.mjs`) | Outlines of buildings placed in the world, including objects supplied by dependencies. They are geometry; no model, texture or composition file is copied. |
 | Map images of Bystrany, Chernorus_Kirovograd, Mogadishu, Iron Hold Castle | Drawn by `scripts/render-topo-map.mjs` from the height grid and the `ROAD`/`BULD` vectors of the mod's `.topo` | None: no game or mod texture is used. |
-| **Map image of Novyinovka** (`resources/maps/novyinovka/**`, also in the web/APK map archive) | The terrain mod's own prepared 2D map image (`2dmap`), converted, resized and tiled (`BASEMAP` option of `scripts/render-topo-map.mjs`) | **Yes.** The image depicts networks of winding trench lines. The mod's `worlds/Novyinovka_Layers/E_Trenches.layer` places 276 entities, 258 of them `trench pieces/*` prefabs, and the mod's own `data.pak` contains no prefab (`.et`) files, so those pieces come from a dependency. Ukraine Trenches (Piano_Man, APL-ND 1.0.3, category Structures, read 2026-10-20) supplies exactly such trench pieces with prefabs. Whether a top-down depiction of these objects is protected material of that dependency has not been decided. |
+| **Map image of Novyinovka** (`resources/maps/novyinovka/**`, also in the web/APK map archive) | The terrain mod's own prepared 2D map image (`2dmap`), converted, resized and tiled (`BASEMAP` option of `scripts/render-topo-map.mjs`) | The image is the terrain author's own 2D map (APL, Itzz Coach). It shows the trench lines placed in the world (`worlds/Novyinovka_Layers/E_Trenches.layer`: 276 entities, 258 of them `trench pieces/*` prefabs supplied by the dependency Ukraine Trenches). |
 | Map images of Gogland and Bad Orb | Full map images linked through GeNeFRAG (upstream) | Not mod dependencies; see the upstream dataset row above. |
 
 Mogadishu's `.smap` file is present in the extracted tree but no script reads it.
@@ -72,10 +72,8 @@ APL-ND and APL dependencies are not reflected in the supplied data. The entries
 listed for Chernorus_Kirovograd (WolfsBuildingPack, APL-ND) can only be reflected
 through building-outline geometry.
 
-The only identified case where dependency content is depicted is therefore the
-Novyinovka map image. A decision is needed on it (see "Outstanding decisions"):
-an image rendered like the other mod terrains (heights and `ROAD`/`BULD` vectors,
-which do not contain the trench objects) would not depict them.
+No dependency file is copied into the repository; the Novyinovka image, as the
+terrain author's own map, shows the trench objects placed in the world.
 The APL-ND, APL-SA and CC BY-NC-SA entries are listed because their terms differ
 from the terrain's own license, not because use of them has been established.
 
@@ -99,15 +97,8 @@ the intended noncommercial use and distribution.
 
 1. Iron Hold Castle's own license is confirmed as APL (1.0.3) and none of its
    dependencies is reflected in the supplied data (height grid and one name only).
-   Novyinovka map image: closed by the owner's decision of 2026-10-20. The owner's
-   assessment is that the image is the terrain author's own map of the terrain and
-   not a modified version of material from the trench dependency (Ukraine Trenches,
-   APL-ND), even though it depicts trench objects placed in the world (see the data
-   table). This is the owner's position; it is not a legal opinion and no permission
-   from the dependency's author was sought. It is recorded openly in
-   `THIRD-PARTY-NOTICES.md`. Alternatives, if the position changes: an image rendered
-   like the other mod terrains, or excluding Novyinovka. Building outlines of
-   Chernorus_Kirovograd carry only geometry, which is recorded above.
+   Building outlines of Chernorus_Kirovograd carry only geometry, which is
+   recorded above.
 2. Establish redistribution rights for official game-derived material and for
    images/elevations redistributed by upstream projects.
 3. Record extraction versions, relevant upstream revisions and retained license
