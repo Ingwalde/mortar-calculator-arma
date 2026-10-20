@@ -39,9 +39,17 @@ archive has already been supplied with a release.
 1. Collect all actual native-component notices, copyright statements and license
    texts from the exact build. Include codec/font notices, not just a list of
    SPDX names. Confirm the set for each target OS/architecture.
+   Status: the license/copyright files of all 28 components listed for Windows x64
+   are stored in `native/component-licenses/` (`INDEX.md` there lists source URL, tag
+   and SHA-256; produced by `scripts/collect-native-licenses.mjs`). They are taken
+   from the upstream repositories at the recorded tags (libimagequant: default
+   branch, no file at its tag), not extracted from the binary. Linux and other
+   targets are not covered.
 2. Supply the corresponding sources, patches and build instructions required by
    LGPL/MPL using a compliant distribution method. A generic upstream homepage
-   or this document alone is not the source delivery.
+   or this document alone is not the source delivery. Status: not done; the
+   method (for example a written offer or a source archive attached to each
+   release) is still to be chosen.
 3. Verify that users can replace the LGPL shared libraries with compatible
    modified builds. `asarUnpack` keeps sharp and `@img` outside the archive,
    but this alone is not a successful replacement test. Check the actual DLL/
@@ -97,8 +105,13 @@ Checked on 2026-10-20 (Windows x64 build host, sharp 0.35.5):
 - After `npm run pack`, `dist/win-unpacked` contains `LICENSE.electron.txt`,
   `LICENSES.chromium.html` and `resources/legal/` (application license, notices,
   the files in `legal/` and the generated npm notices). `npm run smoke` passed on
-  the unpacked build. The NSIS installer and the portable executable were not
-  inspected.
+  the unpacked build. `npm run dist:win` also built the NSIS installer and the
+  portable executable; both were unpacked with 7-Zip and contain the same
+  `LICENSE.electron.txt`, `LICENSES.chromium.html`, `resources/legal/` files
+  (identical SHA-256 to `dist/win-unpacked`) and the three separate sharp/libvips
+  files listed below. (`native/component-licenses/` was added after that build; a later
+  `npm run pack` puts all 33 of its files into `dist/win-unpacked/resources/legal/native/`.
+  The installer and portable were not rebuilt afterwards.)
 - `libvips-42.dll`, `libvips-cpp-8.18.7.dll` and the sharp `.node` module sit as separate
   files in `resources/app.asar.unpacked/node_modules/@img/sharp-win32-x64/lib`, outside
   the archive. On a copy of that tree sharp loaded and produced an image with the
@@ -106,3 +119,4 @@ Checked on 2026-10-20 (Windows x64 build host, sharp 0.35.5):
   above; a truncated `libvips-42.dll` made the module fail to load. This shows the
   library is loaded from a replaceable file. It is not a test with a modified
   libvips build and does not close item 2 or the signing question in item 3.
+  Unsigned builds were used (no signing certificate is configured).

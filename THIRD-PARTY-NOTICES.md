@@ -51,7 +51,7 @@ GeNeFRAG/ArmaReforger (https://github.com/GeNeFRAG/ArmaReforger)
 Некомерційне призначення застосунку саме по собі не є дозволом на поширення цих матеріалів; статус перевірки — у legal/ASSET-PROVENANCE.md.
 
 Моди Arma Reforger Workshop (автори й ліцензії за публічними сторінками, перевірено 2026-10-20):
-- Gogland — Temppa, APL: https://reforger.armaplatform.com/workshop/623EEDF242F6265E
+- Gogland - MANW_2025 — Temppa, APL (версія 1.3.7): https://reforger.armaplatform.com/workshop/65FCE7C94451AFF8
 - Bad Orb 5.0 — Aphex26, APL: https://reforger.armaplatform.com/workshop/64A51967EC407267
 - Bystrany — Der alte Benni, APL: https://reforger.armaplatform.com/workshop/6626CB89B6B9C913
 - Chernorus_Kirovograd — knisez, APL: https://reforger.armaplatform.com/workshop/6608D15676B2EACC

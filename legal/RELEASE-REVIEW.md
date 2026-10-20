@@ -10,19 +10,26 @@
 - Runtime npm notice collection, including a documented MIT supplement for
   `lazy-val@1.0.5`, whose package and upstream tree omit a separate license file.
 - Desktop packaging retains Markdown license files and README licensing information.
-- Full GPLv3, LGPLv3 and MPL-1.1 texts and the upstream native component inventory.
+- Full GPLv3, LGPLv3 and MPL-1.1 texts, the upstream native component inventory and
+  the license files of all 28 Windows x64 native components
+  (`legal/native/component-licenses/`).
+- Installer and portable Windows packages built and inspected (legal files and
+  separate native libraries present); web map archive checked tile by tile.
 - CI type checking/tests and rebuild triggers for license-file changes.
 
 ## Not yet cleared for a new public binary/data release
 
-- Asset provenance issues in `ASSET-PROVENANCE.md`: official extracted material and
-  the separate web map archive.
-- Complete native notices, corresponding-source delivery and a working LGPL
-  library-replacement test described in `NATIVE-COMPONENTS.md`.
-- Final Windows installer/portable validation and Android Gradle dependency and
-  APK validation on the target build environments.
-- Legal review of the project-specific noncommercial license if required by
-  the publisher; technical checks are not a legal opinion.
+- Asset provenance in `ASSET-PROVENANCE.md`: the owner's positions on official
+  outlines, GeNeFRAG images/elevations and recoil.org tiles are recorded as positions,
+  not as verified permissions.
+- Corresponding-source delivery for the LGPL/MPL components and a replacement test
+  with a modified build, described in `NATIVE-COMPONENTS.md`.
+- Android: Gradle dependency inventory and APK validation (needs Java 21 and the
+  Android SDK, not available on the build host).
+- Store listings (Google Play / App Store): privacy policy and data declarations,
+  names and trademarks, store rights declarations.
+- Legal review of the project-specific noncommercial license was not requested by
+  the owner; technical checks are not a legal opinion.
 
 Existing maps and application behavior are preserved while these items are
 reviewed. Do not describe this preparation as completed asset clearance or
@@ -40,9 +47,12 @@ in 20 files passed, Electron code and standalone Vite web code builds passed.
 Both renderer bundles contain the application license, corrected attribution
 and generated npm notices. Dependency versions were not changed.
 
-Windows executables were not built or run here (no Wine/Windows environment).
+Windows installer and portable executable were built with `npm run dist:win` on
+2026-10-20 (unsigned) and their contents inspected; they were not installed or run
+beyond `npm run smoke` on the unpacked build.
 Android APKs were not built (Java 17 is installed; the project needs Java 21
-and an Android SDK). External web map assets were not fetched for this check.
+and an Android SDK); the Android workflow was not run because it publishes a
+signed APK as an artifact.
 
 ```sh
 npm ci --ignore-scripts
