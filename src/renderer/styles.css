@@ -389,11 +389,12 @@ dialog.settings[open]{display:flex;flex-direction:column}
 .set-sub{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
 .set-actions{margin-top:18px;display:flex;justify-content:flex-end}
 .set-row select{min-height:40px;padding:6px 12px;border-radius:11px;background:var(--raised);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:14.5px}
-.theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.themechip{justify-content:center;gap:9px;padding:13px 10px;border-radius:14px;font-size:14.5px;font-weight:500}
-.themechip i{width:18px;height:18px}
+.theme-grid{display:flex;flex-wrap:wrap;gap:10px}
+.theme-grid .themechip{flex:1 1 auto}
+.themechip{justify-content:center;gap:7px;padding:13px 8px;border-radius:14px;font-size:14.5px;font-weight:500}
+.themechip i{width:16px;height:16px}
 .themechip i{flex:none}
-.themechip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.themechip span{white-space:nowrap}
 .set-row .placeslegend{margin-top:2px}
 [data-hidden-platform]{display:none!important}
 @media (max-width:640px){
@@ -547,7 +548,7 @@ dialog[open]::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
 /* вузький екран: пошук у налаштуваннях — значок, що розгортається в поле */
 @media (max-width:640px){
   .set-head h3{max-width:220px;overflow:hidden;white-space:nowrap;transition:max-width .26s ease,opacity .2s ease}
-  .set-head input[type=search]{flex:1 1 42px;max-width:42px;padding:0;color:transparent;cursor:pointer;background-position:12px center;
+  .set-head input[type=search]{flex:1 1 42px;max-width:42px;margin-left:auto;padding:0;color:transparent;cursor:pointer;background-position:12px center;
     transition:max-width .28s cubic-bezier(.2,.8,.2,1),padding .2s ease,border-color .15s ease,box-shadow .15s ease}
   .set-head input[type=search]::placeholder{color:transparent}
   .set-head input[type=search]:focus,.set-head input[type=search]:not(:placeholder-shown){max-width:100%;padding:0 14px 0 42px;color:var(--ink);cursor:text}
