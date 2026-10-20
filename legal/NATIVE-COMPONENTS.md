@@ -47,11 +47,17 @@ archive has already been supplied with a release.
    targets are not covered.
 2. Supply the corresponding sources, patches and build instructions required by
    LGPL/MPL using a compliant distribution method. A generic upstream homepage
-   or this document alone is not the source delivery. Status: not done; the
-   method (for example a written offer or a source archive attached to each
-   release) is still to be chosen.
+   or this document alone is not the source delivery. Method chosen: a source
+   archive attached to each release plus a written offer (`native/SOURCE-OFFER.md`),
+   produced by `scripts/collect-native-sources.mjs` (LGPL/MPL component sources,
+   build recipes and patches, MXE fork, sharp-libvips packaging; checksums in its
+   `SOURCES.md`). Status: the script ran and downloaded every archive (81 MB);
+   the archive is not attached to any release yet and must be with the first public
+   Windows release. Sources of the permissive components are not included; the
+   recipes fetch them from pinned URLs.
 3. Verify that users can replace the LGPL shared libraries with compatible
-   modified builds. `asarUnpack` keeps sharp and `@img` outside the archive,
+   modified builds (rebuild procedure: `native/REBUILD-LIBVIPS.md`; the rebuild with
+   a modified library has not been run, see the verification log). `asarUnpack` keeps sharp and `@img` outside the archive,
    but this alone is not a successful replacement test. Check the actual DLL/
    shared-library loading and packaging/signing behavior on the target OS.
 4. Retain Electron's `LICENSE.electron.txt` and `LICENSES.chromium.html` from

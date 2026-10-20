@@ -22,8 +22,11 @@
 - Asset provenance in `ASSET-PROVENANCE.md`: the owner's positions on official
   outlines, GeNeFRAG images/elevations and recoil.org tiles are recorded as positions,
   not as verified permissions.
-- Corresponding-source delivery for the LGPL/MPL components and a replacement test
-  with a modified build, described in `NATIVE-COMPONENTS.md`.
+- Corresponding-source delivery for the LGPL/MPL components: method and script are
+  in place (`legal/native/SOURCE-OFFER.md`, `scripts/collect-native-sources.mjs`); the
+  archive still has to be attached to the first public Windows release.
+- A replacement test with a modified, rebuilt libvips (`legal/native/REBUILD-LIBVIPS.md`);
+  only the swap of the shipped DLL has been tested so far.
 - Android: Gradle dependency inventory and APK validation (needs Java 21 and the
   Android SDK, not available on the build host).
 - Store listings (Google Play / App Store): privacy policy and data declarations,
