@@ -9,6 +9,7 @@ import { isNativeApp } from "./platform";
 import { initWebUpdate } from "./webUpdate";
 import { applyStaticTranslations, getLang, onLangChange, setLangSilent, t } from "./i18n";
 import { reducedMotion } from "./motion";
+import { initSelectSheets } from "./selectSheet";
 
 /** Заставку з іконкою знімаємо, щойно стан завантажено й інтерфейс готовий. */
 function hideSplash(): void {
@@ -48,6 +49,7 @@ async function boot(): Promise<void> {
   applyStaticTranslations();
   resetView();
   initPanels();
+  initSelectSheets();
   onLangChange(updateStatus);
   updateStatus();
   hideSplash();

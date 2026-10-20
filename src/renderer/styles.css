@@ -414,7 +414,7 @@ dialog.settings[open]{display:flex;flex-direction:column}
 
 /* Випадні списки: де браузер підтримує стилізований селект, малюємо власний список у кольорах теми;
    інакше лишається системний (напр. Safari на iPhone) */
-@supports (appearance: base-select) {
+@media (hover: hover) { @supports (appearance: base-select) {
   select,
   select::picker(select) { appearance: base-select; }
   select { cursor: pointer; padding-right: 12px; font-size: 14.5px; display: inline-flex; align-items: center; gap: 10px; }
@@ -424,26 +424,27 @@ dialog.settings[open]{display:flex;flex-direction:column}
   select:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 1px; }
   ::picker(select) {
     background: color-mix(in srgb, var(--surface) 88%, var(--ink)); color: var(--ink);
-    border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent); border-radius: 16px; padding: 6px;
-    margin-block: 8px; box-shadow: 0 20px 48px rgba(0,0,0,.55), 0 2px 10px rgba(0,0,0,.35);
+    border: 1px solid var(--line); border-radius: 12px; padding: 4px;
+    margin-block: 6px; box-shadow: 0 12px 28px -6px rgba(0,0,0,.55);
     max-height: min(340px, 60vh); overflow: auto; scrollbar-width: thin;
   }
-  select option { display: flex; align-items: center; gap: 12px; box-sizing: border-box; min-height: 40px; padding: 8px 14px; border-radius: 10px; cursor: pointer; color: var(--ink); background: transparent;
-    font-family: inherit; font-size: 14.5px; font-weight: 500; letter-spacing: 0; text-transform: none; text-indent: 0; transition: background .12s ease; }
-  select option + option { margin-top: 2px; }
+  select option { position: relative; display: flex; align-items: center; gap: 12px; box-sizing: border-box; min-height: 32px; padding: 0 10px 0 32px; border-radius: 8px; cursor: pointer; color: var(--ink); background: transparent;
+    font-family: inherit; font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none; text-indent: 0; transition: background .12s ease; }
+  select option + option { margin-top: 1px; }
   select option:hover { background: color-mix(in srgb, var(--ink) 9%, transparent); }
   select option:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent); outline-offset: -2px; }
-  select option:checked { background: color-mix(in srgb, var(--accent) 15%, transparent); font-weight: 600; }
+  select option:checked { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-weight: 500; }
   select option:checked:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
-  select option::checkmark { content: ""; order: 1; flex: 0 0 auto; margin-left: auto; width: 16px; height: 16px; background-color: var(--accent);
+  select option::checkmark { content: ""; position: absolute; left: 10px; top: 50%; translate: 0 -50%; flex: 0 0 auto; margin: 0; width: 14px; height: 14px; background-color: var(--accent);
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / contain no-repeat; }
-  select optgroup { padding: 8px 0 2px; text-indent: 12px; font-family: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  select optgroup { padding: 8px 0 2px; text-indent: 10px; font-family: inherit; font-size: 11px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
   select optgroup + optgroup { margin-top: 4px; border-top: 1px solid var(--line); }
   @media (prefers-reduced-motion: no-preference) {
     ::picker(select) { opacity: 0; transform: translateY(-4px); transition: opacity .15s ease, transform .15s ease, display .15s allow-discrete, overlay .15s allow-discrete; }
     ::picker(select):popover-open { opacity: 1; transform: none; }
     @starting-style { ::picker(select):popover-open { opacity: 0; transform: translateY(-4px); } }
   }
+}
 }
 .about-licenses{margin:8px 0 4px;border-top:1px solid var(--line);padding-top:10px}
 .about-licenses summary{cursor:pointer;font-weight:600;font-size:14px}
@@ -560,3 +561,37 @@ dialog[open]::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(3px)}
   dialog,dialog::backdrop,.toast{transition:none}
   .anim-in,.anim-out,.rip,.set-sec[data-dir]{animation:none}
 }
+
+/* телефон: нижня панель вибору замість системного списку (див. selectSheet.ts) */
+.selbox{position:relative;display:inline-block;max-width:100%}
+.selbox.block{display:block}
+.selbox-hit{position:absolute;inset:0;width:100%;height:100%;border:0;background:none;padding:0;cursor:pointer;opacity:0}
+.selbox>select.sel-touch{pointer-events:none;-webkit-appearance:none;appearance:none;padding-right:34px;text-overflow:ellipsis;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2398a399' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;background-size:16px}
+.selbox>select.sel-touch:disabled+.selbox-hit{pointer-events:none}
+.sel-hidden{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.set-row.inline:has(.selseg){flex-wrap:wrap}
+.selseg{flex:1 1 100%;margin-top:10px}
+dialog.selsheet{margin:auto 0 0;width:100%;max-width:none;max-height:none;padding:0;border:0;border-radius:0;background:transparent;overflow:visible;color:var(--ink);
+  opacity:1;transform:none;transition:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+dialog.selsheet[open]{opacity:1;transform:none}
+dialog.selsheet::backdrop,dialog.selsheet[open]::backdrop{background:rgba(0,0,0,.5);backdrop-filter:none;opacity:0;transition:opacity .22s ease}
+dialog.selsheet.in::backdrop{opacity:1}
+.selsheet-panel{display:flex;flex-direction:column;max-height:80dvh;background:var(--surface);border-top:1px solid var(--line);border-radius:24px 24px 0 0;
+  padding:8px 14px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.45);transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
+dialog.selsheet.in .selsheet-panel{transform:none}
+.selsheet-grab{flex:none;width:36px;height:4px;border-radius:2px;background:var(--line);margin:2px auto 12px}
+.selsheet-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px 12px;font-size:16px;font-weight:500}
+.selsheet-x{width:30px;height:30px;border-radius:50%;border:0;background:var(--raised);color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0}
+.selsheet-list{overflow:auto;overscroll-behavior:contain;background:var(--raised);border:1px solid var(--line);border-radius:16px}
+.selsheet-group{padding:10px 16px 4px;font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.selsheet-group:not(:first-child){border-top:1px solid var(--line)}
+.selsheet-opt{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:50px;padding:0 16px;border:0;background:none;color:var(--ink);font:inherit;font-size:15.5px;text-align:left;cursor:pointer}
+.selsheet-opt+.selsheet-opt{border-top:1px solid var(--line)}
+.selsheet-group+.selsheet-opt{border-top:0}
+.selsheet-opt[aria-selected="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.selsheet-opt:disabled{opacity:.45}
+.selsheet-tick{visibility:hidden;font-size:17px}
+.selsheet-opt[aria-selected="true"] .selsheet-tick{visibility:visible}
+@media (prefers-reduced-motion:reduce){.selsheet-panel,dialog.selsheet::backdrop{transition:none}}

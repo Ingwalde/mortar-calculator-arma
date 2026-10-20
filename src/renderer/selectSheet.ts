@@ -1,0 +1,188 @@
+/**
+ * Телефон: замість системного списку (на iPhone він сірий і не в кольорах теми) показуємо нижню панель вибору,
+ * а список мови — перемикачем у рядок. Справжній <select> лишається в DOM: з нього читає решта коду, і саме на ньому
+ * спрацьовує подія change, тож логіка застосунку не змінюється. На ПК нічого не робимо (там власний стиль списку в CSS).
+ */
+import { slideIndicator } from "./slider";
+import { reducedMotion } from "./motion";
+
+const touchOnly = (): boolean => typeof matchMedia === "function" && matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+let sheet: HTMLDialogElement | null = null;
+let closing = false;
+
+function labelOf(sel: HTMLSelectElement): string {
+  const byFor = sel.id ? document.querySelector<HTMLLabelElement>(`label[for="${sel.id}"]`) : null;
+  const wrapped = sel.closest("label")?.querySelector("span")?.textContent;
+  return (byFor?.textContent || wrapped || sel.getAttribute("aria-label") || "").trim();
+}
+
+function fireChange(sel: HTMLSelectElement): void {
+  sel.dispatchEvent(new Event("input", { bubbles: true }));
+  sel.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function closeSheet(): void {
+  if (!sheet || !sheet.open || closing) return;
+  const d = sheet;
+  if (reducedMotion()) {
+    d.close();
+    return;
+  }
+  closing = true;
+  d.classList.remove("in");
+  const done = (): void => {
+    closing = false;
+    if (d.open) d.close();
+  };
+  d.addEventListener("transitionend", done, { once: true });
+  setTimeout(done, 260);
+}
+
+function ensureSheet(): HTMLDialogElement {
+  if (sheet) return sheet;
+  const d = document.createElement("dialog");
+  d.className = "selsheet";
+  d.addEventListener("click", (e) => {
+    if (e.target === d) closeSheet();
+  });
+  d.addEventListener("cancel", (e) => {
+    e.preventDefault();
+    closeSheet();
+  });
+  document.body.appendChild(d);
+  sheet = d;
+  return d;
+}
+
+function openSheet(sel: HTMLSelectElement): void {
+  if (sel.disabled) return;
+  const d = ensureSheet();
+  d.textContent = "";
+  const panel = document.createElement("div");
+  panel.className = "selsheet-panel";
+  const grab = document.createElement("div");
+  grab.className = "selsheet-grab";
+  const head = document.createElement("div");
+  head.className = "selsheet-head";
+  const title = document.createElement("span");
+  title.textContent = labelOf(sel);
+  const x = document.createElement("button");
+  x.type = "button";
+  x.className = "selsheet-x";
+  x.setAttribute("aria-label", "×");
+  x.textContent = "×";
+  x.onclick = closeSheet;
+  head.append(title, x);
+  const list = document.createElement("div");
+  list.className = "selsheet-list";
+  list.setAttribute("role", "listbox");
+  let selectedBtn: HTMLElement | null = null;
+  const addOption = (o: HTMLOptionElement, into: HTMLElement): void => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "selsheet-opt";
+    b.setAttribute("role", "option");
+    const txt = document.createElement("span");
+    txt.textContent = o.textContent ?? "";
+    const tick = document.createElement("span");
+    tick.className = "selsheet-tick";
+    tick.textContent = "✓";
+    b.append(txt, tick);
+    b.disabled = o.disabled;
+    const on = o.value === sel.value;
+    b.setAttribute("aria-selected", on ? "true" : "false");
+    if (on) selectedBtn = b;
+    b.onclick = () => {
+      const changed = sel.value !== o.value;
+      sel.value = o.value;
+      closeSheet();
+      if (changed) fireChange(sel);
+    };
+    into.appendChild(b);
+  };
+  for (const child of Array.from(sel.children)) {
+    if (child instanceof HTMLOptGroupElement) {
+      const gh = document.createElement("div");
+      gh.className = "selsheet-group";
+      gh.textContent = child.label;
+      list.appendChild(gh);
+      for (const o of Array.from(child.children)) if (o instanceof HTMLOptionElement) addOption(o, list);
+    } else if (child instanceof HTMLOptionElement) {
+      addOption(child, list);
+    }
+  }
+  panel.append(grab, head, list);
+  d.appendChild(panel);
+  if (!d.open) d.showModal();
+  requestAnimationFrame(() => {
+    d.classList.add("in");
+    (selectedBtn as HTMLElement | null)?.scrollIntoView({ block: "center" });
+  });
+}
+
+function wrapTrigger(sel: HTMLSelectElement): void {
+  const wrap = document.createElement("span");
+  wrap.className = "selbox";
+  if (getComputedStyle(sel).display === "block" || sel.closest(".field")) wrap.classList.add("block");
+  sel.parentNode?.insertBefore(wrap, sel);
+  wrap.appendChild(sel);
+  sel.classList.add("sel-touch");
+  const hit = document.createElement("button");
+  hit.type = "button";
+  hit.className = "selbox-hit";
+  hit.setAttribute("aria-label", labelOf(sel) || "select");
+  hit.onclick = () => openSheet(sel);
+  wrap.appendChild(hit);
+  sel.tabIndex = -1;
+}
+
+function segmentedLanguage(sel: HTMLSelectElement): void {
+  const seg = document.createElement("div");
+  seg.className = "seg selseg";
+  seg.setAttribute("role", "group");
+  seg.setAttribute("aria-label", labelOf(sel));
+  const btns = new Map<string, HTMLButtonElement>();
+  for (const o of Array.from(sel.options)) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = o.textContent ?? "";
+    b.onclick = () => {
+      if (sel.value === o.value) return;
+      sel.value = o.value;
+      fireChange(sel);
+    };
+    btns.set(o.value, b);
+    seg.appendChild(b);
+  }
+  const refresh = (): void => {
+    for (const [v, b] of btns) b.setAttribute("aria-pressed", v === sel.value ? "true" : "false");
+  };
+  // значення мови виставляє код (sel.value = …) — підхоплюємо, щоб перемикач не відставав
+  const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  if (desc?.get && desc.set) {
+    const { get, set } = desc;
+    Object.defineProperty(sel, "value", {
+      configurable: true,
+      get() {
+        return get.call(sel) as string;
+      },
+      set(v: string) {
+        set.call(sel, v);
+        refresh();
+      }
+    });
+  }
+  sel.classList.add("sel-hidden");
+  sel.after(seg);
+  refresh();
+  slideIndicator(seg, { active: 'button[aria-pressed="true"]' });
+}
+
+export function initSelectSheets(): void {
+  if (!touchOnly()) return;
+  for (const sel of Array.from(document.querySelectorAll<HTMLSelectElement>("select"))) {
+    if (sel.id === "langSel") segmentedLanguage(sel);
+    else wrapTrigger(sel);
+  }
+}
