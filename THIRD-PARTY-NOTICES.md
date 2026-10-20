@@ -57,13 +57,14 @@ GeNeFRAG/ArmaReforger (https://github.com/GeNeFRAG/ArmaReforger)
 - Chernorus_Kirovograd — knisez, APL: https://reforger.armaplatform.com/workshop/6608D15676B2EACC
 - Mogadishu — KIOK, APL: https://reforger.armaplatform.com/workshop/5F1D02080409E128
 - Novyinovka - Russia — Itzz Coach, APL: https://reforger.armaplatform.com/workshop/689E376275A6AF90
-- Iron Hold Castle — WoodyCracudo; ліцензія не підтверджена: https://reforger.armaplatform.com/workshop/697F774C5FD21619
+- Iron Hold Castle — WoodyCracudo, APL (версія 1.0.3, сторінку прочитано 2026-10-20): https://reforger.armaplatform.com/workshop/697F774C5FD21619
 
 Текст APL: https://www.bohemia.net/en/licenses/arma-public-license
 З файлів модів прочитано розміри теренів, назви пунктів і висоти; для частини карт — контури будівель.
 Назви/координати переведено у формат застосунку, висоти перетворено на стиснуті сітки,
 контури будівель — на бінарні модулі. Для Novyinovka постачається також піраміда тайлів WebP.
 Права на матеріали модів і їхні залежності належать відповідним правовласникам.
+Моди мають залежності з іншими ліцензіями (зокрема APL-ND, APL-SA, CC BY-NC-SA 4.0); їхній перелік і статус перевірки — у legal/ASSET-PROVENANCE.md.
 
 
 2. Програмні бібліотеки

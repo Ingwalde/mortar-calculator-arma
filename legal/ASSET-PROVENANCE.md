@@ -30,7 +30,33 @@ not yet been recorded and must not be silently equated with these versions.
 | Chernorus_Kirovograd | knisez | [6608D15676B2EACC](https://reforger.armaplatform.com/workshop/6608D15676B2EACC) | APL / 1.0.6 |
 | Mogadishu | KIOK | [5F1D02080409E128](https://reforger.armaplatform.com/workshop/5F1D02080409E128) | APL / 1.0.13 |
 | Novyinovka - Russia | Itzz Coach | [689E376275A6AF90](https://reforger.armaplatform.com/workshop/689E376275A6AF90) | APL / 0.5.16 |
-| Iron Hold Castle | WoodyCracudo | [697F774C5FD21619](https://reforger.armaplatform.com/workshop/697F774C5FD21619) | **Unverified**; the detail page could not be retrieved. The Workshop index identifies the author. |
+| Iron Hold Castle | WoodyCracudo | [697F774C5FD21619](https://reforger.armaplatform.com/workshop/697F774C5FD21619) | APL / 1.0.3 (detail page read on 2026-10-20; the license link points to `https://www.bohemia.net/community/licenses`) |
+
+### Dependencies listed on the Workshop pages
+
+The detail pages list these mod dependencies. Their licenses were read on the
+same date from the dependencies' own pages and differ from the terrain's own
+license in several cases. No dependency list was shown on the retrieved pages of
+Gogland, Bad Orb 5.0 and Bystrany; that is an observation of the page text, not a
+guarantee that they have none.
+
+| Terrain | Dependency (author, ID) | Observed license / version |
+| --- | --- | --- |
+| Iron Hold Castle | iRON79 Compositions (iRON79, `60A68ED7293C691A`) | APL-ND / 1.0.29 |
+| Iron Hold Castle | Carcara Props (WoodyCracudo, `684F070647627FD1`) | APL / 1.0.11 |
+| Chernorus_Kirovograd | WolfsBuildingPack (N3crowolf, `5D84C738432BFE6A`) | APL-ND / 0.1.56 |
+| Chernorus_Kirovograd | Rail Enfusion Redux (TilW, `5DE612963E4B005A`) | APL-SA / 1.0.12 |
+| Chernorus_Kirovograd | RHS TerraCore2 (Red Hammer Studios, `5E58A3FB8CE68CBB`) | CC BY-NC-SA 4.0 / 0.1.35 |
+| Chernorus_Kirovograd | Railway Generator (TilW, `5F0D245931200FD1`) | APL / 1.0.5 |
+| Chernorus_Kirovograd, Mogadishu | ArmaTerrainCore (KIOK, `60B524F7A5AE96A8`) | APL / 1.1.9 |
+| Novyinovka - Russia | Ukraine Trenches (Piano_Man, `646518DA09B1E283`) | APL-ND / 1.0.3 |
+
+Whether any protected object, texture or composition from these dependencies is
+embedded in the extracted outlines, height grids or the rendered Novyinovka tile
+pyramid has not been determined. The repository extracts terrain topology and
+renders its own images; the dependency assets themselves were not audited.
+The APL-ND, APL-SA and CC BY-NC-SA entries are listed because their terms differ
+from the terrain's own license, not because use of them has been established.
 
 Affected files include:
 
@@ -50,14 +76,27 @@ the intended noncommercial use and distribution.
 
 ## Outstanding decisions
 
-1. Confirm Iron Hold Castle's applicable license or exclude its supplied data
-   from a public release. Its status must not be presented as confirmed APL.
+1. Iron Hold Castle's own license is confirmed as APL (1.0.3). Determine whether
+   protected material from its APL-ND dependency (iRON79 Compositions) and the
+   other listed dependencies is present in the supplied data (see the table
+   above); exclude or replace the data if it cannot be cleared.
 2. Establish redistribution rights for official game-derived material and for
    images/elevations redistributed by upstream projects.
 3. Record extraction versions, relevant upstream revisions and retained license
    notices. Review the separate web map archive.
 4. If an item cannot be cleared, replace or exclude it and verify the affected
    feature. This change set does not silently remove existing maps or data.
+
+## Verification log
+
+Checked on 2026-10-20:
+
+- All seven terrain pages and the dependency pages above were read; authors, IDs,
+  license names and versions match the tables. Iron Hold Castle's page, which could
+  not be retrieved in the original review, is now read and confirmed.
+- The reference URLs below, `https://reforger.armaplatform.com/workshop-terms` and
+  `https://reforger.recoil.org/map-tiles/everon/5/1/1/tile.jpg` respond with HTTP 200.
+  Reachability is not permission to reuse or cache the tiles.
 
 References:
 

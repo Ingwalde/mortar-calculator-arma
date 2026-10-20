@@ -5,7 +5,8 @@
 - Noncommercial terms for the author's original code/documentation, with explicit
   exclusions for third-party materials and previously granted MIT rights.
 - Application terms displayed with third-party notices in the shared UI.
-- Correct Workshop authors and removal of the unsupported Iron Hold Castle APL claim.
+- Correct Workshop authors; Iron Hold Castle's APL license is confirmed on its public
+  Workshop page (version 1.0.3, read 2026-10-20), with the listed dependencies recorded.
 - Runtime npm notice collection, including a documented MIT supplement for
   `lazy-val@1.0.5`, whose package and upstream tree omit a separate license file.
 - Desktop packaging retains Markdown license files and README licensing information.
@@ -14,8 +15,9 @@
 
 ## Not yet cleared for a new public binary/data release
 
-- Asset provenance issues in `ASSET-PROVENANCE.md`, including Iron Hold Castle,
-  official extracted material and the separate web map archive.
+- Asset provenance issues in `ASSET-PROVENANCE.md`: protected material possibly
+  present through mod dependencies (including APL-ND ones), official extracted
+  material and the separate web map archive.
 - Complete native notices, corresponding-source delivery and a working LGPL
   library-replacement test described in `NATIVE-COMPONENTS.md`.
 - Final Windows installer/portable validation and Android Gradle dependency and
@@ -30,7 +32,11 @@ created by the licensing changes alone.
 
 ## Local verification
 
-Checks completed for this change set: TypeScript checks passed, all 156 tests
+Checks completed for this change set (and repeated on 2026-10-20 on a Windows x64
+host (the branch is based on `6769d03`): `npm run licenses:collect`,
+`npm run check` = typecheck, 156 tests, `npm run pack` and `npm run smoke`, and
+`npm run build:web` including the external map assets all passed; the checks
+below were first recorded for the original change set): TypeScript checks passed, all 156 tests
 in 20 files passed, Electron code and standalone Vite web code builds passed.
 Both renderer bundles contain the application license, corrected attribution
 and generated npm notices. Dependency versions were not changed.
