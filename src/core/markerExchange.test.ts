@@ -102,3 +102,30 @@ describe("exchangeFileName", () => {
     }
   });
 });
+
+describe("нові поля мітки (приналежність, вид, підпис)", () => {
+  it("розбір бере їх, обрізає підпис і виводить type з приналежності та виду", () => {
+    const text = JSON.stringify({
+      app: "mortar-tablet",
+      kind: "markers",
+      v: 1,
+      terrain: "everon",
+      folder: null,
+      exportedAt: 1,
+      markers: [
+        { id: "a", name: "БТР", type: "point", x: 1, z: 2, aff: "hostile", kind: "armour", caption: "  кулемет  на\nвежі " + "я".repeat(200), c: 123 },
+        { id: "b", name: "Старий", type: "target", x: 3, z: 4 },
+        { id: "c", name: "Сміття", type: "mortar", x: 5, z: 6, aff: "neutral", kind: "tank" }
+      ]
+    });
+    const r = parseExchange(text);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const [a, b, c] = r.markers;
+    expect(a).toMatchObject({ type: "target", aff: "hostile", kind: "armour", c: 123 });
+    expect(a.caption!.length).toBe(120);
+    expect(a.caption!.startsWith("кулемет на вежі")).toBe(true);
+    expect(b).toMatchObject({ type: "target", aff: "hostile", kind: "infantry" });
+    expect(c).toMatchObject({ type: "mortar", aff: "friend", kind: "mortar" });
+  });
+});

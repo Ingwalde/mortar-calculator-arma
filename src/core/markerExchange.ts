@@ -4,6 +4,8 @@
  * Документ: { app, kind:"markers", v:1, terrain, terrainName?, folder, exportedAt, markers[] }.
  * Імпорт приймає також старий «резервний» формат ({markers:[...]} чи просто масив).
  */
+import { readCaption, readClass, type Affiliation, type MarkKind } from "./marks";
+
 export type XMarkerType = "mortar" | "target" | "point";
 
 export interface XMarker {
@@ -18,6 +20,13 @@ export interface XMarker {
   u: number;
   /** Ціль/точку позначено зруйнованою (вручну). */
   destroyed?: boolean;
+  /** Приналежність і вид (1.1.0); у старих файлах нема — виводяться з `type`. */
+  aff?: Affiliation;
+  kind?: MarkKind;
+  /** Підпис до мітки, до 120 символів. */
+  caption?: string;
+  /** Час створення, мс. */
+  c?: number;
 }
 
 export interface ExchangeDoc {
@@ -75,7 +84,10 @@ function clean(m: unknown, fallbackFolder: string): XMarker | null {
   // карти — десятки кілометрів; значення на порядки більші — явне сміття або спроба зламати малювання
   if (Math.abs(x) > MAX_COORD || Math.abs(z) > MAX_COORD) return null;
   const h = r.h === null || r.h === undefined || r.h === "" ? null : Number(r.h);
-  const type: XMarkerType = r.type === "mortar" || r.type === "target" ? r.type : "point";
+  const cls = readClass(r);
+  const type: XMarkerType = cls.type;
+  const caption = readCaption(r.caption);
+  const created = Number(r.c);
   return {
     id: typeof r.id === "string" && r.id.length > 0 && r.id.length <= 64 ? r.id : "",
     name: typeof r.name === "string" ? r.name.slice(0, 40) : "",
@@ -86,7 +98,11 @@ function clean(m: unknown, fallbackFolder: string): XMarker | null {
     w: r.w === "2B14" ? "2B14" : "M252",
     folder: typeof r.folder === "string" ? r.folder.slice(0, 40) : fallbackFolder,
     u: Number.isFinite(Number(r.u)) ? Number(r.u) : 0,
-    ...(r.destroyed === true && type !== "mortar" ? { destroyed: true } : {})
+    ...(r.destroyed === true && type !== "mortar" ? { destroyed: true } : {}),
+    ...(cls.aff ? { aff: cls.aff } : {}),
+    kind: cls.kind,
+    ...(caption ? { caption } : {}),
+    ...(Number.isFinite(created) && created > 0 ? { c: created } : {})
   };
 }
 
@@ -142,7 +158,7 @@ export interface MergeResult {
 }
 
 function same(a: XMarker, b: XMarker): boolean {
-  return a.name === b.name && a.type === b.type && a.x === b.x && a.z === b.z && a.h === b.h && a.w === b.w && a.folder === b.folder && !!a.destroyed === !!b.destroyed;
+  return a.name === b.name && a.type === b.type && a.x === b.x && a.z === b.z && a.h === b.h && a.w === b.w && a.folder === b.folder && !!a.destroyed === !!b.destroyed && a.aff === b.aff && a.kind === b.kind && (a.caption ?? "") === (b.caption ?? "");
 }
 
 /**

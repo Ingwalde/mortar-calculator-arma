@@ -14,7 +14,7 @@ const csp = [
   "img-src 'self' data: blob: https://reforger.recoil.org",
   "font-src 'self'",
   // перевірка нової версії Android-застосунку (останній реліз на GitHub)
-  "connect-src 'self' https://api.github.com",
+  "connect-src 'self' https://api.github.com https://mortar-tablet-relay.gdimas0603.workers.dev wss://mortar-tablet-relay.gdimas0603.workers.dev",
   "media-src 'self' blob: data:",
   "worker-src 'self'",
   "manifest-src 'self'",

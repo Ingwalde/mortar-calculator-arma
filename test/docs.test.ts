@@ -9,7 +9,7 @@ const read = (p: string): string => readFileSync(join(root, p), "utf8");
 
 function docFiles(): string[] {
   const out = ["README.md", "SECURITY.md", "THIRD-PARTY-NOTICES.md", "LICENSE"];
-  for (const dir of ["legal", "legal/native"]) {
+  for (const dir of ["legal", "legal/native", "docs"]) {
     for (const f of readdirSync(join(root, dir))) if (f.endsWith(".md")) out.push(`${dir}/${f}`);
   }
   return out;

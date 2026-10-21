@@ -5,6 +5,7 @@
  * Payload: base64url(deflate-raw(JSON)), де JSON — компактний масивний запис міток.
  */
 import { serializeExport, type ExchangeDoc, type XMarker, type XMarkerType } from "./markerExchange";
+import { readCaption, readClass, type Affiliation, type MarkKind } from "./marks";
 
 /** Адреса веб-версії, у яку веде посилання (PWA на GitHub Pages). */
 export const SHARE_BASE = "https://ingwalde.github.io/mortar-tablet/";
@@ -17,8 +18,27 @@ const MAX_MARKERS = 1000;
 
 const TYPES: XMarkerType[] = ["mortar", "target", "point"];
 
-/** [id, name, тип(0..2), x, z, h|null, зброя(0 M252 / 1 2B14), u, папка?] */
-type PackedMarker = [string, string, number, number, number, number | null, number, number, string?];
+/**
+ * [id, name, тип(0..2), x, z, h|null, зброя(0 M252 / 1 2B14), u, папка?, розширення?]
+ * Розширення (1.1.0): [код приналежності й виду, підпис?]; старі застосунки його ігнорують, нові без нього виводять вид зі старого типу.
+ */
+type PackedMarker = [string, string, number, number, number, number | null, number, number, (string | null)?, [string, string?]?];
+
+const AFF_CODE: Record<Affiliation, string> = { friend: "f", hostile: "h" };
+const KIND_CODE: Record<MarkKind, string> = { infantry: "i", armour: "a", mortar: "m", helicopter: "h", retreat: "r", legacy: "l" };
+
+function extCode(aff: Affiliation | undefined, kind: MarkKind): string {
+  return kind === "legacy" || !aff ? "l" : AFF_CODE[aff] + KIND_CODE[kind];
+}
+
+function readExtCode(code: unknown): { aff?: Affiliation; kind?: MarkKind } {
+  if (typeof code !== "string") return {};
+  if (code === "l") return { kind: "legacy" };
+  if (code.length !== 2) return {};
+  const aff = (Object.keys(AFF_CODE) as Affiliation[]).find((a) => AFF_CODE[a] === code[0]);
+  const kind = (Object.keys(KIND_CODE) as MarkKind[]).find((k) => KIND_CODE[k] === code[1] && k !== "legacy");
+  return aff && kind ? { aff, kind } : {};
+}
 interface Packed {
   v: 1;
   t: string;
@@ -93,7 +113,9 @@ export async function encodeShare(doc: ExchangeDoc): Promise<string> {
     m: doc.markers.map((m): PackedMarker => {
       const typeCode = Math.max(0, TYPES.indexOf(m.type)) + (m.destroyed ? TYPES.length : 0);
       const row: PackedMarker = [m.id, m.name, typeCode, m.x, m.z, m.h, m.w === "2B14" ? 1 : 0, m.u];
-      if (perMarkerFolder) row.push(m.folder);
+      row.push(perMarkerFolder ? m.folder : null);
+      const cls = readClass(m);
+      row.push(m.caption ? [extCode(cls.aff, cls.kind), m.caption] : [extCode(cls.aff, cls.kind)]);
       return row;
     })
   };
@@ -120,18 +142,25 @@ export async function decodeShare(payload: string): Promise<ExchangeDoc | null> 
   const markers: XMarker[] = [];
   for (const row of o.m) {
     if (!Array.isArray(row)) continue;
-    const [id, name, type, x, z, h, w, u, f] = row as PackedMarker;
+    const [id, name, type, x, z, h, w, u, f, ext] = row as PackedMarker;
+    const typeName = TYPES[Number(type) % TYPES.length] ?? "point";
+    const code = Array.isArray(ext) ? readExtCode(ext[0]) : {};
+    const cls = readClass({ ...code, type: typeName });
+    const caption = Array.isArray(ext) ? readCaption(ext[1]) : undefined;
     markers.push({
       id: typeof id === "string" ? id : "",
       name: typeof name === "string" ? name : "",
-      type: TYPES[Number(type) % TYPES.length] ?? "point",
+      type: cls.type,
       x: Number(x),
       z: Number(z),
       h: h === null || h === undefined ? null : Number(h),
       w: w === 1 ? "2B14" : "M252",
       folder: typeof f === "string" ? f : (folder ?? ""),
       u: Number(u) || 0,
-      ...(Number(type) >= TYPES.length && Number(type) % TYPES.length !== 0 ? { destroyed: true } : {})
+      ...(Number(type) >= TYPES.length && Number(type) % TYPES.length !== 0 ? { destroyed: true } : {}),
+      ...(cls.aff ? { aff: cls.aff } : {}),
+      kind: cls.kind,
+      ...(caption ? { caption } : {})
     });
   }
   return {

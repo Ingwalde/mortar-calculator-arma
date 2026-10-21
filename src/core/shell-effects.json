@@ -1,0 +1,77 @@
+{
+  "source": {
+    "pak": "data002.pak",
+    "bytes": 1137962283,
+    "extractedAt": "2026-10-21",
+    "game": "Arma Reforger Server (addons/data)"
+  },
+  "note": "fragmentation.distance is the DamageDistance (metres) of the shell's ExplosionFragmentationEffect as defined in the game files; null means no fragmentation effect",
+  "shells": {
+    "M252:HE": {
+      "ammo": "Prefabs/Weapons/Ammo/Ammo_Shell_81mm_HE_M821.et",
+      "warhead": "Prefabs/Weapons/Warheads/Warhead_Shell_HE_M821.et",
+      "chargeWeightG": 680,
+      "fragmentation": {
+        "distance": 25,
+        "count": 2800
+      },
+      "chain": [
+        "Prefabs/Weapons/Warheads/Warhead_Shell_HE_M821.et",
+        "Prefabs/Weapons/Core/Damage/ExplosionContainer_HEF.conf"
+      ]
+    },
+    "M252:Illumination": {
+      "ammo": "Prefabs/Weapons/Ammo/Ammo_Shell_81mm_Illum_M853A1.et",
+      "warhead": null,
+      "fragmentation": null,
+      "note": "explosion disabled (flare submunition)"
+    },
+    "M252:Smoke": {
+      "ammo": "Prefabs/Weapons/Ammo/Ammo_Shell_81mm_Smoke_M819.et",
+      "warhead": "Prefabs/Weapons/Warheads/Warhead_Shell_Smoke_M819.et",
+      "chargeWeightG": 100,
+      "fragmentation": {
+        "distance": 25,
+        "count": 300
+      },
+      "chain": [
+        "Prefabs/Weapons/Warheads/Warhead_Shell_Smoke_M819.et",
+        "Prefabs/Weapons/Warheads/Warhead_Shell_HE.et",
+        "Prefabs/Weapons/Core/Damage/ExplosionContainer_HE.conf"
+      ]
+    },
+    "2B14:HE": {
+      "ammo": "Prefabs/Weapons/Ammo/Ammo_Shell_82mm_HE_O832DU.et",
+      "warhead": "Prefabs/Weapons/Warheads/Warhead_Shell_HE_O832DU.et",
+      "chargeWeightG": 400,
+      "fragmentation": {
+        "distance": 25,
+        "count": 2700
+      },
+      "chain": [
+        "Prefabs/Weapons/Warheads/Warhead_Shell_HE_O832DU.et",
+        "Prefabs/Weapons/Core/Damage/ExplosionContainer_HEF.conf"
+      ]
+    },
+    "2B14:Illumination": {
+      "ammo": "Prefabs/Weapons/Ammo/Ammo_Shell_82mm_Illum_S832S.et",
+      "warhead": null,
+      "fragmentation": null,
+      "note": "explosion disabled (flare submunition)"
+    },
+    "2B14:Smoke": {
+      "ammo": "Prefabs/Weapons/Ammo/Ammo_Shell_82mm_Smoke_D832DU.et",
+      "warhead": "Prefabs/Weapons/Warheads/Warhead_Shell_Smoke_D832DU.et",
+      "chargeWeightG": 100,
+      "fragmentation": {
+        "distance": 25,
+        "count": 300
+      },
+      "chain": [
+        "Prefabs/Weapons/Warheads/Warhead_Shell_Smoke_D832DU.et",
+        "Prefabs/Weapons/Warheads/Warhead_Shell_HE.et",
+        "Prefabs/Weapons/Core/Damage/ExplosionContainer_HE.conf"
+      ]
+    }
+  }
+}

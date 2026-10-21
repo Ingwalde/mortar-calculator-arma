@@ -27,3 +27,8 @@ jobs:
       - run: npm run licenses:collect
       - run: npm run typecheck
       - run: npm test
+      - name: Relay typecheck
+        working-directory: server
+        run: |
+          npm ci --ignore-scripts
+          npm run typecheck

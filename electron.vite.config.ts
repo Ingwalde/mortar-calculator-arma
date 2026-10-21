@@ -37,7 +37,7 @@ export default defineConfig({
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob: tile: localtile:",
             "font-src 'self'",
-            "connect-src 'self' tile: localtile:",
+            "connect-src 'self' tile: localtile: https://mortar-tablet-relay.gdimas0603.workers.dev wss://mortar-tablet-relay.gdimas0603.workers.dev",
             "media-src 'self' blob: data:",
             "worker-src 'self'",
             "manifest-src 'self'",

@@ -1,0 +1,31 @@
+# Deploys the squad-mode relay (Cloudflare Workers): by hand, and on every push to master that touches the relay. Needs the repository secrets
+# CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (see "Owner setup" in docs/squad-mode.md).
+name: Relay
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths: [server/**, src/core/squad/**, .github/workflows/relay.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy relay
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

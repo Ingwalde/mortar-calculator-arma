@@ -12,9 +12,12 @@ with the height difference taken into account. No tables, notebook or calculator
 ## Why it is convenient
 
 - **The map at hand.** Everon, Arland, Kolguyev and the maps of popular mods (Gogland, Bad Orb, Bystrany, Kirovograd, Mogadishu, Iron Hold Castle, Novyinovka): zoom, a coordinate grid, place names, building outlines.
+- **Clear symbols.** Marks are friend (blue rectangle) or hostile (red diamond) and come as infantry, armour, mortar, helicopter or a retreat cross, each with a caption you can write and a legend (the "?" button on the "Marks" tab).
 - **Aiming with one tap.** Tap a building and the reticle snaps to it; "Place mark" puts a target exactly at the centre. Destroyed targets are marked on the map.
 - **Real ballistics.** M252 and 2B14, high-explosive, illumination and smoke shells, the best charge (★), height correction, time of flight.
+- **Safety warning.** If a friendly mark lies within the dispersion plus the fragmentation range of the shell (taken from the game files) around the target, the solution and the firing log show a warning that does not block aiming.
 - **See where it lands.** Range rings, the line of fire, a dispersion ellipse; a shot with flight animation, a rumble and an impact at the moment of arrival.
+- **Squad mode.** A shared live map: the commander creates a squad, the others join by a link or QR code. Roles (commander, mortarman, soldier) decide who can place and change what; everyone sees every mark with its author, mortarmen and the commander also share the firing log, and when the game is over the commander gets a report (statistics, who marked what and when) that can be edited, saved as a file or a printable page and opened later. It needs internet and a small relay server ([`server/`](server/README.md)); the data is deleted when the report is saved, a day after the game, or after three days without activity.
 - **Together with your crew.** Share markers by link, QR code or file, keep a firing log.
 - **Comfortable on a phone.** Three dark themes, a light mode for weak devices, vibration, the screen stays on.
 - **Free for the community.** No ads and no registration; the source code is available for noncommercial use, modification and distribution.
@@ -201,6 +204,8 @@ Imported maps are cut into **WebP** tiles (JPEG before): the files are a third t
 close the app and run `node scripts/convert-pyramids-webp.mjs` (`--keep` keeps the originals, `--only=bystrany,mogadishu` limits the set of maps).
 
 ## Documentation
+
+Design documents are in [`docs/`](docs): the plan for the squad mode is [docs/squad-mode.md](docs/squad-mode.md).
 
 All documentation is written in English, and this README is kept in step with the code: the test `test/docs.test.ts` (part of `npm test`) fails if the README mentions
 an npm script, a script file, a workflow or a document that does not exist, contains a hard-coded version number, or if any documentation file is not in English.

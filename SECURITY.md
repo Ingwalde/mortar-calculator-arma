@@ -1,8 +1,9 @@
 # Security
 
-Threat model: the application runs on the user's PC, in a browser (the site) or on an Android phone, and has no server component.
+Threat model: the application runs on the user's PC, in a browser (the site) or on an Android phone. Everything works without a server;
+the only server component is the optional relay for squad mode (see below), which the application uses only when the user creates or joins a squad.
 We trust the operating system and the user; we do not trust content that comes from outside
-(imported JSON, images, server responses) and, as defence in depth, the renderer itself.
+(imported JSON, images, server responses, squad messages) and, as defence in depth, the renderer itself.
 
 ## What has been done
 
@@ -33,6 +34,23 @@ We trust the operating system and the user; we do not trust content that comes f
   report a new release and open its page. The Android app opens share links only from this site.
 - **Build:** the mod terrain maps are downloaded from a service release with a SHA-256 check (`scripts/web-mod-maps.sha256`) and a check of the paths
   in the tar before unpacking. The APK is signed with a key stored in the repository secrets (a copy of the key is kept outside the repository).
+
+## Squad mode (the relay)
+
+The relay is a Cloudflare Worker with one Durable Object per squad (`server/`, design in `docs/squad-mode.md`).
+
+- **Access:** a squad is reached by a secret room id plus a random join code (128 bits each). The join code travels in the address fragment, so browsers do not send it to any server,
+  and the relay never writes it to a log. The relay stores only SHA-256 hashes of the join code and of every member key; a member key lives only on that member's device.
+- **Permissions are enforced on the server** for every message (role, own marks, kind of mark; table-driven tests cover every cell of the matrix). The client only hides what a role may not do.
+- **Input limits:** a message is at most 8 KB (counted in bytes), at most 40 operations per member per minute, 20 members and 100 marks per squad; every field is validated and
+  cleaned (control characters removed, lengths and coordinates bounded). A removed member's key stops working at once; the commander can restore it.
+- **Retention:** the relay deletes a squad when the report has been saved, 24 hours after the game ended, or after 3 days without activity; the commander can delete it at any time.
+  What it holds is marks and coordinates of a video game, callsigns, roles, timestamps and firing-log entries; there are no accounts, names or e-mail addresses.
+- **Abuse:** creating a squad is limited per address per day (the address is kept only as a one-day hash) and overall per day; `CREATE_DISABLED=1` switches creation off.
+- **Client:** all squad text is shown as text (never as HTML); the report page is escaped and has no scripts or external resources; a report file is validated on opening
+  (schema, lengths, own keys only); the terrain id from the relay is compared only with own keys. The CSP allows connections only to the relay's address.
+- **Limitations:** whoever has the invitation link can join and take a free callsign (the commander can remove them); callsigns that differ only in look-alike letters from other alphabets are
+  not detected; the relay's operator (the hosting provider) can see network metadata under its own policy; a device that is lost still holds a member key until the commander removes that member.
 
 ## Known limitations
 
