@@ -28,6 +28,8 @@ polygons on the map (phase lines, routes, no-fire areas as polygons), peer-to-pe
 | Game over | The commander ends the game and gets a statistics report; the report can be edited by the commander and by members he allows, saved to a file and imported for viewing later |
 | Retention | The server deletes the squad's data after the report is exported; if it is not exported within 24 hours after the game ended, it is deleted anyway |
 | Danger warning | If a friendly mark lies inside the dispersion radius plus the fragmentation range of the shell, show a non-blocking warning in the solution and in the log |
+| Fragmentation range | Taken from the explosion data of the shells in the game files (decided) |
+| Report language | The language the application is set to (decided) |
 | LAN view | Removed in 1.0.1 |
 | Later | Lines and zones; possibly the real APP-6 symbol renderer |
 
@@ -99,7 +101,14 @@ Proposed kinds (icon inside the frame), each with a short caption in Ukrainian a
 
 Lines and polygons are phase 2 (after 1.1.0).
 
-Two ways to draw the symbols; the data model is the same for both (`affiliation` + `kind`), so the choice does not change the protocol:
+Two ways to draw the symbols; the data model is the same for both (`affiliation` + `kind`), so the choice does not change the protocol.
+Both were rendered for review. With the milsymbol renderer (version 2.2.0), the standard codes that render with a clear
+symbol are: infantry `SHGPUCI`, armour `SHGPUCA`, anti-armour `SHGPUCAA`, mortar `SHGPUCFM`, artillery `SHGPUCF`,
+reconnaissance `SHGPUCR`, engineers `SHGPUCE`, air defence `SHGPUCD`, helicopter `SHAPMH`, command post `SHGPUH`,
+mines `SHGPEXM`, vehicle `SHGPEVAL` (with `SF`, `SN`, `SU` for the other affiliations). No clear standard code was found for
+machine gun, sniper, observation post and MEDEVAC: those would need an own glyph in the same frame, so a pure APP-6
+choice is not possible and the real-symbols option means a mix. The codes must be re-verified against the standard's list
+when implementing.
 
 | | Own simple icons | Real APP-6 / 2525 symbols (milsymbol, MIT) |
 | --- | --- | --- |
@@ -119,9 +128,10 @@ text is saved in the firing-log entry. Several warnings are listed shortest dist
 the client from the synchronised marks; it is shown to commander and mortarmen only. The age of the friendly mark
 ("updated 4 min ago") is shown next to it, because positions go stale.
 
-The **fragmentation range per shell** is not in the current tables. It must come from a documented source (decision D2):
-the explosion parameters of the shells in the game files (as was done for the dispersion), or a value the author sets and
-documents. No invented number will be used. The source goes into `legal/ASSET-PROVENANCE.md`.
+The **fragmentation range per shell** is not in the current tables. It is read from the explosion parameters of the
+shells in the game files (as was done for the dispersion) by an extraction script, per shell and per weapon. If a value
+cannot be found for a shell, the warning for that shell is disabled and the interface says so; no invented number is used.
+The source and the extraction date go into `legal/ASSET-PROVENANCE.md`.
 
 ## 8. Protocol
 
@@ -195,7 +205,19 @@ Alternatives considered: your own server (full control, but needs hosting, updat
 database (the permission rules would live in database policies and the report logic outside the data), and peer-to-peer
 (roles and the record cannot be enforced; it needs a signalling server anyway).
 
-The relay code lives in a new `server/` folder with its own tests and a deployment workflow that needs one repository secret (the host's API token).
+The relay code lives in a new `server/` folder with its own tests and a deployment workflow that needs two repository secrets (the host's API token and account id).
+
+### Owner setup (one time)
+
+1. Create a free Cloudflare account (an e-mail address; turn on two-step verification).
+2. Open **Workers & Pages** once; the first visit asks you to choose the account's `workers.dev` name. No domain is needed. No payment card is needed for the free plan (confirm at sign-up).
+3. Create an API token: **My Profile → API Tokens → Create Token**, use the template **Edit Cloudflare Workers**, restrict it to your account, and copy it once.
+4. Copy the **Account ID** (shown on the Workers & Pages overview page).
+5. Add both to the GitHub repository as secrets, from a terminal so that they are not typed anywhere else:
+   `gh secret set CLOUDFLARE_API_TOKEN` and `gh secret set CLOUDFLARE_ACCOUNT_ID`.
+6. Keep the token private; if it ever leaks, delete it in the same page and create a new one. The deployment runs in GitHub Actions, so the token never needs to be on a development computer. Local development uses `wrangler dev`, which needs no account.
+
+The menu names above may differ slightly from the live dashboard.
 
 ## 11. Game over, report and retention
 
@@ -255,12 +277,12 @@ migration of old marks, danger-warning geometry, report export and import, and a
 ## 17. Open decisions
 
 - **D1 Symbols:** own simple icons first, or the real APP-6 symbols through milsymbol now? (A mock-up exists; the data model is the same.)
-- **D2 Fragmentation range:** read from the game files (explosion parameters per shell) or entered by the author with a documented source?
-- **D3 Hosting:** who owns the host account and the API token, and who handles a service outage? The default host name of the provider is enough; a custom domain is optional.
+- **D2 Fragmentation range:** decided: read from the game files (explosion parameters per shell).
+- **D3 Hosting:** the owner creates the account and the secrets (see "Owner setup" in section 10); a custom domain is optional.
 - **D4 Callsign rules:** length 2 to 16 and the allowed characters as in section 3? Block empty or look-alike duplicates?
 - **D5 Limits:** 30 members and 1000 marks per squad, 60 operations per minute per member: confirm or change.
 - **D6 Soldier details:** may a soldier create several friendly marks (his own position only, or other friendly units)? May he caption hostile marks of others? (Section 4 assumes yes.)
 - **D7 Danger warning visibility:** only the commander and mortarmen (as drafted), or also soldiers?
 - **D8 Firing log sharing:** do the mortarmen see each other's entries live (drafted yes), and does the commander see all?
-- **D9 Report language:** the report text and the legend in Ukrainian and English according to the user's interface language?
+- **D9 Report language:** decided: the language the application is set to.
 - **D10 Version number:** 1.1.0 (drafted).
