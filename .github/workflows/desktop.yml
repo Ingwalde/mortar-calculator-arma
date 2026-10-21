@@ -4,6 +4,8 @@
 name: Desktop
 
 on:
+  push:
+    branches: [ci/desktop-builds]
   workflow_dispatch:
     inputs:
       tag:
