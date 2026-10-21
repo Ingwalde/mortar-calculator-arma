@@ -21,8 +21,8 @@ polygons on the map (phase lines, routes, no-fire areas as polygons), peer-to-pe
 | Unit of cooperation | One **squad** = one room. Squads are fully isolated from each other; there is no operation above squads |
 | Roles | **Commander**, **mortarman**, **soldier**; the commander assigns who is a mortarman |
 | Sign-in | A **callsign** typed at joining; no accounts, no Discord |
-| Marks | Affiliation **friend / hostile** (and neutral / unknown for commander and mortarman), more mark types with real military designations, captions explaining the symbols, author and time on every mark |
-| Soldier | Sees all marks, marks only hostile and friendly, moves only his own marks (never a mortar), can mark a building destroyed, has no solution and no firing log |
+| Marks | Affiliation **friend / hostile** only. Kinds: infantry, armour, mortar, helicopter and a retreat cross. Captions explaining the symbols, author and time on every mark |
+| Soldier | Sees all marks, creates every kind except a mortar, moves only his own marks, can mark a building destroyed, has no solution and no firing log |
 | Firing log | Only for mortarmen and the commander |
 | Member removal | The commander can remove a member, and can **restore** access later |
 | Game over | The commander ends the game and gets a statistics report; the report can be edited by the commander and by members he allows, saved to a file and imported for viewing later |
@@ -31,7 +31,7 @@ polygons on the map (phase lines, routes, no-fire areas as polygons), peer-to-pe
 | Fragmentation range | Taken from the explosion data of the shells in the game files (decided) |
 | Report language | The language the application is set to (decided) |
 | LAN view | Removed in 1.0.1 |
-| Later | Lines and zones; possibly the real APP-6 symbol renderer |
+| Later | More mark kinds (fire control, machine gun, sniper, observation post and so on), neutral and unknown affiliations, lines and zones |
 
 ## 3. Concepts
 
@@ -50,71 +50,51 @@ The **server enforces** every rule below; the client only hides what a role may 
 | Action | Commander | Mortarman | Soldier |
 | --- | --- | --- | --- |
 | See all marks, captions, authors | yes | yes | yes |
-| Create a mark of any affiliation and type | yes | yes | no |
-| Create a hostile mark | yes | yes | yes |
-| Create a friendly mark (own position or friendly units) | yes | yes | yes |
-| Create a neutral / unknown mark | yes | yes | no |
-| Create or move a **mortar** mark | yes | yes (own mortar) | no |
+| Create a friend or hostile mark of kind infantry, armour, helicopter or retreat | yes | yes | yes |
+| Create or move a **mortar** mark | yes | yes | no |
 | Edit, move or delete a mark of someone else | yes | yes | no |
-| Edit, move or delete his own mark | yes | yes | yes, except a mortar (a soldier has none) |
-| Add or edit a caption of a mark | any mark | any mark | his own marks and hostile marks |
+| Edit, move or delete his own mark | yes | yes | yes |
+| Add or edit a caption | any mark | any mark | his own marks and hostile marks |
 | Mark a building destroyed or restore it | yes | yes | yes |
 | Open the solution (azimuth, elevation, charge) and the firing log | yes | yes | no |
 | See friendly-fire warnings | yes | yes | no |
 | Create the squad, change roles, remove and restore members, end the game, delete the squad | yes | no | no |
 | Edit the report after the game ended | yes | only if allowed | only if allowed |
 
-Details to confirm are in section 17 (D6, D7).
-
 ## 5. Marks
-
-Current marks are `mortar`, `target` and `point` with a name, folder, coordinates, height and a destroyed flag. 1.1.0 extends them:
 
 | Field | Meaning |
 | --- | --- |
 | `id` | Random id, created by the author's device |
-| `affiliation` | `friend`, `hostile`, `neutral`, `unknown` (later `suspect`, `assumed-friend`) |
-| `kind` | The symbol type (section 6); `mortar` stays a kind |
+| `affiliation` | `friend` or `hostile` |
+| `kind` | `infantry`, `armour`, `mortar`, `helicopter`, `retreat` (and `legacy-point` for migrated old points, see below) |
 | `name` | Short name shown on the map |
 | `caption` | Free text, up to 120 characters |
 | `x`, `z`, `h` | Game coordinates and optional height |
-| `status` | `active`, `destroyed` (later `damaged`, `suspected`) |
+| `destroyed` | The existing flag |
 | `author` | The member that created it (id and callsign at that time) |
 | `createdAt`, `updatedAt`, `updatedBy` | Server time and the member who last changed it |
 | `deleted` | Tombstone, kept until the game ends |
 
-Migration of existing local marks: `mortar` → friendly mortar; `target` → hostile target; `point` → unknown point. The old
-share format (link, QR, file) stays readable; the new one carries affiliation and kind. Local use without a squad stays
-fully working.
+The **target** of a calculation is any **hostile** mark. A friendly mortar mark is the position a mortarman calculates from.
 
-## 6. Mark types and symbols
+Migration of existing local marks: `mortar` → friend mortar; `target` → hostile infantry (renamable, kind editable);
+`point` → `legacy-point`, shown as a small neutral dot with its name, kept so that nothing is lost, and not creatable any more.
+The old share format (link, QR, file) stays readable; the new one carries affiliation and kind. Local use without a squad stays fully working.
 
-Affiliation frames follow NATO APP-6 and MIL-STD-2525: **friend** is a blue rectangle, **hostile** a red diamond,
-**neutral** a green square, **unknown** a yellow quatrefoil.
+## 6. Symbols (decided)
 
-Proposed kinds (icon inside the frame), each with a short caption in Ukrainian and English shown on demand
-(a "?" legend and a tap on an unknown symbol):
+Five symbols, drawn as small SVG pictures embedded in the application (no runtime dependency):
 
-- Units: infantry, armour, wheeled vehicle / APC, anti-tank (AT) team, machine gun (MG), sniper, mortar, artillery, helicopter / aircraft, engineers / minefield, command post (CP), observation post (OP), checkpoint, MEDEVAC.
-- Fire control: target (numbered), target reference point (TRP), registration point, forward observer (FO), no-fire area (NFA) and restricted-fire area (RFA) as circles with a radius, battle damage assessment (BDA).
-- Status overlays: destroyed (exists), damaged, suspected.
+- **Frames** follow NATO APP-6: **friend** a blue rectangle, **hostile** a red diamond. There is no neutral and no unknown frame.
+- **Infantry**: the crossed lines in the frame. **Armour**: the tracked oval in the frame.
+- **Mortar** and **helicopter**: a small side-view silhouette in the frame (a tube on a base plate with a bipod; a helicopter with its rotor, tail and skids).
+- **Retreat**: a bold cross without a frame, blue for friend and red for hostile, with a dark outline for contrast on any terrain.
+- Line weights are bold (frame 6, symbols 6 to 9 in a 100-unit box) so that the marks read at 30 px on dark and light maps.
 
-Lines and polygons are phase 2 (after 1.1.0).
-
-Two ways to draw the symbols; the data model is the same for both (`affiliation` + `kind`), so the choice does not change the protocol.
-Both were rendered for review. With the milsymbol renderer (version 2.2.0), the standard codes that render with a clear
-symbol are: infantry `SHGPUCI`, armour `SHGPUCA`, anti-armour `SHGPUCAA`, mortar `SHGPUCFM`, artillery `SHGPUCF`,
-reconnaissance `SHGPUCR`, engineers `SHGPUCE`, air defence `SHGPUCD`, helicopter `SHAPMH`, command post `SHGPUH`,
-mines `SHGPEXM`, vehicle `SHGPEVAL` (with `SF`, `SN`, `SU` for the other affiliations). No clear standard code was found for
-machine gun, sniper, observation post and MEDEVAC: those would need an own glyph in the same frame, so a pure APP-6
-choice is not possible and the real-symbols option means a mix. The codes must be re-verified against the standard's list
-when implementing.
-
-| | Own simple icons | Real APP-6 / 2525 symbols (milsymbol, MIT) |
-| --- | --- | --- |
-| Look | Frames by affiliation, a simple glyph | The symbols military users already know |
-| Size and effort | Small, quick | One more dependency and larger bundle; must be checked for size and the SIDC codes of every kind |
-| Recommendation | First step | Optional later switch |
+The infantry and armour pictures and the frames are taken from the symbol library milsymbol (MIT license, with its notice added to
+THIRD-PARTY-NOTICES.md); the mortar, helicopter and retreat pictures are own drawings. Every symbol has a short caption in
+Ukrainian and English (shown by the "?" legend and on tap): infantry, armour, mortar, helicopter, retreat.
 
 ## 7. Danger warning for friendly marks
 
@@ -238,7 +218,7 @@ will describe this, and the Content Security Policy will be extended with the re
 
 - **Squad panel** (new): create or join, callsign, invitation link and QR, member list with roles and who is online, commander tools (roles, remove and restore, rotate the code, allow report editing, game over), connection status.
 - **Role-aware interface**: a soldier sees the map and marks only (no solution and log tabs, only the mark types he may create); mortarmen and the commander see everything.
-- **Mark card**: author, time, caption, affiliation, kind, status; a legend ("?") with the meaning of every symbol; filters by affiliation or author.
+- **Mark card**: author, time, caption, affiliation, kind, status; a legend ("?") with the meaning of the five symbols; filters by affiliation or author.
 - **Attribution**: toasts such as "Alpha-2 added hostile infantry"; a history list of events (for commander and mortarmen).
 - **Solution and log**: the friendly-fire warning (section 7); firing-log entries shared with the other mortarmen and the commander.
 - **Report view**: edit, export, import (section 11).
@@ -274,15 +254,16 @@ migration of old marks, danger-warning geometry, report export and import, and a
 | Stale friendly positions give a false sense of safety | The warning shows the age of the mark and never replaces the crew's own judgement |
 | The fragmentation range is a wrong number | Only a documented source; shown with its origin |
 
-## 17. Open decisions
+## 17. Decisions
 
-- **D1 Symbols:** own simple icons first, or the real APP-6 symbols through milsymbol now? (A mock-up exists; the data model is the same.)
+- **D1 Symbols:** decided (section 6).
 - **D2 Fragmentation range:** decided: read from the game files (explosion parameters per shell).
 - **D3 Hosting:** the owner creates the account and the secrets (see "Owner setup" in section 10); a custom domain is optional.
-- **D4 Callsign rules:** length 2 to 16 and the allowed characters as in section 3? Block empty or look-alike duplicates?
-- **D5 Limits:** 30 members and 1000 marks per squad, 60 operations per minute per member: confirm or change.
-- **D6 Soldier details:** may a soldier create several friendly marks (his own position only, or other friendly units)? May he caption hostile marks of others? (Section 4 assumes yes.)
-- **D7 Danger warning visibility:** only the commander and mortarmen (as drafted), or also soldiers?
-- **D8 Firing log sharing:** do the mortarmen see each other's entries live (drafted yes), and does the commander see all?
+- **D4 Callsign rules:** 2 to 16 characters from letters, digits, `-`, `_` and space; unique in the squad ignoring case; look-alike duplicates (the same name with only case or spacing different) are refused.
+- **D5 Limits:** 30 members and 1000 marks per squad, 60 operations per minute per member, a message at most 8 KB, a caption of 120 characters.
+- **D6 Soldier details:** a soldier creates friend and hostile marks of infantry, armour, helicopter and retreat (his own position or other friendly units), moves and deletes only his own marks, and may caption his own marks and hostile marks of others.
+- **D7 Danger warning visibility:** the commander and mortarmen only.
+- **D8 Firing log sharing:** mortarmen see each other's entries live and the commander sees all of them; soldiers see none.
 - **D9 Report language:** decided: the language the application is set to.
-- **D10 Version number:** 1.1.0 (drafted).
+- **D10 Version number:** 1.1.0.
+- **D11 Old marks:** `target` becomes a hostile infantry mark, `point` becomes a legacy dot (section 5). Proposed; the author may still change it.
