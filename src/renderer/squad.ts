@@ -280,7 +280,8 @@ function fromSquad(m: SquadMark, room: string, old?: Marker): Marker {
 }
 
 function terrainData(): TerrainState | null {
-  return session ? (getRoot().data[session.terrain] ?? null) : null;
+  // власні ключі: «__proto__» і подібні не можуть стати терном
+  return session && Object.hasOwn(getRoot().data, session.terrain) ? getRoot().data[session.terrain] : null;
 }
 
 /** Мітки відділення на його терені (те, що користувач бачить і змінює). */
@@ -416,7 +417,7 @@ function onMessage(msg: ServerMsg): void {
       phase = msg.phase;
       if (msg.terrain && msg.terrain !== session.terrain) session = { ...session, terrain: msg.terrain };
       const squadTerrain = session.terrain;
-      if (squadTerrain && squadTerrain !== getRoot().cur && getRoot().data[squadTerrain] && !wasShownOnce) {
+      if (squadTerrain && squadTerrain !== getRoot().cur && Object.hasOwn(getRoot().data, squadTerrain) && !wasShownOnce) {
         wasShownOnce = true;
         switchTerrain(squadTerrain);
         window.dispatchEvent(new CustomEvent("mortar:squad-terrain"));

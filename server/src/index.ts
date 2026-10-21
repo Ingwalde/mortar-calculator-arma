@@ -53,6 +53,17 @@ export default {
 
     if (url.pathname === "/create" && req.method === "POST") {
       if (env.CREATE_DISABLED === "1") return json({ error: "disabled" }, 503);
+      // сміттєвий запит не має витрачати добовий ліміт: спершу перевіряємо тіло
+      if (Number(req.headers.get("content-length") ?? "0") > 1024) return json({ error: "invalid" }, 413);
+      let body: { callsign?: unknown; terrain?: unknown };
+      try {
+        body = (await req.json()) as { callsign?: unknown; terrain?: unknown };
+      } catch {
+        return json({ error: "invalid" }, 400);
+      }
+      const callsign = readCallsign(body.callsign);
+      if (!callsign) return json({ error: "bad_callsign" }, 400);
+      const terrain = typeof body.terrain === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(body.terrain) ? body.terrain : "";
       // обмеження створення: з однієї адреси й на весь сервер за добу; адреса не зберігається, лише її хеш на добу
       const day = new Date().toISOString().slice(0, 10);
       const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
@@ -61,15 +72,6 @@ export default {
       const limitIp = Number(env.CREATE_LIMIT_PER_DAY ?? "10");
       const limitAll = Number(env.CREATE_LIMIT_GLOBAL_PER_DAY ?? "300");
       if (!(await perIp.take(limitIp)) || !(await global.take(limitAll))) return json({ error: "limit" }, 429);
-      let body: { callsign?: unknown; terrain?: unknown };
-      try {
-        body = (await req.json()) as { callsign?: unknown };
-      } catch {
-        return json({ error: "invalid" }, 400);
-      }
-      const callsign = readCallsign(body.callsign);
-      if (!callsign) return json({ error: "bad_callsign" }, 400);
-      const terrain = typeof body.terrain === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(body.terrain) ? body.terrain : "";
       const room = randomToken(16);
       const code = randomToken(16);
       const key = randomToken(32);

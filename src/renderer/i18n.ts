@@ -577,7 +577,7 @@ const DICT: Dict = {
       <li><b>Мітки.</b> Міномети, цілі й точки, розкладені по папках-місіях; зруйновані цілі позначаються на карті. Висоти беруться з даних рельєфу.</li>
       <li><b>Розрахунок.</b> Дальність, азимут у мілах, кут підвищення, заряд (★ — найкращий), час польоту й поправка на висоту. Осколково-фугасний, освітлювальний і димовий снаряди, розкид, журнал стрільби.</li>
       <li><b>Постріл.</b> Анімація польоту снаряда з гуркотом і влученням, прив'язаними до прильоту.</li>
-      <li><b>Разом із командою.</b> Перегляд і правка з телефона по Wi-Fi (QR-код), обмін мітками посиланням, резервні копії.</li>
+      <li><b>Відділення.</b> Спільна карта міток у реальному часі: командир створює відділення, інші заходять за посиланням чи QR-кодом; ролі командира, мінометника й солдата, свої й чужі знаки з підписами, журнал стрільби для мінометників, звіт після гри. Обмін мітками посиланням, резервні копії.</li>
       <li><b>Для слабких телефонів.</b> Економний режим: плавніше малює карту, підписи лишаються чіткими.</li>
       <li><b>Скрізь.</b> Windows, сайт (його можна встановити як застосунок) і Android; мови — українська й англійська; три темні колірні теми.</li>
     </ul>
@@ -592,7 +592,7 @@ const DICT: Dict = {
       <li><b>Marks.</b> Mortars, targets and points organised in mission folders; destroyed targets are marked on the map. Heights come from terrain data.</li>
       <li><b>Solutions.</b> Range, azimuth in mils, elevation, charge (★ is the best), time of flight and height correction. High-explosive, illumination and smoke shells, dispersion, a firing log.</li>
       <li><b>Shot.</b> A shell flight animation with the boom and impact timed to the landing.</li>
-      <li><b>With your team.</b> View and edit from a phone over Wi-Fi (QR code), share marks by link, backups.</li>
+      <li><b>Squad mode.</b> A shared live map of marks: the commander creates a squad, the others join by a link or QR code; commander, mortarman and soldier roles, friendly and hostile symbols with captions, a firing log for mortarmen, a report after the game. Share marks by link, backups.</li>
       <li><b>Weak phones.</b> A light mode that draws the map more smoothly while keeping labels sharp.</li>
       <li><b>Everywhere.</b> Windows, the website (installable as an app) and Android; Ukrainian and English; three dark colour themes.</li>
     </ul>

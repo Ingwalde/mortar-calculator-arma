@@ -122,10 +122,12 @@ Client to server:
 | `t` | Purpose |
 | --- | --- |
 | `hello` | Join with the join code, callsign and member key (a new device sends no key and receives one) |
-| `op` | One change: create, update, move, delete, set status, set caption; with a client-generated `opId` for idempotency |
+| `op` | One change: create, edit (kind, affiliation, name, weapon), move, caption, status, delete; with a client-generated `opId` for idempotency |
 | `log` | A firing-log entry (mortarman or commander) |
 | `admin` | Commander only: set role, remove, restore, rotate the join code, allow report editing, end game, delete squad |
-| `report` | After the game: edit a report field (commander or allowed editor) |
+| `report` | After the game: edit the title, the notes or a mark of the report (commander or allowed editor) |
+| `exported` | The report was saved to a file (commander or allowed editor): the server forgets the squad |
+| `sync` | Ask for a fresh snapshot (after a refused operation) |
 | `ping` | Keep-alive (answered by the platform without waking the server code where possible) |
 
 Server to client:
@@ -135,8 +137,13 @@ Server to client:
 | `snapshot` | The visible state for the member's role (marks, members, own role, last sequence number) |
 | `op` | A change applied, with the server sequence number, author and server time |
 | `reject` | An operation refused, with a reason code (permission, deleted mark, limit, stale) |
+| `welcome` | The member id, and the member key for a new member |
+| `ack` | A repeated operation that had already been applied |
+| `terrain` | The commander changed the squad map |
+| `code` | A new join code (only to the commander who replaced it) |
+| `reportEdit` | A change of the report, applied by everybody in the same way |
 | `members` | Members and who is online; role changes; removal and restoration |
-| `ended` | The commander ended the game; the report follows |
+| `ended` | The commander ended the game; carries the report |
 | `error` | Fatal problem (bad code, removed, rate limit, server limit) |
 
 Rules:
@@ -144,7 +151,7 @@ Rules:
 - The **server is authoritative**: it validates the role for every operation, assigns a monotonically increasing sequence number per squad and the time, and broadcasts the accepted operation to everybody who may see it.
 - Per mark, the **last accepted change wins field by field**; deleting a mark leaves a tombstone, so a late update of a deleted mark is rejected.
 - **Offline first**: the client applies its own operations at once, queues them, and replays them after a reconnect with the same `opId`s; the server ignores duplicates and rejects what is no longer allowed. The existing "changes waiting to sync" status is reused.
-- **Reconnect** sends the last sequence number seen; the server replies with the missed operations or a fresh snapshot.
+- **Reconnect** sends `hello` again with the member key; the server always replies with a fresh snapshot (a squad has at most 100 marks, so it is small) and the client replays its queue over it.
 - **Message economy** (it matters for the free hosting limits): drags are sent only when released; changes of one mark within 300 ms are merged; no position streaming; no application heartbeat.
 - **Limits**: 40 operations per member per minute, a message at most 8 KB, 100 marks and 20 members per squad, a caption of 120 characters.
 
@@ -234,10 +241,10 @@ where it still fits; the server's ordering replaces it for squads.
 
 1. **Spec approval** (this document) and the open decisions of section 17.
 2. **Data model and local features** (no server) — **done**: new mark model and migration, affiliation frames and kinds, captions and legend, author and time fields, friendly-fire warning, report data structures. *Done when* local use works, every kind has a caption, the migration test passes and the warning is covered by unit tests with fixed numbers.
-3. **Relay and protocol**: the server, the protocol, permissions, retention alarms, rate limits. *Done when* a table-driven test covers every cell of the permission matrix, duplicates and ordering are tested, a reconnect test passes, and a load test with 20 clients stays within the limits of section 10.
-4. **Client sync and squad panel**: the sync engine with the offline queue, the role-aware interface, removal and restore, invitation links. *Done when* three browser clients in different roles pass an automated scenario (a soldier marks a hostile, a mortarman sees it and logs a mission, the commander removes and restores a member), and a dropped connection recovers without losing marks.
-5. **Game over and report**: report building, editing, export and import, retention. *Done when* the exported file imports back identically and the server holds no data after export or after 24 hours.
-6. **Hardening and release**: security review (SECURITY.md updated), documentation, packaged-app smoke test, real-device check on a phone and a PC, release 1.1.0. The documentation test and the README stay current in the same changes.
+3. **Relay and protocol** — **done**: the server, the protocol, permissions, retention alarms, rate limits. *Done when* a table-driven test covers every cell of the permission matrix, duplicates and ordering are tested, a reconnect test passes, and a load test with 20 clients stays within the limits of section 10.
+4. **Client sync and squad panel** — **done**: the sync engine with the offline queue, the role-aware interface, removal and restore, invitation links. *Done when* three browser clients in different roles pass an automated scenario (a soldier marks a hostile, a mortarman sees it and logs a mission, the commander removes and restores a member), and a dropped connection recovers without losing marks.
+5. **Game over and report** — **done**: report building, editing, export and import, retention. *Done when* the exported file imports back identically and the server holds no data after export or after 24 hours.
+6. **Hardening and release** — in progress (the security review, creation limits and documentation are done; the packaged-app smoke test, the check on a phone and a PC and the release remain): security review (SECURITY.md updated), documentation, packaged-app smoke test, real-device check on a phone and a PC, release 1.1.0. The documentation test and the README stay current in the same changes.
 
 Tests throughout: the permission matrix, protocol conformance, ordering and idempotency, reconnect, retention, the
 migration of old marks, danger-warning geometry, report export and import, and a multi-client scenario.
