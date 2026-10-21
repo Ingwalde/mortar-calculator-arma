@@ -25,8 +25,8 @@
 - Asset provenance in `ASSET-PROVENANCE.md`: for the official outlines, GeNeFRAG
   images/elevations and recoil.org tiles no separate permissions were obtained.
 - Corresponding-source delivery for the LGPL/MPL components: method and script are
-  in place (`legal/native/SOURCE-OFFER.md`, `scripts/collect-native-sources.mjs`); the
-  archive still has to be attached to the first public Windows release.
+  in place (`legal/native/SOURCE-OFFER.md`, `scripts/collect-native-sources.mjs`); release 1.0.0
+  carries the archive, and every later release must attach its own.
 - Technical checks are not a legal opinion on the project-specific noncommercial license.
 
 Existing maps and application behavior are preserved while these items are

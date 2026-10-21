@@ -55,8 +55,8 @@ archive has already been supplied with a release.
    produced by `scripts/collect-native-sources.mjs` (LGPL/MPL component sources,
    build recipes and patches, MXE fork, sharp-libvips packaging; checksums in its
    `SOURCES.md`). Status: the script ran and downloaded every archive (81 MB);
-   the archive is not attached to any release yet and must be with the first public
-   Windows release. Sources of the permissive components are not included; the
+   release 1.0.0 carries the archive (`MortarTablet-native-sources-1.0.0.zip`) and every
+   later release must attach its own. Sources of the permissive components are not included; the
    recipes fetch them from pinned URLs.
 3. Verify that users can replace the LGPL shared libraries with compatible
    modified builds (rebuild procedure: `native/REBUILD-LIBVIPS.md`; replacement with a

@@ -48,6 +48,6 @@ do not restrict these libraries.
 
 ## Status
 
-The release archive has not yet been attached to any release; the first public Windows release
-must include it. The script that produces it has been run (all archives downloaded, see
-`SOURCES.md` in its output).
+Release 1.0.0 carries the archive as `MortarTablet-native-sources-1.0.0.zip` (produced by the script; all
+archives downloaded, checksums in `SHA256SUMS`). Every later release that ships these libraries must carry
+its own archive.
