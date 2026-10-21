@@ -220,6 +220,7 @@ export class Room {
     const m = this.state.members[id];
     if (!m || m.removed) return [{ k: "close", member: id, code: "removed" }];
     if (msg.t === "ping" || msg.t === "hello") return [];
+    if (msg.t === "sync") return this.allow(id, now) ? [toMember(id, this.snapshot(id))] : [];
     if (this.seen.has(msg.opId)) return [toMember(id, { t: "ack", v: PROTOCOL_VERSION, opId: msg.opId, seq: this.seen.get(msg.opId)! })];
     if (!this.allow(id, now)) return reject(id, msg.opId, "rate");
     if (msg.t === "op") return this.markOp(m, msg.opId, msg.op, now);

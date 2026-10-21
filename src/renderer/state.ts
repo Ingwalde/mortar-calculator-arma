@@ -42,6 +42,8 @@ export interface Marker {
   caption?: string;
   /** Час створення (мс). */
   c?: number;
+  /** Мітка належить відділенню з цим id кімнати (її змінює й бачить уся група); без поля — локальна. */
+  sq?: string;
 }
 
 export type MapState = { kind: "none" } | { kind: "pyramid"; width: number; height: number };
@@ -65,6 +67,8 @@ export interface FireLogEntry {
   tof: number | null;
   /** Свої мітки в небезпечній зоні навколо цілі на момент розрахунку (1.1.0). */
   warnings?: { name: string; distance: number; radius: number }[];
+  /** Хто записав у відділенні (id учасника); у локальному журналі немає. */
+  by?: string;
 }
 
 /** Найбільша кількість записів журналу на терен — старіші відкидаються. */
@@ -191,7 +195,8 @@ function normalizeMarker(m: unknown): Marker | null {
     ...(cls.aff ? { aff: cls.aff } : {}),
     kind: cls.kind,
     ...(caption ? { caption } : {}),
-    ...(Number.isFinite(created) && created > 0 ? { c: created } : {})
+    ...(Number.isFinite(created) && created > 0 ? { c: created } : {}),
+    ...(typeof r.sq === "string" && /^[0-9a-f]{32}$/.test(r.sq) ? { sq: r.sq } : {})
   };
 }
 
@@ -206,7 +211,7 @@ function normalizeTombs(v: unknown): Record<string, number> {
   return out;
 }
 
-function normalizeFireLogEntry(e: unknown): FireLogEntry | null {
+export function normalizeFireLogEntry(e: unknown): FireLogEntry | null {
   if (!e || typeof e !== "object") return null;
   const r = e as Record<string, unknown>;
   if (!isFinite(Number(r.at)) || !isFinite(Number(r.elevation)) || !isFinite(Number(r.bearingMils))) return null;
@@ -237,7 +242,8 @@ function normalizeFireLogEntry(e: unknown): FireLogEntry | null {
     range: isFinite(Number(r.range)) ? Number(r.range) : 0,
     heightDiff: heightDiff !== null && isFinite(heightDiff) ? heightDiff : null,
     tof: tof !== null && isFinite(tof) ? tof : null,
-    ...(warnings.length ? { warnings } : {})
+    ...(warnings.length ? { warnings } : {}),
+    ...(typeof r.by === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(r.by) ? { by: r.by } : {})
   };
 }
 
@@ -367,7 +373,13 @@ export async function loadState(): Promise<void> {
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
+const saveListeners: Array<() => void> = [];
+/** Підписка на кожну локальну зміну стану (її використовує синхронізація відділення). */
+export function onStateChanged(cb: () => void): void {
+  saveListeners.push(cb);
+}
 export function scheduleSave(): void {
+  for (const cb of saveListeners) cb();
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = undefined;
@@ -465,11 +477,13 @@ export function addCustomTerrain(name: string, sizeX: number, sizeZ: number): st
   return id;
 }
 
-export function addFireLogEntry(entry: Omit<FireLogEntry, "id" | "at">): void {
+export function addFireLogEntry(entry: Omit<FireLogEntry, "id" | "at">): FireLogEntry {
   const S = getCurrent();
-  S.fireLog.push({ ...entry, id: uid(), at: Date.now() });
+  const added: FireLogEntry = { ...entry, id: uid(), at: Date.now() };
+  S.fireLog.push(added);
   if (S.fireLog.length > FIRE_LOG_LIMIT) S.fireLog.splice(0, S.fireLog.length - FIRE_LOG_LIMIT);
   scheduleSave();
+  return added;
 }
 
 export function removeCustomTerrain(id: string): void {

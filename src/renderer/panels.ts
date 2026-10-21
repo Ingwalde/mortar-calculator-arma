@@ -57,6 +57,8 @@ import { CAPTION_MAX, KINDS, isMortarMark, isTargetable, readClass, typeOf, type
 import { symbolSvg } from "@core/symbols";
 import { dangerRadius, friendlyWarnings, type DangerRadius, type FriendlyWarning } from "@core/shellEffects";
 import { ageOf } from "@core/age";
+import { markAuthor, markRights, mayUseSolution, memberName, shareLog, squadScope } from "./squad";
+import { initSquadPanel, render as renderSquadPane } from "./squadPanel";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
@@ -193,6 +195,13 @@ function renderMarksListInner(): void {
       cap.className = "cap";
       cap.textContent = m.caption;
       parts.push(cap);
+    }
+    const author = m.sq ? markAuthor(m.id) : null;
+    if (author && author.name) {
+      const by = document.createElement("div");
+      by.className = "by";
+      by.textContent = t("squadAuthor", { who: author.name, age: ageText(author.at) });
+      parts.push(by);
     }
     info.append(...parts, sub);
     info.onclick = () => selectMarker(m.id, true);
@@ -352,6 +361,15 @@ function fillFolderDatalist(): void {
   }
 }
 
+/** Права за роллю у відділенні: недоступне вимикаємо (сервер усе одно перевіряє). */
+function applyDialogRights(marker?: Marker): void {
+  const r = markRights(marker);
+  for (const id of ["fAff", "fKind"]) for (const b of $(id).querySelectorAll<HTMLButtonElement>("button")) b.disabled = !r.edit;
+  $<HTMLInputElement>("fName").disabled = !r.edit;
+  $<HTMLInputElement>("fCaption").disabled = !r.caption;
+  if (marker) $<HTMLButtonElement>("fDel").hidden = !r.remove;
+}
+
 export function openMarkerDialog(marker?: Marker, preset?: DialogPreset): void {
   editing = marker ?? null;
   const d: DialogPreset = marker ?? preset!;
@@ -372,6 +390,7 @@ export function openMarkerDialog(marker?: Marker, preset?: DialogPreset): void {
   $("fDestroyedRow").hidden = dlgType() === "mortar";
   $<HTMLInputElement>("fCaption").value = marker?.caption ?? "";
   $<HTMLInputElement>("fCaption").maxLength = CAPTION_MAX;
+  applyDialogRights(marker);
   showModalNoKeyboard(dlg);
 
   if (!marker && d.h === null && isFinite(d.x) && isFinite(d.z)) {
@@ -417,6 +436,12 @@ $<HTMLFormElement>("dlgForm").addEventListener("submit", (e) => {
     toast(t("fillXZorGrid"));
     return;
   }
+  const rights = markRights(editing ?? undefined);
+  if (dlgAff === "friend" && dlgKind === "mortar" && !rights.friendMortar) {
+    e.preventDefault();
+    toast(t("squadDenied"));
+    return;
+  }
   const hv = $<HTMLInputElement>("fH").value.trim();
   const h = hv === "" ? null : parseFloat(hv);
   const type = dlgType();
@@ -443,7 +468,8 @@ $<HTMLFormElement>("dlgForm").addEventListener("submit", (e) => {
     else delete editing.destroyed;
   } else {
     const now = Date.now();
-    const m: Marker = { id: uid(), ...data, u: now, c: now, ...(caption ? { caption } : {}), ...(destroyedNow ? { destroyed: true } : {}) };
+    const scope = dlgAff && dlgKind !== "legacy" ? squadScope(currentMeta().id) : undefined;
+    const m: Marker = { id: uid(), ...data, u: now, c: now, ...(caption ? { caption } : {}), ...(destroyedNow ? { destroyed: true } : {}), ...(scope ? { sq: scope } : {}) };
     S.markers.push(m);
     selectedId = m.id;
     if (m.type === "mortar") {
@@ -848,7 +874,7 @@ export function renderFire(): void {
     saveBtn.textContent = t("saveToLogBtn");
     saveBtn.onclick = () => {
       const best = sols[0];
-      addFireLogEntry({
+      const logged = addFireLogEntry({
         mortarName: p.m.name,
         mortarGrid: gridRef(p.m.x, p.m.z),
         targetName: p.t.name,
@@ -864,6 +890,7 @@ export function renderFire(): void {
         tof: best.timeOfFlight ?? null,
         ...(warns.length ? { warnings: warns.slice(0, 5).map((x) => ({ name: x.name, distance: Math.round(x.distance), radius: Math.round(x.radius) })) } : {})
       });
+      shareLog(logged);
       toast(t("savedToLog"));
       if (!$("pane-log").hidden) renderLog();
     };
@@ -1064,7 +1091,15 @@ function renderLogInner(): void {
     };
     acts.append(copyBtn, delBtn);
 
-    li.append(top, vals, meta, ...warnEls, acts);
+    const whoEl: HTMLElement[] = [];
+    const who = e.by ? memberName(e.by) : "";
+    if (who) {
+      const w = document.createElement("div");
+      w.className = "logwarn who";
+      w.textContent = t("squadWhoLog", { who });
+      whoEl.push(w);
+    }
+    li.append(top, vals, meta, ...whoEl, ...warnEls, acts);
     ul.appendChild(li);
   }
 }
@@ -1401,12 +1436,13 @@ function renderStaticHints(): void {
 }
 
 // ---------- tabs ----------
-type TabName = "marks" | "fire" | "log";
+type TabName = "marks" | "fire" | "log" | "squad";
+const PANES: TabName[] = ["marks", "fire", "log", "squad"];
 function showTab(name: TabName): void {
   for (const b of document.querySelectorAll<HTMLButtonElement>(".tabs button")) {
     b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
   }
-  for (const p of ["marks", "fire", "log"]) $("pane-" + p).hidden = p !== name;
+  for (const p of PANES) $("pane-" + p).hidden = p !== name;
   if (name === "fire") {
     fillFireSelects();
     fillShellOptions();
@@ -1423,7 +1459,32 @@ function showTab(name: TabName): void {
     rollNumbersIn($("logList"), ".lv b");
   }
   if (name === "marks") rollNumbersIn($("list"), ".gref, .c");
+  if (name === "squad") renderSquadPane();
 }
+
+/** Солдат у відділенні не бачить розрахунку й журналу. */
+function applySquadGating(): void {
+  const solution = mayUseSolution();
+  for (const b of document.querySelectorAll<HTMLButtonElement>(".tabs button")) {
+    if (b.dataset.tab === "fire" || b.dataset.tab === "log") b.hidden = !solution;
+  }
+  const active = document.querySelector<HTMLButtonElement>('.tabs button[aria-selected="true"]');
+  if (active?.hidden) showTab("marks");
+}
+
+window.addEventListener("mortar:squad", () => {
+  applySquadGating();
+  const S = getCurrent();
+  if (selectedId && !S.markers.some((m) => m.id === selectedId)) {
+    selectedId = null;
+    setDrawCallbacks({ selectedId });
+  }
+  renderAll();
+});
+window.addEventListener("mortar:squad-terrain", () => {
+  fillTerrainSelect();
+  onTerrainSwitched();
+});
 document.querySelector(".tabs")!.addEventListener("click", (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
   if (b) showTab(b.dataset.tab as TabName);
@@ -1651,6 +1712,14 @@ export function initPanels(): void {
   initImmersive();
   initAboutDialog();
   initLegend();
+  initSquadPanel({
+    showTab: () => showTab("squad"),
+    afterTerrainSwitch: () => {
+      fillTerrainSelect();
+      onTerrainSwitched();
+    }
+  });
+  applySquadGating();
   initWakeLock();
   slideIndicator(document.querySelector<HTMLElement>(".tabs"), { active: 'button[aria-selected="true"]' });
   for (const seg of document.querySelectorAll<HTMLElement>(".seg")) slideIndicator(seg, { active: 'button[aria-pressed="true"]' });

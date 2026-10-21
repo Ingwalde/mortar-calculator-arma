@@ -84,6 +84,7 @@ export type ClientMsg =
   | { t: "op"; v: number; opId: string; op: MarkOp }
   | { t: "log"; v: number; opId: string; entry: FireEntry }
   | { t: "admin"; v: number; opId: string; action: AdminAction }
+  | { t: "sync"; v: number }
   | { t: "ping"; v: number };
 
 export interface MemberInfo {
@@ -241,6 +242,8 @@ export function parseClientMessage(raw: unknown): ParseResult {
   switch (o.t) {
     case "ping":
       return { ok: true, msg: { t: "ping", v: PROTOCOL_VERSION } };
+    case "sync":
+      return { ok: true, msg: { t: "sync", v: PROTOCOL_VERSION } };
     case "hello": {
       if (typeof o.code !== "string" || o.code.length > 128) return { ok: false, code: "invalid" };
       if (typeof o.callsign !== "string" || o.callsign.length > 64) return { ok: false, code: "invalid" };

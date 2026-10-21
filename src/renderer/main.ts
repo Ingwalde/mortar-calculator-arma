@@ -10,6 +10,8 @@ import { initWebUpdate } from "./webUpdate";
 import { applyStaticTranslations, getLang, onLangChange, setLangSilent, t } from "./i18n";
 import { reducedMotion } from "./motion";
 import { initSelectSheets } from "./selectSheet";
+import { parseInvite } from "@core/squad/config";
+import { openInvite } from "./squadPanel";
 
 /** Заставку з іконкою знімаємо, щойно стан завантажено й інтерфейс готовий. */
 function hideSplash(): void {
@@ -49,6 +51,14 @@ async function boot(): Promise<void> {
   };
   takeShareFromHash();
   window.addEventListener("hashchange", takeShareFromHash);
+  // Запрошення у відділення (#squad=…): відкрити вкладку з підставленим посиланням і прибрати фрагмент з адреси
+  const takeInviteFromHash = (): void => {
+    if (!location.hash.includes("squad=")) return;
+    const inv = parseInvite(location.hash);
+    if (inv && openInvite(inv)) history.replaceState(null, "", location.pathname + location.search);
+  };
+  takeInviteFromHash();
+  window.addEventListener("hashchange", takeInviteFromHash);
   if (__STANDALONE__ && isNativeApp) {
     // Android: посилання, відкрите через застосунок
     void import("@capacitor/app").then(({ App }) => {

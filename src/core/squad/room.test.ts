@@ -262,6 +262,18 @@ describe("мітки: порядок, дублі, видалення, ліміт
   });
 });
 
+describe("запит свіжого зліпка", () => {
+  it("учасник отримує зліпок за запитом, але в межах ліміту дій", () => {
+    const h = squad();
+    h.op("Alpha", "o1", create("k1"));
+    const e = h.send("Alpha", { t: "sync", v: V });
+    expect(e).toHaveLength(1);
+    expect(e[0].k === "send" && e[0].msg.t).toBe("snapshot");
+    for (let i = 0; i < LIMITS.opsPerMinute; i++) h.send("Alpha", { t: "sync", v: V });
+    expect(h.send("Alpha", { t: "sync", v: V })).toEqual([]);
+  });
+});
+
 describe("журнал стрільби", () => {
   it("записує й розсилає лише командиру й мінометникам; солдат не бачить і не пише", () => {
     const h = squad();
