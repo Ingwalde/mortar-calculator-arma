@@ -67,6 +67,7 @@ npm run dist:linux  # AppImage + deb
 npm run build:web   # the standalone web version (PWA) -> out/web
 ```
 
+- The `master` branch is protected: changes go in through pull requests, and the workflow `Check` (`.github/workflows/check.yml`: types, tests and the documentation test) must pass before a pull request is merged.
 - `npm run check` is enough before a release; the full build is only needed for publishing. Antivirus software slows packaging down a lot
   (thousands of small files): add the project's `dist` and `node_modules` folders to the Windows Defender exclusions.
 - **Windows, `winCodeSign` error:** if the build fails with `Cannot create symbolic link` while downloading `winCodeSign`, turn on Developer Mode
