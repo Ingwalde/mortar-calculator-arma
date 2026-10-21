@@ -4,6 +4,9 @@ name: Relay
 
 on:
   workflow_dispatch:
+  push:
+    branches: [docs/squad-mode-plan]
+    paths: [server/**, src/core/squad/**, .github/workflows/relay.yml]
 
 permissions:
   contents: read
