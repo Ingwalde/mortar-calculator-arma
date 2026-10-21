@@ -10,9 +10,11 @@ Recorded versions:
 
 - sharp: `0.35.5` (Apache-2.0).
 - Linux x64 libvips npm bundle: `@img/sharp-libvips-linux-x64@1.3.4`.
+- macOS libvips npm bundles: `@img/sharp-libvips-darwin-arm64@1.3.4` and `@img/sharp-libvips-darwin-x64@1.3.4`.
 - Windows x64 package inspected: `@img/sharp-win32-x64@0.35.5`.
 - libvips in these inspected packages: `8.18.7`.
 - Exact Linux component versions: `native/sharp-libvips-1.3.4-linux-x64-versions.json`.
+- Exact macOS component versions: `native/sharp-libvips-1.3.4-darwin-arm64-versions.json` and `...-darwin-x64-versions.json`.
 - Exact Windows component versions: `native/sharp-0.35.5-win32-x64-versions.json`.
 - Upstream component/license table: `native/sharp-libvips-1.3.4-NOTICES.md`.
 
@@ -40,11 +42,12 @@ archive has already been supplied with a release.
    texts from the exact build. Include codec/font notices, not just a list of
    SPDX names. Confirm the set for each target OS/architecture.
    Status: the license/copyright files of all 28 components listed for Windows x64
-   are stored in `native/component-licenses/` (`INDEX.md` there lists source URL, tag
+   (the Linux and macOS bundles list the same 28 components at the same versions, see the
+   verification log) are stored in `native/component-licenses/` (`INDEX.md` there lists source URL, tag
    and SHA-256; produced by `scripts/collect-native-licenses.mjs`). They are taken
    from the upstream repositories at the recorded tags (libimagequant: default
-   branch, no file at its tag), not extracted from the binary. Linux and other
-   targets are not covered.
+   branch, no file at its tag), not extracted from the binary. Other targets (Linux
+   arm64, musl, 32-bit, etc.) are not covered.
 2. Supply the corresponding sources, patches and build instructions required by
    LGPL/MPL using a compliant distribution method. A generic upstream homepage
    or this document alone is not the source delivery. Method chosen: a source
@@ -127,3 +130,9 @@ Checked on 2026-10-20 (Windows x64 build host, sharp 0.35.5):
   libvips build and does not close item 2 or the signing question in item 3.
   Unsigned builds were used (no signing certificate is configured).
 - Replacement of `libvips-42.dll` with a library rebuilt from source with a modification: verified.
+- `@img/sharp-libvips-linux-x64`, `-darwin-arm64` and `-darwin-x64` 1.3.4 were downloaded from npm: their
+  `versions.json` files list the same 28 components at the same versions as the Windows x64 bundle
+  (compared key by key), and each package carries one shared library
+  (`libvips-cpp.so.8.18.7` / `libvips-cpp.8.18.7.dylib`). The license texts, the written offer and the source
+  archive therefore apply to all four platforms; the Linux and macOS libraries are built by
+  `lovell/sharp-libvips` (`build/posix.sh`), included in the source archive.

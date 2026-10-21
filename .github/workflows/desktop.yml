@@ -4,6 +4,8 @@
 name: Desktop
 
 on:
+  push:
+    branches: [ci/desktop-builds]
   workflow_dispatch:
     inputs:
       tag:
@@ -47,6 +49,23 @@ jobs:
       - name: Вміст пакунка
         shell: bash
         run: ls -la dist
+      - name: Перевірка юридичних файлів і бібліотеки libvips
+        shell: bash
+        run: |
+          set -e
+          found=0
+          for res in dist/mac*/*.app/Contents/Resources dist/linux-unpacked/resources; do
+            [ -d "$res" ] || continue
+            found=1
+            for f in legal/APPLICATION-LICENSE.txt legal/THIRD-PARTY-NOTICES.md legal/npm-notices.txt legal/native/SOURCE-OFFER.md legal/native/REBUILD-LIBVIPS.md legal/native/component-licenses/INDEX.md; do
+              test -f "$res/$f" || { echo "У $res немає $f"; exit 1; }
+            done
+            n=$(ls "$res/legal/native/component-licenses" | wc -l)
+            echo "$res: файлів ліцензій компонентів: $n"
+            ls "$res"/app.asar.unpacked/node_modules/@img/sharp-libvips-*/lib | grep -E "libvips-cpp" || { echo "У $res немає libvips поза app.asar"; exit 1; }
+          done
+          [ "$found" = 1 ] || { echo "Не знайдено розпакований застосунок у dist"; exit 1; }
+          find dist -maxdepth 4 \( -name "LICENSE.electron.txt" -o -name "LICENSES.chromium.html" \) | head
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.name }}
