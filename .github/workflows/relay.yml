@@ -1,11 +1,11 @@
-# Deploys the squad-mode relay (Cloudflare Workers) by hand. Needs the repository secrets
+# Deploys the squad-mode relay (Cloudflare Workers): by hand, and on every push to master that touches the relay. Needs the repository secrets
 # CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (see "Owner setup" in docs/squad-mode.md).
 name: Relay
 
 on:
   workflow_dispatch:
   push:
-    branches: [docs/squad-mode-plan]
+    branches: [master]
     paths: [server/**, src/core/squad/**, .github/workflows/relay.yml]
 
 permissions:
