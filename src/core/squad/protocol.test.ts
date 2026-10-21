@@ -7,9 +7,13 @@ const parse = (o: unknown) => parseClientMessage(JSON.stringify(o));
 describe("parseClientMessage", () => {
   it("приймає коректні повідомлення", () => {
     expect(parse({ t: "ping", v: V })).toEqual({ ok: true, msg: { t: "ping", v: V } });
-    const create = { t: "op", v: V, opId: "o1", op: { k: "create", id: "m1", aff: "hostile", kind: "armour", x: 100, z: 200, name: "Танк", caption: "біля мосту", u: 12 } };
+    const create = { t: "op", v: V, opId: "o1", op: { k: "create", id: "m1", aff: "hostile", kind: "armour", x: 100, z: 200, name: "Танк", caption: "біля мосту", u: 12, w: "" } };
     expect(parse(create)).toEqual({ ok: true, msg: create });
     expect(parse({ t: "admin", v: V, opId: "a1", action: { a: "role", member: "m2", role: "mortarman" } }).ok).toBe(true);
+    expect(parse({ t: "admin", v: V, opId: "a2", action: { a: "terrain", id: "everon" } }).ok).toBe(true);
+    expect(parse({ t: "admin", v: V, opId: "a3", action: { a: "terrain", id: "bad id" } }).ok).toBe(false);
+    expect(parse({ t: "op", v: V, opId: "o2", op: { k: "create", id: "m", aff: "friend", kind: "mortar", x: 1, z: 1, name: "", caption: "", u: null, w: "M252" } }).ok).toBe(true);
+    expect(parse({ t: "op", v: V, opId: "o3", op: { k: "edit", id: "m", w: "bad weapon!" } }).ok).toBe(false);
   });
 
   it("відкидає не JSON, чужу версію, невідомий тип і неправильні поля", () => {

@@ -31,6 +31,8 @@ export interface SquadState {
   createdAt: number;
   lastActive: number;
   joinHash: string;
+  /** Карта відділення (id терену); порожній рядок, поки не вибрано. */
+  terrain: string;
   phase: "active" | "ended";
   endedAt: number | null;
   seq: number;
@@ -94,7 +96,7 @@ export class Room {
   }
 
   /** Нова кімната: її створювач — командир. */
-  static create(i: { joinHash: string; memberId: string; callsign: string; keyHash: string; now: number }): Room {
+  static create(i: { joinHash: string; memberId: string; callsign: string; keyHash: string; now: number; terrain?: string }): Room {
     const callsign = readCallsign(i.callsign);
     if (!callsign) throw new Error("bad callsign");
     const state: SquadState = {
@@ -102,6 +104,7 @@ export class Room {
       createdAt: i.now,
       lastActive: i.now,
       joinHash: i.joinHash,
+      terrain: i.terrain ?? "",
       phase: "active",
       endedAt: null,
       seq: 0,
@@ -243,7 +246,7 @@ export class Room {
       if (cur) return cur.del ? reject(m.id, opId, "deleted") : cur.by === m.id ? this.ack(m.id, opId) : reject(m.id, opId, "exists");
       if (!canCreate(m.role, op.aff, op.kind)) return reject(m.id, opId, "permission");
       if (this.liveMarks() >= LIMITS.marks) return reject(m.id, opId, "limit");
-      const mark: StoredMark = { id: op.id, aff: op.aff, kind: op.kind, name: op.name, caption: op.caption, x: op.x, z: op.z, u: op.u, destroyed: false, by: m.id, at: now, ub: m.id, ut: now };
+      const mark: StoredMark = { id: op.id, aff: op.aff, kind: op.kind, name: op.name, caption: op.caption, x: op.x, z: op.z, u: op.u, w: op.w, destroyed: false, by: m.id, at: now, ub: m.id, ut: now };
       s.marks[op.id] = mark;
       return this.accept(m, opId, op, mark, now);
     }
@@ -259,6 +262,7 @@ export class Room {
         cur.aff = aff;
         cur.kind = kind;
         if (op.name !== undefined) cur.name = op.name;
+        if (op.w !== undefined) cur.w = op.w;
         // свій міномет не буває «зруйнованим»
         if (aff === "friend" && kind === "mortar") cur.destroyed = false;
         break;
@@ -356,6 +360,12 @@ export class Room {
         this.touch(now, true);
         return [send({ kind: "all" }, { t: "ended", v: PROTOCOL_VERSION, at: now })];
       }
+      case "terrain": {
+        s.terrain = a.id;
+        s.seq++;
+        this.touch(now, true);
+        return [send({ kind: "all" }, { t: "terrain", v: PROTOCOL_VERSION, id: a.id })];
+      }
       case "rotate":
         // код змінює обгортка через `rotateJoin` (вона знає, як хешувати); сюди така дія не доходить
         return reject(m.id, opId, "invalid");
@@ -422,6 +432,7 @@ export class Room {
       v: PROTOCOL_VERSION,
       seq: s.seq,
       phase: s.phase,
+      terrain: s.terrain,
       you: { id: m.id, role: m.role, callsign: m.callsign, editor: m.editor },
       marks,
       members: this.memberList(m.role === "commander"),

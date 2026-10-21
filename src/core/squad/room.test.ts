@@ -82,7 +82,7 @@ class Harness {
   }
 }
 
-const create = (id: string, extra: Partial<Extract<MarkOp, { k: "create" }>> = {}): MarkOp => ({ k: "create", id, aff: "hostile", kind: "infantry", x: 10, z: 20, name: "", caption: "", u: null, ...extra });
+const create = (id: string, extra: Partial<Extract<MarkOp, { k: "create" }>> = {}): MarkOp => ({ k: "create", id, aff: "hostile", kind: "infantry", x: 10, z: 20, name: "", caption: "", u: null, w: "", ...extra });
 const reasonOf = (e: Effect[]): string | undefined => {
   const f = e.find((x) => x.k === "send" && x.msg.t === "reject");
   return f && f.k === "send" && f.msg.t === "reject" ? f.msg.reason : undefined;

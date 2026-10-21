@@ -45,7 +45,7 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
     if (url.pathname === "/create" && req.method === "POST") {
-      let body: { callsign?: unknown };
+      let body: { callsign?: unknown; terrain?: unknown };
       try {
         body = (await req.json()) as { callsign?: unknown };
       } catch {
@@ -53,12 +53,13 @@ export default {
       }
       const callsign = readCallsign(body.callsign);
       if (!callsign) return json({ error: "bad_callsign" }, 400);
+      const terrain = typeof body.terrain === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(body.terrain) ? body.terrain : "";
       const room = randomToken(16);
       const code = randomToken(16);
       const key = randomToken(32);
       const memberId = randomToken(8);
       const stub = env.SQUAD.get(env.SQUAD.idFromName(room));
-      const ok = await stub.init({ joinHash: await sha256(code), memberId, callsign, keyHash: await sha256(key) });
+      const ok = await stub.init({ joinHash: await sha256(code), memberId, callsign, keyHash: await sha256(key), terrain });
       return ok ? json({ room, code, key, memberId }) : json({ error: "unavailable" }, 503);
     }
 
@@ -92,7 +93,7 @@ export class SquadRoomDO extends DurableObject<Env> {
   }
 
   /** Створення відділення (викликає Worker). Повертає false, якщо кімната вже є. */
-  async init(i: { joinHash: string; memberId: string; callsign: string; keyHash: string }): Promise<boolean> {
+  async init(i: { joinHash: string; memberId: string; callsign: string; keyHash: string; terrain: string }): Promise<boolean> {
     if (this.room) return false;
     this.room = Room.create({ ...i, now: Date.now() });
     await this.flush();

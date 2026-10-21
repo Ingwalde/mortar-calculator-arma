@@ -80,7 +80,7 @@ const promoted = await mort.next((m) => m.t === "snapshot");
 assert.equal(promoted.you.role, "mortarman");
 
 // the soldier marks a hostile, everybody sees it with the author
-sold.send({ t: "op", opId: "s1", op: { k: "create", id: "k1", aff: "hostile", kind: "armour", x: 1200, z: 3400, name: "T-72", caption: "by the bridge", u: null } });
+sold.send({ t: "op", opId: "s1", op: { k: "create", id: "k1", aff: "hostile", kind: "armour", x: 1200, z: 3400, name: "T-72", caption: "by the bridge", u: null, w: "" } });
 for (const c of [cmd, mort, sold]) {
   const op = await c.next((m) => m.t === "op" && m.opId === "s1");
   assert.equal(op.by, sold.memberId);
@@ -88,9 +88,9 @@ for (const c of [cmd, mort, sold]) {
 }
 
 // the soldier cannot create a friendly mortar, but may move one made by the mortarman
-sold.send({ t: "op", opId: "s2", op: { k: "create", id: "k2", aff: "friend", kind: "mortar", x: 1, z: 1, name: "", caption: "", u: null } });
+sold.send({ t: "op", opId: "s2", op: { k: "create", id: "k2", aff: "friend", kind: "mortar", x: 1, z: 1, name: "", caption: "", u: null, w: "" } });
 assert.equal((await sold.next((m) => m.t === "reject")).reason, "permission");
-mort.send({ t: "op", opId: "m1", op: { k: "create", id: "k3", aff: "friend", kind: "mortar", x: 100, z: 100, name: "M1", caption: "", u: null } });
+mort.send({ t: "op", opId: "m1", op: { k: "create", id: "k3", aff: "friend", kind: "mortar", x: 100, z: 100, name: "M1", caption: "", u: null, w: "" } });
 await sold.next((m) => m.t === "op" && m.opId === "m1");
 sold.send({ t: "op", opId: "s3", op: { k: "move", id: "k3", x: 150, z: 160, u: null } });
 await mort.next((m) => m.t === "op" && m.opId === "s3");
@@ -102,7 +102,7 @@ await new Promise((r) => setTimeout(r, 300));
 assert.equal(sold.inbox.filter((m) => m.t === "log").length, 0, "the soldier does not see the log");
 
 // duplicates are not applied twice
-sold.send({ t: "op", opId: "s1", op: { k: "create", id: "k1", aff: "hostile", kind: "armour", x: 1200, z: 3400, name: "T-72", caption: "", u: null } });
+sold.send({ t: "op", opId: "s1", op: { k: "create", id: "k1", aff: "hostile", kind: "armour", x: 1200, z: 3400, name: "T-72", caption: "", u: null, w: "" } });
 assert.equal((await sold.next((m) => m.t === "ack")).opId, "s1");
 
 // the commander removes the soldier; the soldier is disconnected and cannot come back

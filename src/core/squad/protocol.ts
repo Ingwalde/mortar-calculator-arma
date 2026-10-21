@@ -40,7 +40,10 @@ export interface SquadMark {
   caption: string;
   x: number;
   z: number;
+  /** Висота над рівнем моря, якщо відома. */
   u: number | null;
+  /** Гармата міномета (M252, 2B14); порожній рядок, якщо не міномет. */
+  w: string;
   destroyed: boolean;
   /** Автор (id учасника) і час створення. */
   by: string;
@@ -59,8 +62,8 @@ export interface FireEntry {
 }
 
 export type MarkOp =
-  | { k: "create"; id: string; aff: Affiliation; kind: SquadKind; x: number; z: number; name: string; caption: string; u: number | null }
-  | { k: "edit"; id: string; aff?: Affiliation; kind?: SquadKind; name?: string }
+  | { k: "create"; id: string; aff: Affiliation; kind: SquadKind; x: number; z: number; name: string; caption: string; u: number | null; w: string }
+  | { k: "edit"; id: string; aff?: Affiliation; kind?: SquadKind; name?: string; w?: string }
   | { k: "move"; id: string; x: number; z: number; u: number | null }
   | { k: "caption"; id: string; caption: string }
   | { k: "status"; id: string; destroyed: boolean }
@@ -71,6 +74,7 @@ export type AdminAction =
   | { a: "remove"; member: string }
   | { a: "restore"; member: string }
   | { a: "editor"; member: string; allowed: boolean }
+  | { a: "terrain"; id: string }
   | { a: "rotate" }
   | { a: "end" }
   | { a: "delete" };
@@ -98,6 +102,8 @@ export type ServerMsg =
       v: number;
       seq: number;
       phase: "active" | "ended";
+      /** Карта відділення: усі мітки мають координати на ній. */
+      terrain: string;
       you: { id: string; role: Role; callsign: string; editor: boolean };
       marks: SquadMark[];
       members: MemberInfo[];
@@ -108,6 +114,7 @@ export type ServerMsg =
   | { t: "reject"; v: number; opId: string; reason: RejectReason }
   | { t: "members"; v: number; members: MemberInfo[] }
   | { t: "log"; v: number; seq: number; entry: FireEntry }
+  | { t: "terrain"; v: number; id: string }
   | { t: "ended"; v: number; at: number }
   | { t: "code"; v: number; code: string }
   | { t: "error"; v: number; code: ErrorCode };
@@ -135,6 +142,10 @@ export function cleanText(v: unknown, max: number): string | null {
   return s.length <= max ? s : null;
 }
 
+function isWeapon(v: unknown): v is string {
+  return typeof v === "string" && /^[A-Za-z0-9]{0,12}$/.test(v);
+}
+
 function isSquadKind(v: unknown): v is SquadKind {
   return typeof v === "string" && (SQUAD_KINDS as readonly string[]).includes(v);
 }
@@ -148,8 +159,9 @@ function parseOp(o: Record<string, unknown>): MarkOp | null {
       const caption = cleanText(o.caption ?? "", LIMITS.caption);
       if (!isAffiliation(o.aff) || !isSquadKind(o.kind) || !isCoord(o.x) || !isCoord(o.z) || name === null || caption === null) return null;
       const u = o.u === undefined ? null : o.u;
-      if (!isHeight(u)) return null;
-      return { k: "create", id, aff: o.aff, kind: o.kind, x: o.x, z: o.z, name, caption, u };
+      const w = o.w === undefined ? "" : o.w;
+      if (!isHeight(u) || !isWeapon(w)) return null;
+      return { k: "create", id, aff: o.aff, kind: o.kind, x: o.x, z: o.z, name, caption, u, w };
     }
     case "edit": {
       const op: MarkOp = { k: "edit", id };
@@ -166,7 +178,11 @@ function parseOp(o: Record<string, unknown>): MarkOp | null {
         if (name === null) return null;
         op.name = name;
       }
-      return op.aff === undefined && op.kind === undefined && op.name === undefined ? null : op;
+      if (o.w !== undefined) {
+        if (!isWeapon(o.w)) return null;
+        op.w = o.w;
+      }
+      return op.aff === undefined && op.kind === undefined && op.name === undefined && op.w === undefined ? null : op;
     }
     case "move": {
       const u = o.u === undefined ? null : o.u;
@@ -197,6 +213,8 @@ function parseAdmin(o: Record<string, unknown>): AdminAction | null {
       return isId(o.member) ? { a: o.a, member: o.member } : null;
     case "editor":
       return isId(o.member) && typeof o.allowed === "boolean" ? { a: "editor", member: o.member, allowed: o.allowed } : null;
+    case "terrain":
+      return isId(o.id) ? { a: "terrain", id: o.id } : null;
     case "rotate":
     case "end":
     case "delete":
