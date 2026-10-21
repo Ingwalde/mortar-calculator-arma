@@ -32,7 +32,7 @@ jobs:
           - name: linux-x64
             os: ubuntu-latest
             args: --linux AppImage deb --x64
-            files: "dist/*.AppImage dist/*.deb"
+            files: "dist/MortarTablet-*-linux-x64.*"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
