@@ -172,6 +172,28 @@
           <a class="dl off" id="dlPortable" href="https://github.com/Ingwalde/mortar-tablet/releases"><span>Portable (без встановлення)</span><small>…</small></a>
         </div>
       </article>
+      <article class="card" data-card="mac">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+          macOS
+        </h3>
+        <p>Повна версія для Mac: власні карти, обмін мітками з телефоном по Wi-Fi. Файл не підписаний.</p>
+        <div class="row">
+          <a class="dl off" id="dlMacArm" href="https://github.com/Ingwalde/mortar-tablet/releases"><span>Apple Silicon (M1 і новіші)</span><small>…</small></a>
+          <a class="dl off" id="dlMacX64" href="https://github.com/Ingwalde/mortar-tablet/releases"><span>Intel</span><small>…</small></a>
+        </div>
+      </article>
+      <article class="card" data-card="linux">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l4-4-4-4M12 17h8"/></svg>
+          Linux
+        </h3>
+        <p>Повна версія для Linux (x64): AppImage запускається без встановлення, .deb ставиться в Debian і Ubuntu.</p>
+        <div class="row">
+          <a class="dl off" id="dlAppImage" href="https://github.com/Ingwalde/mortar-tablet/releases"><span>AppImage</span><small>…</small></a>
+          <a class="dl off" id="dlDeb" href="https://github.com/Ingwalde/mortar-tablet/releases"><span>.deb</span><small>…</small></a>
+        </div>
+      </article>
       <article class="card" data-card="android">
         <h3>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M11 18h2"/></svg>
@@ -204,6 +226,22 @@
         <li>Завантажте <b>інсталятор</b> (або portable, якщо встановлення не потрібне) і запустіть.</li>
         <li>Якщо Windows показує попередження, натисніть <b>«Докладніше» → «Все одно виконати»</b>.</li>
         <li>Далі застосунок оновлюється сам.</li>
+      </ol>
+    </details>
+    <details id="howMac">
+      <summary>macOS</summary>
+      <ol>
+        <li>Завантажте файл під свій Mac і відкрийте його, перетягніть застосунок у «Програми».</li>
+        <li>Файл не підписаний, тому macOS попередить про невідомого розробника: у «Програмах» натисніть на застосунок <b>правою кнопкою → «Відкрити»</b> і підтвердьте.</li>
+        <li>Нова версія: завантажте її з цієї сторінки й замініть застосунок (він сам підкаже, що вийшла нова).</li>
+      </ol>
+    </details>
+    <details id="howLinux">
+      <summary>Linux</summary>
+      <ol>
+        <li><b>AppImage:</b> зробіть файл виконуваним (<code>chmod +x</code> або у властивостях файлу) і запустіть.</li>
+        <li><b>.deb:</b> <code>sudo apt install ./MortarTablet-….deb</code>.</li>
+        <li>AppImage оновлюється сам. Для .deb завантажте нову версію з цієї сторінки (застосунок підкаже, що вона вийшла).</li>
       </ol>
     </details>
     <details id="howAndroid">

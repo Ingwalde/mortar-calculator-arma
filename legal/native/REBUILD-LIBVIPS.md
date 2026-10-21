@@ -18,7 +18,16 @@ Recipe, as documented by the upstream projects (`libvips/build-win64-mxe` v8.18.
    `resources/app.asar.unpacked/node_modules/@img/sharp-win32-x64/lib/` of the installed application,
    replacing the existing file.
 
-Whether these exact options reproduce the distributed DLL byte for byte is not established: the DLL
+## Linux and macOS
+
+The libraries are built by `lovell/sharp-libvips` v1.3.4 (in the source archive): `build.sh` without
+parameters prints the usage; Linux x64 uses `platforms/linux-x64/Dockerfile`, which runs `build/posix.sh`
+inside a container; macOS runs the same `build/posix.sh` directly on a macOS machine for each architecture.
+The versions of all dependencies are pinned in `versions.properties`. The result is
+`libvips-cpp.8.18.7.dylib` or `libvips-cpp.so.8.18.7`; put it into
+`resources/app.asar.unpacked/node_modules/@img/sharp-libvips-<platform>/lib/` of the installed application.
+
+Windows: whether these exact options reproduce the distributed DLL byte for byte is not established: the DLL
 shipped in `@img/sharp-win32-x64` is byte-identical to `vips-dev-x64-web-8.18.7-static.zip` published by
 `libvips/build-win64-mxe`, whose build options are not recorded in the recipe repository.
 

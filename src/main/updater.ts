@@ -1,10 +1,13 @@
 /**
- * Автооновлення з GitHub Releases (electron-updater). Працює лише в встановленій (NSIS) збірці:
- * у portable-версії та в режимі розробки його нема. Завантажується лише різниця між версіями
+ * Автооновлення з GitHub Releases (electron-updater). Працює у встановленій (NSIS) збірці Windows і в AppImage на Linux:
+ * у portable-версії та в режимі розробки його нема. macOS не дозволяє самооновлення непідписаних застосунків, а .deb
+ * потребує прав адміністратора, тож там лише перевіряємо останній реліз і пропонуємо відкрити сторінку завантаження
+ * (стан «manual»). Завантажується лише різниця між версіями
  * (blockmap), оновлення ставиться при виході або за кнопкою «Перезапустити й оновити».
  */
 import { app, BrowserWindow, ipcMain } from "electron";
 import electronUpdater from "electron-updater";
+import { RELEASE_REPO, isNewerVersion, isTrustedReleaseUrl } from "../core/appVersion";
 
 // electron-updater — CommonJS: з ESM-збірки main іменований імпорт недоступний, беремо через default.
 const { autoUpdater } = electronUpdater;
@@ -16,6 +19,7 @@ export type UpdateState =
   | "downloading"
   | "ready"
   | "none"
+  | "manual"
   | "error"
   | "unsupported";
 
@@ -24,6 +28,8 @@ export interface UpdateStatus {
   version?: string;
   percent?: number;
   message?: string;
+  /** «manual»: сторінка релізу, з якої завантажити нову версію */
+  url?: string;
 }
 
 let status: UpdateStatus = { state: "idle" };
@@ -35,6 +41,9 @@ function set(next: UpdateStatus): void {
 }
 
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
+
+/** Автоматичне завантаження й встановлення: Windows (NSIS) і Linux AppImage (змінна APPIMAGE виставляється його запускачем). */
+const AUTO_INSTALL = process.platform === "win32" || (process.platform === "linux" && Boolean(process.env.APPIMAGE));
 
 export function supported(): boolean {
   return app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR;
@@ -50,6 +59,11 @@ export function registerUpdater(win: () => BrowserWindow | null): void {
 
   if (!supported()) {
     status = { state: "unsupported" };
+    return;
+  }
+  if (!AUTO_INSTALL) {
+    setTimeout(() => void check(), 8000);
+    setInterval(() => void check(), CHECK_EVERY_MS);
     return;
   }
   autoUpdater.autoDownload = true;
@@ -68,8 +82,29 @@ export function registerUpdater(win: () => BrowserWindow | null): void {
   setInterval(() => void check(), CHECK_EVERY_MS);
 }
 
+/** macOS і Linux: дивимось останній стабільний реліз; встановлює користувач сам зі сторінки релізу. */
+async function checkManual(): Promise<UpdateStatus> {
+  if (status.state === "checking") return status;
+  set({ state: "checking" });
+  try {
+    const res = await fetch(`https://api.github.com/repos/${RELEASE_REPO}/releases/latest`, { headers: { accept: "application/vnd.github+json" } });
+    if (!res.ok) throw new Error(String(res.status));
+    const rel = (await res.json()) as { tag_name?: string; html_url?: string; draft?: boolean; prerelease?: boolean };
+    const url = rel.html_url ?? "";
+    if (!rel.draft && !rel.prerelease && rel.tag_name && isNewerVersion(rel.tag_name, app.getVersion()) && isTrustedReleaseUrl(url)) {
+      set({ state: "manual", version: rel.tag_name.replace(/^v/, ""), url });
+    } else {
+      set({ state: "none" });
+    }
+  } catch (err) {
+    set({ state: "error", message: String((err as Error)?.message ?? err).slice(0, 200) });
+  }
+  return status;
+}
+
 async function check(): Promise<UpdateStatus> {
   if (!supported()) return status;
+  if (!AUTO_INSTALL) return checkManual();
   if (status.state === "checking" || status.state === "downloading" || status.state === "ready") return status;
   try {
     await autoUpdater.checkForUpdates();
