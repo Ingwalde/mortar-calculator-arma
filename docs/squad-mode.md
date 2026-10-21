@@ -51,7 +51,7 @@ The **server enforces** every rule below; the client only hides what a role may 
 | --- | --- | --- | --- |
 | See all marks, captions, authors | yes | yes | yes |
 | Create a friend or hostile mark of kind infantry, armour, helicopter or retreat | yes | yes | yes |
-| Create or move a **mortar** mark | yes | yes | no |
+| Create a friendly **mortar** mark (a hostile mortar position is an ordinary hostile mark) | yes | yes | no |
 | Move a mark (change its position) | any mark | any mark | any mark |
 | Edit (kind, affiliation, name) or delete a mark of someone else | yes | yes | no |
 | Edit or delete his own mark | yes | yes | yes |
@@ -261,7 +261,7 @@ migration of old marks, danger-warning geometry, report export and import, and a
 - **D3 Hosting:** the owner creates the account and the secrets (see "Owner setup" in section 10); a custom domain is optional.
 - **D4 Callsign rules:** 2 to 16 characters from letters, digits, `-`, `_` and space; unique in the squad ignoring case; look-alike duplicates (the same name with only case or spacing different) are refused.
 - **D5 Limits:** 20 members and 100 marks per squad, 40 operations per minute per member, a message at most 8 KB, a caption of 120 characters.
-- **D6 Soldier details:** a soldier creates friend and hostile marks of infantry, armour, helicopter and retreat (his own position or other friendly units), moves any mark (a mortar too), deletes only his own marks, and may caption his own marks and hostile marks of others.
+- **D6 Soldier details:** a soldier creates friend and hostile marks of infantry, armour, helicopter and retreat (his own position or other friendly units) and may also mark a hostile mortar position (only the friendly mortar is restricted), moves any mark (a mortar too), deletes only his own marks, and may caption his own marks and hostile marks of others.
 - **D7 Danger warning visibility:** the commander and mortarmen only.
 - **D8 Firing log sharing:** mortarmen see each other's entries live and the commander sees all of them; soldiers see none.
 - **D9 Report language:** decided: the language the application is set to.
