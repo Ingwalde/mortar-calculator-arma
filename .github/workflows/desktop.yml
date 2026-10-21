@@ -4,6 +4,8 @@
 name: Desktop
 
 on:
+  push:
+    branches: [ci/desktop-builds]
   workflow_dispatch:
     inputs:
       tag:
@@ -30,7 +32,9 @@ jobs:
           - name: linux-x64
             os: ubuntu-latest
             args: --linux AppImage deb --x64
-            files: "dist/MortarTablet-*-linux-*"
+            files: |
+              dist/MortarTablet-*-linux-*
+              dist/latest-linux.yml
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -78,4 +82,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
-        run: gh release upload "$TAG" ${{ matrix.files }} --clobber
+          FILES: ${{ matrix.files }}
+        run: gh release upload "$TAG" $FILES --clobber

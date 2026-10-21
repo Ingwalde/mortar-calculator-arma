@@ -1,7 +1,8 @@
 /**
- * Автооновлення з GitHub Releases (electron-updater). Працює лише в встановленій (NSIS) збірці Windows:
- * у portable-версії та в режимі розробки його нема. На macOS і Linux збірки не підписані й без файлів оновлення,
- * тож там лише перевіряємо останній реліз і пропонуємо відкрити сторінку завантаження (стан «manual»). Завантажується лише різниця між версіями
+ * Автооновлення з GitHub Releases (electron-updater). Працює у встановленій (NSIS) збірці Windows і в AppImage на Linux:
+ * у portable-версії та в режимі розробки його нема. macOS не дозволяє самооновлення непідписаних застосунків, а .deb
+ * потребує прав адміністратора, тож там лише перевіряємо останній реліз і пропонуємо відкрити сторінку завантаження
+ * (стан «manual»). Завантажується лише різниця між версіями
  * (blockmap), оновлення ставиться при виході або за кнопкою «Перезапустити й оновити».
  */
 import { app, BrowserWindow, ipcMain } from "electron";
@@ -41,8 +42,8 @@ function set(next: UpdateStatus): void {
 
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
 
-/** Автоматичне завантаження й встановлення — лише Windows (NSIS). */
-const AUTO_INSTALL = process.platform === "win32";
+/** Автоматичне завантаження й встановлення: Windows (NSIS) і Linux AppImage (змінна APPIMAGE виставляється його запускачем). */
+const AUTO_INSTALL = process.platform === "win32" || (process.platform === "linux" && Boolean(process.env.APPIMAGE));
 
 export function supported(): boolean {
   return app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR;
