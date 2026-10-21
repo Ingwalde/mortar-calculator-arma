@@ -15,12 +15,7 @@ const DICT: Dict = {
   prefetchCancelled: { uk: "Зупинено.", en: "Stopped." },
   offlineBtnAria: { uk: "Офлайн-режим", en: "Offline mode" },
   offlineTitle: { uk: "Офлайн-режим", en: "Offline mode" },
-  offlineIntro: {
-    uk: "Збережіть карту на телефоні, щоб працювати без Wi-Fi і ПК. Мітки й журнал теж зберігаються на пристрої та зливаються з ПК, коли зв'язок повернеться.",
-    en: "Save the map on this phone to work without Wi-Fi or the PC. Marks and log are kept on the device too and merge with the PC when the connection returns."
-  },
   offlineTerrainLabel: { uk: "Терен", en: "Terrain" },
-  offlineNoMap: { uk: "У цього терену нема карти для збереження (порожня сітка працює й так).", en: "This terrain has no map to save (the blank grid works offline anyway)." },
   offlineLevelAria: { uk: "Деталізація", en: "Detail level" },
   offlineLevelLow: { uk: "Оглядова", en: "Overview" },
   offlineLevelMid: { uk: "Середня", en: "Medium" },
@@ -37,21 +32,8 @@ const DICT: Dict = {
     en: "Done: {done} saved. Not on the server: {missing} (outside the map, expected). Errors: {failed}."
   },
   offlinePcTiles: { uk: "Онлайн-тайли цього терену зберігаються на диск ПК, щоб карта відкривалась без інтернету.", en: "Online tiles of this terrain are saved to the PC disk so the map opens without internet." },
-  offlineCleared: { uk: "Збережену карту видалено", en: "Saved map deleted" },
-  offlineSaved: { uk: "Збережено на пристрої для цього терену: {n} файлів", en: "Saved on this device for this terrain: {n} files" },
-  offlineUsage: { uk: "Зайнято на пристрої: {mb} МБ із {quota} МБ", en: "Used on this device: {mb} MB of {quota} MB" },
-  offlineActive: { uk: "Офлайн-режим активний: застосунок відкриється й без ПК.", en: "Offline mode is active: the app opens even without the PC." },
-  offlineNotYet: { uk: "Офлайн-режим готується — перезавантажте застосунок один раз.", en: "Offline mode is getting ready — reload the app once." },
-  offlineNoHttps: {
-    uk: "Офлайн недоступний: відкрито через http. На ПК у «Перегляд з телефона» візьміть посилання «офлайн (HTTPS)» і встановіть сертифікат довіри.",
-    en: "Offline is unavailable: opened over http. On the PC, use the “offline (HTTPS)” link under “View from phone” and install the trust certificate."
-  },
   offlinePcLocal: { uk: "На ПК карта цього терену вже на диску й працює без інтернету.", en: "On the PC this terrain's map is already on disk and works without internet." },
-  offlineNeedsPc: { uk: "Для збереження карти потрібен зв'язок з ПК", en: "Saving a map needs a connection to the PC" },
-  statusOffline: { uk: "Офлайн: зміни на цьому пристрої, синхронізуються з ПК пізніше", en: "Offline: changes are kept on this device and sync with the PC later" },
   statusSaved: { uk: "Мітки збережено на цьому пристрої", en: "Marks are saved on this device" },
-  langToggle: { uk: "EN", en: "UA" },
-
   terrainAriaLabel: { uk: "Терен", en: "Terrain" },
   markTypeAria: { uk: "Тип мітки", en: "Mark type" },
   canvasAriaLabel: {
@@ -185,9 +167,6 @@ const DICT: Dict = {
   soundOff: { uk: "Звук вимкнено", en: "Sound off" },
   ringLabelCharge: { uk: "заряд {c}: {max} м", en: "charge {c}: {max} m" },
   ringLabelMin: { uk: "мін {min} м", en: "min {min} m" },
-  statusOfflinePending: { uk: "Офлайн: {n} змін чекає відправки на ПК", en: "Offline: {n} changes waiting to sync with the PC" },
-  extFromPc: { uk: "З ПК", en: "From the PC" },
-  extFromPhone: { uk: "З телефона", en: "From the phone" },
   extAdded: { uk: "додано: {list}", en: "added: {list}" },
   extChanged: { uk: "змінено: {list}", en: "changed: {list}" },
   extRemoved: { uk: "видалено: {list}", en: "removed: {list}" },
@@ -198,6 +177,7 @@ const DICT: Dict = {
   updAvailable: { uk: "доступна версія {v}, завантажую…", en: "version {v} available, downloading…" },
   updProgress: { uk: "завантаження {p}%", en: "downloading {p}%" },
   updReady: { uk: "версія {v} завантажена — перезапустіть, щоб оновитись", en: "version {v} downloaded — restart to update" },
+  extOtherTab: { uk: "З іншої вкладки", en: "From another tab" },
   updManual: { uk: "доступна версія {v} — завантажте її зі сторінки релізів", en: "version {v} is available — download it from the releases page" },
   updOpenPage: { uk: "Відкрити сторінку завантаження", en: "Open the download page" },
   updNone: { uk: "встановлена остання версія", en: "you have the latest version" },
@@ -262,7 +242,6 @@ const DICT: Dict = {
   secSound: { uk: "Звук і відгук", en: "Sound and feedback" },
   secCalc: { uk: "Розрахунок", en: "Calculation" },
   secData: { uk: "Карти й дані", en: "Maps and data" },
-  secNet: { uk: "Мережа", en: "Network" },
   secBackup: { uk: "Резервні копії", en: "Backups" },
   secAbout: { uk: "Оновлення й про програму", en: "Updates and about" },
   setTheme: { uk: "Колірна тема", en: "Colour theme" },
@@ -279,9 +258,6 @@ const DICT: Dict = {
   setShells: { uk: "Доступні снаряди", en: "Available shells" },
   setShellsHint: { uk: "Вимкнені снаряди не показуються у списку «Снаряд». Типовий снаряд підставляється при виборі міномета.", en: "Disabled shells are hidden from the Shell list. The default shell is picked when you choose a mortar." },
   setShellDefault: { uk: "Типовий снаряд", en: "Default shell" },
-  setOfflineTitle: { uk: "Карти для роботи без інтернету", en: "Maps for offline use" },
-  setOfflineHint: { uk: "Збережені на пристрої тайли карт і висоти. Тут можна зберегти карту поточного терену, переглянути розмір і видалити.", en: "Map tiles and heights stored on this device. Save the current terrain, check its size or delete it." },
-  setOfflineOpen: { uk: "Відкрити збережені карти", en: "Open saved maps" },
   setUpdNotice: { uk: "Повідомляти про нову версію", en: "Notify about new versions" },
   setAboutTitle: { uk: "Про програму", en: "About" },
   setAboutHint: { uk: "Можливості, перевірка оновлень, ліцензії та подяки", en: "Features, update check, licences and credits" },
@@ -313,8 +289,6 @@ const DICT: Dict = {
   storageDeleted: { uk: "Видалено", en: "Deleted" },
   unitMb: { uk: "МБ", en: "MB" },
   unitGb: { uk: "ГБ", en: "GB" },
-  offlineListTitle: { uk: "Збережено на пристрої", en: "Saved on this device" },
-  offlineClearAll: { uk: "Видалити все збережене", en: "Delete everything saved" },
   exCount: { uk: "У файлі буде міток: {n}", en: "Marks in the export: {n}" },
   exEmpty: { uk: "У цій папці немає міток вибраних типів", en: "No marks of the chosen types in this folder" },
   exShare: { uk: "Поділитись", en: "Share" },
@@ -349,8 +323,6 @@ const DICT: Dict = {
   placesHeading: { uk: "Назви пунктів", en: "Place names" },
   calibSummarySize: { uk: "Уся карта · {x}×{z} м", en: "Whole map · {x}×{z} m" },
   calibSummaryPts: { uk: "Дві точки", en: "Two points" },
-  lanStateOn: { uk: "увімкнено", en: "on" },
-  lanStateOff: { uk: "вимкнено", en: "off" },
   placeKind_settlement: { uk: "Населені пункти", en: "Settlements" },
   placeKind_military: { uk: "Військові", en: "Military" },
   placeKind_transport: { uk: "Транспорт", en: "Transport" },
@@ -395,49 +367,10 @@ const DICT: Dict = {
   wipeText: { uk: "Буде видалено міток: {n} на терені {terrain}.", en: "{n} marks on {terrain} will be deleted." },
 
   sheetToggleAria: { uk: "Згорнути/розгорнути панель", en: "Collapse/expand panel" },
-  lanHeading: { uk: "Перегляд з телефона", en: "Phone view" },
-  lanHint: {
-    uk: "ПК віддає планшет у локальній мережі: відкрийте посилання або відскануйте QR на телефоні (та сама Wi-Fi). Мітки, журнал і карта спільні; розрахунок і вибір цілі на кожному пристрої свої.",
-    en: "This PC serves the tablet on your local network: open the link or scan the QR on your phone (same Wi-Fi). Marks, log and map are shared; the solution and target choice stay per-device."
-  },
-  lanToggleLabel: { uk: "Доступ з локальної мережі", en: "Local network access" },
-  lanQrAria: { uk: "QR-код посилання", en: "Link QR code" },
-  lanUrlAria: { uk: "Посилання для телефона", en: "Link for the phone" },
-  lanCaWarnText: {
-    uk: "Сертифікат довіри створено старою версією й не обмежений приватною мережею. Перевипустіть його: новий дозволяє підписувати лише адреси локальної мережі й *.local. Після цього профіль потрібно встановити на телефоні заново.",
-    en: "The trust certificate was created by an older version and is not limited to the private network. Re-issue it: the new one can only sign local-network addresses and *.local. Then install the profile on the phone again."
-  },
-  lanCaRegenBtn: { uk: "Перевипустити сертифікат", en: "Re-issue certificate" },
-  lanCaRegenTitle: { uk: "Перевипустити сертифікат?", en: "Re-issue the certificate?" },
-  lanCaRegenText: {
-    uk: "Старий профіль на телефонах перестане діяти для офлайн-режиму. Встановіть новий профіль («Сертифікат довіри») і знову увімкніть довіру в налаштуваннях iPhone.",
-    en: "The old profile on phones will stop working for offline mode. Install the new profile (“Trust certificate”) and enable trust again in the iPhone settings."
-  },
-  lanCaRegenConfirm: { uk: "Перевипустити", en: "Re-issue" },
-  lanCaRegenDone: { uk: "Сертифікат перевипущено", en: "Certificate re-issued" },
   storageFailed: {
     uk: "Не вдалося зберегти: сховище браузера заповнене або вимкнене. Зробіть експорт міток.",
     en: "Could not save: browser storage is full or disabled. Export your markers."
   },
-  lanOptOffline: { uk: "офлайн (HTTPS)", en: "offline (HTTPS)" },
-  lanOptCert: { uk: "Сертифікат довіри (одноразово)", en: "Trust certificate (one time)" },
-  lanOfflineHint: {
-    uk: "Офлайн-режим телефона: 1) у списку виберіть «Сертифікат довіри», відскануйте QR на iPhone й встановіть профіль (Налаштування → Профіль завантажено); 2) Налаштування → Загальні → Про пристрій → Довіра сертифікатам → увімкніть «Планшет мінометника»; 3) відкрийте посилання «офлайн (HTTPS)» (порт {https}), додайте на головний екран. Потім у застосунку на телефоні відкрийте «Офлайн» і збережіть потрібну карту.",
-    en: "Phone offline mode: 1) pick “Trust certificate” in the list, scan the QR on the iPhone and install the profile (Settings → Profile Downloaded); 2) Settings → General → About → Certificate Trust Settings → enable “Mortar Tablet”; 3) open the “offline (HTTPS)” link (port {https}) and add it to the Home Screen. Then open “Offline” in the phone app and save the map you need."
-  },
-  lanCopyBtn: { uk: "Копіювати посилання", en: "Copy link" },
-  lanCopied: { uk: "Посилання скопійовано", en: "Link copied" },
-  lanRegenBtn: { uk: "Новий ключ", en: "New key" },
-  lanRegenTitle: { uk: "Створити новий ключ доступу?", en: "Create a new access key?" },
-  lanRegenText: { uk: "Старі посилання й QR-коди перестануть працювати — телефон треба буде підключити знову.", en: "Old links and QR codes will stop working — the phone must be connected again." },
-  lanRegenDone: { uk: "Новий ключ створено", en: "New key created" },
-  lanNoNetwork: { uk: "Не знайдено мережевого підключення — підключіться до Wi-Fi чи Ethernet.", en: "No network connection found — connect to Wi-Fi or Ethernet." },
-  lanSecurity: {
-    uk: "Будь-хто в цій мережі з посиланням бачить і змінює мітки. Не вмикайте в чужих мережах. Брандмауер Windows при першому вмиканні спитає дозвіл — оберіть «Приватні мережі».",
-    en: "Anyone on this network with the link can see and edit marks. Do not enable on networks you do not trust. Windows Firewall will ask for permission the first time — choose Private networks."
-  },
-  lanError: { uk: "Не вдалося запустити сервер: {msg}", en: "Could not start the server: {msg}" },
-
   heightFromTerrain: { uk: "Висоту (однієї чи обох точок) взято з даних рельєфу карти.", en: "Height (of one or both points) taken from the map's terrain data." },
   calibGridLabel: {
     uk: "Перетин сітки з карти (напр. 030 029) — заповнить X і Z",

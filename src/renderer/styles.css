@@ -171,11 +171,8 @@ dialog h3{margin:0 0 10px;font-size:18px}
 
 .sheet-handle{display:none}
 .ic-shrink{display:none}
-.lan-qr{width:200px;max-width:100%;background:#fff;padding:6px;border-radius:12px;margin-top:10px;line-height:0}
-.lan-qr svg{display:block;width:100%;height:auto}
-.lan-qr:empty{display:none}
 /* Веб-версія для телефона: імпорт карт робиться лише в застосунку на ПК. */
-.remote #pickFile,.remote #downloadImport,.remote #clearMap,.remote #lanBox{display:none}
+.remote #pickFile,.remote #downloadImport,.remote #clearMap{display:none}
 
 @media (max-width:760px){
   :root{--sheet-h:48vh;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px)}

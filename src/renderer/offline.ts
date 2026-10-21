@@ -1,122 +1,22 @@
 /**
- * Офлайн-режим телефона: збереження карти вибраного терену на пристрої. Тайли й висоти запитуються
- * як звичайно — service worker (public/sw.js) кладе їх у кеш і віддає без мережі.
- * Працює лише в безпечному контексті (HTTPS із довірчим сертифікатом або localhost).
+ * Офлайн-режим на ПК: онлайн-тайли карти (Everon, Arland, Kolguyev) зберігаються в дисковий кеш застосунку
+ * (main-процес), щоб карта працювала без інтернету. Імпортовані карти вже лежать на диску.
  */
-import { planPyramid } from "@core/tilePyramid";
 import { onlineTileList } from "@core/onlineTiles";
-import { modMapTilePath, webHeightsPath } from "@core/webMirror";
-import { PRESETS } from "@core/terrains";
-import { getRoot } from "./state";
-import { $, toast } from "./dom";
+import { $ } from "./dom";
 import { t } from "./i18n";
-import { currentMeta, getCurrent } from "./state";
-import { isNativeApp, isOffline, isRemote, isStandalone } from "./platform";
+import { currentMeta } from "./state";
+import { isNativeApp, isStandalone } from "./platform";
 
+/** Кеш service worker-а, який могли створити старі версії сайту (PWA): його прибираємо. */
 const TILES_CACHE = "mortar-tiles-v1";
-/** Орієнтовний розмір тайла: піраміда (256 px, JPEG q90) і онлайн-тайли (~540 px). */
-const PYRAMID_TILE_BYTES = 16 * 1024;
+/** Орієнтовний розмір онлайн-тайла (~540 px). */
 const ONLINE_TILE_BYTES = 40 * 1024;
-const CONCURRENCY = 6;
-/** Запасна оцінка розміру збереженого файла (тайл зі свого сайту), якщо сервер не вказав довжину. */
-const SITE_TILE_BYTES = 22 * 1024;
-
-export interface OfflineOption {
-  /** Скільки найгрубших рівнів включено (від найгрубшого). */
-  key: string;
-  label: string;
-  urls: string[];
-  bytes: number;
-}
-
-/** Рівні деталізації для поточного терену: кожен наступний варіант включає всі попередні. */
-/** Середній розмір тайла піраміди з ПК (кеш у пам'яті сторінки); null — невідомо. */
-const avgBytesCache = new Map<string, number | null>();
-async function loadAvgBytes(id: string): Promise<void> {
-  if (isStandalone || avgBytesCache.has(id)) return;
-  try {
-    const res = await fetch(`/api/tilestat/${encodeURIComponent(id)}`);
-    const j = (await res.json()) as { avgBytes: number | null };
-    avgBytesCache.set(id, typeof j.avgBytes === "number" ? j.avgBytes : null);
-  } catch {
-    // ПК недосяжний — лишається типова оцінка
-  }
-}
-
-export function offlineOptions(): OfflineOption[] {
-  // автономна версія: тайли офіційних карт йдуть напряму з першоджерела, на сайті їх нема, тож зберігати нічого
-  if (isStandalone) return [];
-  const meta = currentMeta();
-  const S = getCurrent();
-  const extra = [isStandalone ? webHeightsPath(meta.id) : `/api/heights/${encodeURIComponent(meta.id)}`];
-  const opts: OfflineOption[] = [];
-
-  if (S.map && S.map.kind === "pyramid") {
-    const plan = planPyramid(S.map.width, S.map.height);
-    const top = plan.maxLevel;
-    const urlsUpTo = (maxZ: number): string[] => {
-      const out: string[] = [];
-      for (const lv of plan.levels) {
-        if (lv.z > maxZ) break;
-        for (let row = 0; row < lv.rows; row++) {
-          for (let col = 0; col < lv.cols; col++) {
-            out.push(isStandalone ? modMapTilePath(meta.id, lv.z, row, col) : `/localtile/${meta.id}/${lv.z}/${row}/${col}`);
-          }
-        }
-      }
-      return out;
-    };
-    const picks = [...new Set([Math.max(0, top - 3), Math.max(0, top - 2), Math.max(0, top - 1), top])];
-    const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
-    picks.forEach((z, i) => {
-      const urls = urlsUpTo(z);
-      const avg = avgBytesCache.get(meta.id) ?? PYRAMID_TILE_BYTES;
-      opts.push({ key: `p${z}`, label: names[names.length - picks.length + i] ?? names[i], urls: [...urls, ...extra], bytes: urls.length * avg });
-    });
-    return opts;
-  }
-
-  const tiles = meta.preset?.tiles;
-  if (tiles) {
-    const maxLod = tiles.maxLod;
-    const urlsFrom = (minLod: number): string[] =>
-      onlineTileList(meta.sizeX, meta.sizeZ, maxLod, minLod).map((c) => `/tile/${meta.id}/${c.lod}/${c.x}/${c.y}`);
-    const picks = [...new Set([Math.min(maxLod, 3), Math.min(maxLod, 2), 1, 0].filter((l) => l <= maxLod))];
-    const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
-    picks.forEach((lod, i) => {
-      const urls = urlsFrom(lod);
-      opts.push({ key: `o${lod}`, label: names[i] ?? names[names.length - 1], urls: [...urls, ...extra], bytes: urls.length * ONLINE_TILE_BYTES });
-    });
-  }
-  return opts;
-}
 
 function fmtMb(bytes: number): string {
   const mb = bytes / (1024 * 1024);
   return mb < 10 ? mb.toFixed(1) : String(Math.round(mb));
 }
-
-async function cachedCount(prefixes: string[]): Promise<number> {
-  if (!("caches" in window)) return 0;
-  try {
-    const cache = await caches.open(TILES_CACHE);
-    const keys = await cache.keys();
-    return keys.filter((r) => prefixes.some((p) => new URL(r.url).pathname.startsWith(p))).length;
-  } catch {
-    return 0;
-  }
-}
-
-function terrainPrefixes(id: string): string[] {
-  if (isStandalone) {
-    // сайт може лежати на підшляху (GitHub Pages): ключі кешу — повні шляхи; tiles/ і tiles-hd/ — те, що збережено старими версіями
-    const root = new URL("./", document.baseURI).pathname;
-    return [`${root}tiles/${id}/`, `${root}tiles-hd/${id}/`, `${root}maps/${id}/`, `${root}heights/${id}`];
-  }
-  return [`/localtile/${id}/`, `/tile/${id}/`, `/api/heights/${id}`];
-}
-
-let abort: AbortController | null = null;
 
 function setBusy(busy: boolean): void {
   $<HTMLButtonElement>("offlineSave").hidden = busy;
@@ -131,52 +31,37 @@ function summary(done: number, missing: number, failed: number, aborted: boolean
   return t("offlineDone", { done, missing, failed });
 }
 
-/** Телефон: тайли тягнуться через service worker, що кладе їх у кеш пристрою. */
-async function download(opt: OfflineOption): Promise<void> {
-  if (abort) return;
-  abort = new AbortController();
-  const signal = abort.signal;
-  const bar = $<HTMLProgressElement>("offlineProg");
-  const txt = $("offlineProgText");
-  txt.hidden = false;
-  bar.max = opt.urls.length;
-  bar.value = 0;
-  setBusy(true);
-  let done = 0;
-  let missing = 0;
-  let failed = 0;
-  let next = 0;
-  let finished = 0;
-  const worker = async (): Promise<void> => {
-    while (!signal.aborted) {
-      const i = next++;
-      if (i >= opt.urls.length) return;
-      try {
-        const res = await fetch(opt.urls[i], { signal });
-        if (res.status === 404) missing++;
-        else if (!res.ok) failed++;
-        else {
-          await res.arrayBuffer();
-          done++;
-        }
-      } catch {
-        if (signal.aborted) return;
-        failed++;
-      }
-      finished++;
-      bar.value = finished;
-      txt.textContent = t("offlineProgress", { done: finished, total: opt.urls.length });
-    }
-  };
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  const aborted = signal.aborted;
-  abort = null;
-  setBusy(false);
-  txt.textContent = summary(done, missing, failed, aborted);
-  void refresh();
+/** Варіанти деталізації: лише онлайн-тайли (імпортована карта вже на диску). */
+function pcOptions(): { key: string; minLod: number; label: string; n: number; bytes: number }[] {
+  const meta = currentMeta();
+  const tiles = meta.preset?.tiles;
+  if (!tiles) return [];
+  const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
+  const lods = [...new Set([Math.min(tiles.maxLod, 3), Math.min(tiles.maxLod, 2), 1, 0])];
+  return lods.map((lod, i) => {
+    const n = onlineTileList(meta.sizeX, meta.sizeZ, tiles.maxLod, lod).length;
+    return { key: `o${lod}`, minLod: lod, label: names[i] ?? names[names.length - 1], n, bytes: n * ONLINE_TILE_BYTES };
+  });
 }
 
-/** ПК: онлайн-тайли зберігаються в дисковий кеш застосунку (main-процес). */
+function refresh(): void {
+  const meta = currentMeta();
+  const state = $("offlineState");
+  state.dataset.ok = "1";
+  $("offlineTerrain").textContent = meta.name;
+  const opts = pcOptions();
+  const sel = $<HTMLSelectElement>("offlineLevel");
+  const prev = sel.value;
+  sel.textContent = "";
+  for (const o of opts) sel.appendChild(new Option(t("offlineOpt", { label: o.label, n: o.n, mb: fmtMb(o.bytes) }), o.key));
+  if (opts.some((o) => o.key === prev)) sel.value = prev;
+  const has = opts.length > 0;
+  state.textContent = has ? t("offlinePcTiles") : t("offlinePcLocal");
+  sel.hidden = !has;
+  $<HTMLButtonElement>("offlineSave").hidden = !has;
+}
+
+/** Онлайн-тайли зберігаються в дисковий кеш застосунку (main-процес). */
 async function pcDownload(minLod: number): Promise<void> {
   const meta = currentMeta();
   const bar = $<HTMLProgressElement>("offlineProg");
@@ -199,195 +84,14 @@ async function pcDownload(minLod: number): Promise<void> {
   }
 }
 
-async function clearTerrain(terrainId?: string): Promise<void> {
-  const id = terrainId ?? currentMeta().id;
-  try {
-    const cache = await caches.open(TILES_CACHE);
-    const prefixes = terrainPrefixes(id);
-    for (const req of await cache.keys()) {
-      if (prefixes.some((p) => new URL(req.url).pathname.startsWith(p))) await cache.delete(req);
-    }
-  } catch {
-    // кеш недоступний — нічого видаляти
-  }
-  toast(t("offlineCleared"));
-  void refresh();
-}
-
-/** Видаляє з кешу все збережене для всіх теренів. */
-async function clearAllSaved(): Promise<void> {
-  try {
-    const cache = await caches.open(TILES_CACHE);
-    for (const req of await cache.keys()) await cache.delete(req);
-  } catch {
-    // кеш недоступний
-  }
-  toast(t("offlineCleared"));
-  void refresh();
-}
-
-const TERRAIN_FROM_PATH = /(?:^|\/)(?:tiles|tiles-hd|maps|localtile|tile)\/([A-Za-z0-9_-]+)\//;
-const HEIGHTS_FROM_PATH = /(?:^|\/)(?:api\/heights|heights)\/([A-Za-z0-9_-]+)/;
-
-/** Збережене на пристрої за теренами: кількість файлів і розмір (з content-length, інакше оцінка). */
-async function savedByTerrain(): Promise<Map<string, { files: number; bytes: number }>> {
-  const out = new Map<string, { files: number; bytes: number }>();
-  if (!("caches" in window)) return out;
-  try {
-    const cache = await caches.open(TILES_CACHE);
-    const keys = await cache.keys();
-    const owner = (req: Request): string | null => {
-      const p = new URL(req.url).pathname;
-      return TERRAIN_FROM_PATH.exec(p)?.[1] ?? HEIGHTS_FROM_PATH.exec(p)?.[1] ?? null;
-    };
-    for (let i = 0; i < keys.length; i += 100) {
-      await Promise.all(
-        keys.slice(i, i + 100).map(async (req) => {
-          const id = owner(req);
-          if (!id) return;
-          const res = await cache.match(req);
-          const len = Number(res?.headers.get("content-length"));
-          const e = out.get(id) ?? { files: 0, bytes: 0 };
-          e.files++;
-          e.bytes += Number.isFinite(len) && len > 0 ? len : SITE_TILE_BYTES;
-          out.set(id, e);
-        })
-      );
-    }
-  } catch {
-    // кеш недоступний
-  }
-  return out;
-}
-
-function terrainTitle(id: string): string {
-  return PRESETS.find((p) => p.id === id)?.name ?? getRoot().customTerrains.find((c) => c.id === id)?.name ?? id;
-}
-
-/** Список збереженого на пристрої (PWA): за теренами, з кнопками видалення. */
-async function renderSavedList(): Promise<void> {
-  const box = $("offlineList");
-  const stats = await savedByTerrain();
-  box.textContent = "";
-  box.hidden = stats.size === 0;
-  if (!stats.size) return;
-  const title = document.createElement("div");
-  title.className = "storage-head";
-  title.textContent = t("offlineListTitle");
-  box.appendChild(title);
-  for (const [id, s] of [...stats.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    const row = document.createElement("div");
-    row.className = "storage-row";
-    const txt = document.createElement("span");
-    txt.textContent = `${terrainTitle(id)}: ${fmtMb(s.bytes)} ${t("unitMb")} · ${s.files} ${t("storageFiles")}`;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "btn small danger";
-    btn.textContent = t("deleteBtn");
-    btn.onclick = () => void clearTerrain(id);
-    row.append(txt, btn);
-    box.appendChild(row);
-  }
-  if (stats.size > 1) {
-    const all = document.createElement("button");
-    all.type = "button";
-    all.className = "btn small danger";
-    all.style.marginTop = "6px";
-    all.textContent = t("offlineClearAll");
-    all.onclick = () => void clearAllSaved();
-    box.appendChild(all);
-  }
-}
-
-/** Варіанти деталізації для ПК: лише онлайн-тайли (імпортована карта вже на диску). */
-function pcOptions(): { key: string; minLod: number; label: string; n: number; bytes: number }[] {
-  const meta = currentMeta();
-  const tiles = meta.preset?.tiles;
-  if (!tiles) return [];
-  const names = [t("offlineLevelLow"), t("offlineLevelMid"), t("offlineLevelHigh"), t("offlineLevelFull")];
-  const lods = [...new Set([Math.min(tiles.maxLod, 3), Math.min(tiles.maxLod, 2), 1, 0])];
-  return lods.map((lod, i) => {
-    const n = onlineTileList(meta.sizeX, meta.sizeZ, tiles.maxLod, lod).length;
-    return { key: `o${lod}`, minLod: lod, label: names[i] ?? names[names.length - 1], n, bytes: n * ONLINE_TILE_BYTES };
-  });
-}
-
-function refreshPc(): void {
-  const meta = currentMeta();
-  const state = $("offlineState");
-  state.dataset.ok = "1";
-  $("offlineIntro").hidden = true;
-  $("offlineTerrain").textContent = meta.name;
-  const opts = pcOptions();
-  const sel = $<HTMLSelectElement>("offlineLevel");
-  const prev = sel.value;
-  sel.textContent = "";
-  for (const o of opts) sel.appendChild(new Option(t("offlineOpt", { label: o.label, n: o.n, mb: fmtMb(o.bytes) }), o.key));
-  if (opts.some((o) => o.key === prev)) sel.value = prev;
-  const has = opts.length > 0;
-  state.textContent = has ? t("offlinePcTiles") : t("offlinePcLocal");
-  sel.hidden = !has;
-  $<HTMLButtonElement>("offlineSave").hidden = !has || abort !== null;
-  $("offlineNoMap").hidden = true;
-  $("offlineSaved").hidden = true;
-  $("offlineUsage").hidden = true;
-}
-
-async function refresh(): Promise<void> {
-  if (!isRemote) {
-    refreshPc();
-    return;
-  }
-  const meta = currentMeta();
-  $("offlineIntro").hidden = false;
-  await loadAvgBytes(meta.id);
-  const secure = window.isSecureContext;
-  const controlled = "serviceWorker" in navigator && !!navigator.serviceWorker.controller;
-  const state = $("offlineState");
-  state.textContent = controlled
-    ? t("offlineActive")
-    : secure
-      ? t("offlineNotYet")
-      : t("offlineNoHttps");
-  state.dataset.ok = controlled ? "1" : "0";
-
-  $("offlineTerrain").textContent = meta.name;
-  const sel = $<HTMLSelectElement>("offlineLevel");
-  const prev = sel.value;
-  sel.textContent = "";
-  const opts = offlineOptions();
-  for (const o of opts) {
-    sel.appendChild(new Option(t("offlineOpt", { label: o.label, n: o.urls.length, mb: fmtMb(o.bytes) }), o.key));
-  }
-  if (opts.some((o) => o.key === prev)) sel.value = prev;
-  const hasMap = opts.length > 0;
-  sel.disabled = !hasMap || abort !== null;
-  $<HTMLButtonElement>("offlineSave").disabled = !hasMap || !secure;
-  $("offlineNoMap").hidden = hasMap;
-
-  void renderSavedList();
-  const n = await cachedCount(terrainPrefixes(meta.id));
-  $("offlineSaved").textContent = t("offlineSaved", { n });
-
-  let usage = "";
-  try {
-    const est = await navigator.storage?.estimate?.();
-    if (est?.usage) usage = t("offlineUsage", { mb: fmtMb(est.usage), quota: est.quota ? fmtMb(est.quota) : "?" });
-  } catch {
-    // немає storage API
-  }
-  $("offlineUsage").textContent = usage;
-}
-
 /**
- * Кнопка «хмарка» в шапці: діалог збереження карти. На телефоні — у кеш пристрою (service worker),
- * на ПК — онлайн-тайли на диск (для імпортованих карт показує, що вони вже на диску).
+ * Кнопка «хмарка» в шапці: діалог збереження карти на диск (лише застосунок на ПК).
+ * Android-застосунок і сайт її не мають: у APK усе вже в пакеті, а на сайті тайли йдуть з першоджерела.
  */
 export function initOffline(): void {
-  // Android-застосунок: усе вже в пакеті. Вебверсія: тайли йдуть з першоджерела й зберегти їх не можна,
-  // тож офлайн-режиму там нема (кнопка лишається прихованою), а збережене старими версіями прибираємо.
   if (isNativeApp) return;
   if (isStandalone) {
+    // збережене старими версіями сайту стираємо
     if ("caches" in window) void caches.delete(TILES_CACHE).catch(() => undefined);
     return;
   }
@@ -396,34 +100,15 @@ export function initOffline(): void {
   const dlg = $<HTMLDialogElement>("offlineDlg");
   btn.onclick = () => {
     dlg.showModal();
-    void refresh();
+    refresh();
   };
   $<HTMLButtonElement>("offlineClose").onclick = () => dlg.close();
   dlg.addEventListener("click", (e) => {
     if (e.target === dlg) dlg.close();
   });
   $<HTMLButtonElement>("offlineSave").onclick = () => {
-    const key = $<HTMLSelectElement>("offlineLevel").value;
-    if (!isRemote) {
-      const opt = pcOptions().find((o) => o.key === key);
-      if (opt) void pcDownload(opt.minLod);
-      return;
-    }
-    const opt = offlineOptions().find((o) => o.key === key);
-    if (!opt) return;
-    if (isOffline()) {
-      toast(t("offlineNeedsPc"));
-      return;
-    }
-    void download(opt);
+    const opt = pcOptions().find((o) => o.key === $<HTMLSelectElement>("offlineLevel").value);
+    if (opt) void pcDownload(opt.minLod);
   };
-  $<HTMLButtonElement>("offlineStop").onclick = () => {
-    if (isRemote) abort?.abort();
-    else void window.api.tiles.cancelPrefetch();
-  };
-  if (isRemote && "serviceWorker" in navigator) {
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (dlg.open) void refresh();
-    });
-  }
+  $<HTMLButtonElement>("offlineStop").onclick = () => void window.api.tiles.cancelPrefetch();
 }

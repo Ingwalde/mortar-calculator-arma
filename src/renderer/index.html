@@ -139,7 +139,6 @@ html.no-splash #splash{display:none}
       <button type="button" data-sec="sound" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.8a7.4 7.4 0 0 1 0 10.4"/></svg><span data-i18n="secSound">Звук і відгук</span></button>
       <button type="button" data-sec="calc" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg><span data-i18n="secCalc">Розрахунок</span></button>
       <button type="button" data-sec="data" data-pc aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg><span data-i18n="secData">Карти й дані</span></button>
-      <button type="button" data-sec="net" data-pc aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg><span data-i18n="secNet">Мережа</span></button>
       <button type="button" data-sec="backup" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 20h14"/></svg><span data-i18n="secBackup">Резервні копії</span></button>
       <button type="button" data-sec="about" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span data-i18n="secAbout">Оновлення й про програму</span></button>
     </nav>
@@ -269,34 +268,6 @@ html.no-splash #splash{display:none}
         <p class="hint" data-i18n="storageHint">Кеш онлайн-тайлів, імпортовані карти й висоти займають місце на диску. Тут видно, скільки, і можна видалити окремо для кожного терену.</p>
         <div class="row"><button class="btn" id="storageOpen" data-i18n="storageOpenBtn">Відкрити менеджер</button></div>
         </div></details>
-        <div class="set-row" data-web data-q="збережені карти офлайн saved offline cache">
-          <div class="set-label" data-i18n="setOfflineTitle">Карти для роботи без інтернету</div>
-          <p class="hint" data-i18n="setOfflineHint">Збережені на пристрої тайли карт і висоти. Тут можна зберегти карту поточного терену, переглянути розмір і видалити.</p>
-          <div class="row"><button type="button" class="btn" id="setOfflineOpen" data-i18n="setOfflineOpen">Відкрити збережені карти</button></div>
-        </div>
-      </section>
-
-      <section class="set-sec" data-sec="net" data-pc hidden>
-        <h4 data-i18n="secNet">Мережа</h4>
-        <details class="card" open id="lanBox" data-card="lan"><summary><span data-i18n="lanHeading">Перегляд з телефона</span><span class="card-sum" id="lanSummary"></span></summary><div class="card-body">
-          <p class="hint" data-i18n="lanHint"></p>
-          <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="lanToggle"> <span data-i18n="lanToggleLabel">Доступ з локальної мережі</span></label>
-          <div id="lanDetails" hidden>
-            <div class="lan-qr" id="lanQr" role="img" data-i18n-aria-label="lanQrAria" aria-label="QR"></div>
-            <div class="field" style="margin-top:10px"><select id="lanUrlSel" data-i18n-aria-label="lanUrlAria" aria-label="URL"></select></div>
-            <div class="row" style="margin-top:10px">
-              <button class="btn" id="lanCopy" data-i18n="lanCopyBtn">Копіювати посилання</button>
-              <button class="btn" id="lanRegen" data-i18n="lanRegenBtn">Новий ключ</button>
-            </div>
-          </div>
-          <p class="hint" style="font-size:12px" id="lanOfflineHint" hidden></p>
-          <div id="lanCaWarn" class="warn" hidden>
-            <p style="margin:0 0 8px" data-i18n="lanCaWarnText"></p>
-            <button class="btn small" id="lanCaRegen" data-i18n="lanCaRegenBtn">Перевипустити сертифікат</button>
-          </div>
-          <p class="warn" id="lanWarn" hidden></p>
-          <p class="hint" style="font-size:12px" data-i18n="lanSecurity"></p>
-        </div></details>
       </section>
 
       <section class="set-sec" data-sec="backup" hidden>
@@ -361,16 +332,11 @@ html.no-splash #splash{display:none}
 </dialog>
 <dialog id="offlineDlg">
   <h3 data-i18n="offlineTitle">Офлайн-режим</h3>
-  <p class="hint" id="offlineIntro" data-i18n="offlineIntro"></p>
   <p class="offline-state" id="offlineState"></p>
   <div class="field"><label><span data-i18n="offlineTerrainLabel">Терен</span>: <b id="offlineTerrain"></b></label></div>
-  <p class="hint" id="offlineNoMap" hidden data-i18n="offlineNoMap"></p>
   <div class="field" style="margin-top:8px"><select id="offlineLevel" data-i18n-aria-label="offlineLevelAria" aria-label="Деталізація"></select></div>
   <progress id="offlineProg" hidden style="width:100%;margin-top:10px"></progress>
   <p class="hint" id="offlineProgText" hidden></p>
-  <p class="hint" id="offlineSaved"></p>
-  <p class="hint" id="offlineUsage"></p>
-  <div id="offlineList" class="storage-list" hidden></div>
   <div class="dlg-actions" style="justify-content:flex-end;flex-wrap:wrap">
     <span style="display:flex;gap:8px">
       <button type="button" class="btn" id="offlineStop" hidden data-i18n="offlineStopBtn">Зупинити</button>

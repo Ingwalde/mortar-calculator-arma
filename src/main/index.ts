@@ -1,10 +1,16 @@
 import { app, BrowserWindow, Menu, nativeTheme, session, shell } from "electron";
 import { isAllowedExternalUrl } from "./security";
+import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { registerPrivilegedSchemes, registerProtocolHandlers } from "./protocols";
 import { registerIpcHandlers } from "./ipc";
-import { initLan, shutdownLan } from "./lan";
 import { registerUpdater } from "./updater";
+
+/** Версії до 1.0.1 зберігали тут налаштування й закритий ключ режиму «Перегляд з телефона»; режиму більше нема, файли прибираємо. */
+async function removeLegacyLanFiles(): Promise<void> {
+  const dir = app.getPath("userData");
+  for (const name of ["lan.json", "lan-ca.json", "lan-leaf.json"]) await rm(join(dir, name), { force: true }).catch(() => undefined);
+}
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
@@ -79,16 +85,12 @@ void app.whenReady().then(() => {
   registerProtocolHandlers();
   registerIpcHandlers(() => mainWindow);
   registerUpdater(() => mainWindow);
-  void initLan();
+  void removeLegacyLanFiles();
   createWindow();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
-});
-
-app.on("before-quit", () => {
-  void shutdownLan();
 });
 
 app.on("window-all-closed", () => {

@@ -24,37 +24,15 @@ export interface StorageEntry {
   heightsBytes: number;
 }
 
-export interface LanInfo {
-  enabled: boolean;
-  port: number;
-  urls: string[];
-  httpsPort: number;
-  httpsUrls: string[];
-  caUrl: string | null;
-  caConstrained: boolean;
-  error: string | null;
-}
-
 const api = {
-  /** true лише в веб-версії для телефона (LAN) — там нема імпорту карт і файлових діалогів. */
+  /** true лише в браузерних збірках (сайт, APK): там нема імпорту карт і файлових діалогів. */
   remote: false,
   store: {
     load: (): Promise<unknown> => ipcRenderer.invoke("store:load"),
     /** true — стан змінився при злитті з чужими правками, його треба перечитати. */
     save: (data: unknown): Promise<boolean> => ipcRenderer.invoke("store:save", data),
-    /** Стан змінив інший клієнт (телефон) — треба перечитати. */
-    onChanged: (cb: () => void): (() => void) => {
-      const listener = () => cb();
-      ipcRenderer.on("store:changed", listener);
-      return () => ipcRenderer.removeListener("store:changed", listener);
-    }
-  },
-  lan: {
-    info: (): Promise<LanInfo> => ipcRenderer.invoke("lan:info"),
-    setEnabled: (enabled: boolean): Promise<LanInfo> => ipcRenderer.invoke("lan:setEnabled", enabled),
-    regenerate: (): Promise<LanInfo> => ipcRenderer.invoke("lan:regenerate"),
-    regenerateCa: (): Promise<LanInfo> => ipcRenderer.invoke("lan:regenerateCa"),
-    qr: (url: string): Promise<string> => ipcRenderer.invoke("lan:qr", url)
+    /** Стан змінив інша вкладка (лише в браузерних збірках); у застосунку на ПК стан пише тільки його вікно. */
+    onChanged: (_cb: () => void): (() => void) => () => undefined
   },
   dialogs: {
     pickImageFile: (): Promise<string | null> => ipcRenderer.invoke("dialog:pickImageFile")

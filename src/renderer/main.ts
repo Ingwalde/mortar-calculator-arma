@@ -23,24 +23,10 @@ function hideSplash(): void {
   }, wait);
 }
 
-let offline = false;
-let pending = 0;
 function updateStatus(): void {
-  $("status").textContent = offline
-    ? pending > 0
-      ? t("statusOfflinePending", { n: pending })
-      : t("statusOffline")
-    : t("statusSaved");
+  $("status").textContent = t("statusSaved");
 }
-window.addEventListener("mortar:pending", (e) => {
-  pending = (e as CustomEvent<{ count: number }>).detail.count;
-  updateStatus();
-});
 window.addEventListener("mortar:storage-error", () => toast(t("storageFailed")));
-window.addEventListener("mortar:connectivity", (e) => {
-  offline = !(e as CustomEvent<{ online: boolean }>).detail.online;
-  updateStatus();
-});
 
 async function boot(): Promise<void> {
   await loadState();

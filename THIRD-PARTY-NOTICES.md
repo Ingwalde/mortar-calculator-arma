@@ -78,7 +78,6 @@ LICENSE.electron.txt and LICENSES.chromium.html from the matching Electron distr
 
 - Electron and Chromium: MIT and the licenses of the Chromium components (LICENSES.chromium.html).
 - sharp: Apache-2.0; the bundled libvips: LGPL-3.0-or-later (https://github.com/lovell/sharp-libvips), used only in the desktop version to cut maps into tiles (Windows, macOS and Linux builds).
-- node-forge: used under BSD-3-Clause, Copyright (c) 2010, Digital Bazaar, Inc.
 - qrcode: MIT, Copyright (c) 2012 Ryan Day; dijkstrajs: MIT, Copyright (C) 2008 Wyatt Baldwin.
 - nosleep.js: MIT, Copyright (c) Rich Tibbett.
 - electron-updater and builder-util-runtime: MIT, Copyright (c) 2015 Loopline Systems.
