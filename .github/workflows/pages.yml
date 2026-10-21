@@ -1,6 +1,6 @@
-# Автономна версія (PWA без ПК): збирається з того ж коду й публікується на GitHub Pages.
-# Запуск: вручну (Actions -> Pages -> Run workflow) або пушем у master зі змінами сайту
-# (середовище github-pages не дозволяє деплой із тегів).
+# Standalone version (a PWA, no PC needed): built from the same code and published to GitHub Pages.
+# Run: manually (Actions -> Pages -> Run workflow) or by a push to master that changes the site
+# (the github-pages environment does not allow deploying from tags).
 name: Pages
 
 on:
@@ -40,11 +40,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # без postinstall-скриптів: Electron і sharp для веб-збірки не потрібні
+      # without postinstall scripts: Electron and sharp are not needed for the web build
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
       - run: npm test
-      # завантажені тайли й висоти не качаємо щоразу
+      # do not download the tiles and heights every time
       - uses: actions/cache@v4
         with:
           path: .web-cache

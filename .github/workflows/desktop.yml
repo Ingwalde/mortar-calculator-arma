@@ -1,13 +1,13 @@
-# Настільні збірки для macOS і Linux (Windows збирається локально: npm run dist:win).
-# Запуск: вручну (Actions -> Desktop -> Run workflow). Без тегу результат лишається артефактом збірки; з тегом файли
-# додаються до релізу. Збірки не підписані (macOS покаже попередження про невідомого розробника).
+# Desktop builds for macOS and Linux (Windows is built locally: npm run dist:win).
+# Run: manually (Actions -> Desktop -> Run workflow). Without a tag the result stays a build artifact; with a tag the files
+# are attached to that release. The builds are not signed (macOS warns about an unknown developer).
 name: Desktop
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Тег релізу, до якого додати файли (порожньо — лише артефакт збірки)"
+        description: "Release tag to attach the files to (empty: build artifact only)"
         required: false
 
 permissions:
@@ -46,10 +46,10 @@ jobs:
       - run: npm run licenses:collect
       - run: npx electron-vite build
       - run: npx electron-builder ${{ matrix.args }} --publish never
-      - name: Вміст пакунка
+      - name: Package contents
         shell: bash
         run: ls -la dist
-      - name: Перевірка юридичних файлів і бібліотеки libvips
+      - name: Check legal files and the libvips library
         shell: bash
         run: |
           set -e
@@ -58,23 +58,23 @@ jobs:
             [ -d "$res" ] || continue
             found=1
             for f in legal/APPLICATION-LICENSE.txt legal/THIRD-PARTY-NOTICES.md legal/npm-notices.txt legal/native/SOURCE-OFFER.md legal/native/REBUILD-LIBVIPS.md legal/native/component-licenses/INDEX.md; do
-              test -f "$res/$f" || { echo "У $res немає $f"; exit 1; }
+              test -f "$res/$f" || { echo "$res is missing $f"; exit 1; }
             done
             n=$(ls "$res/legal/native/component-licenses" | wc -l)
-            echo "$res: файлів ліцензій компонентів: $n"
-            ls "$res"/app.asar.unpacked/node_modules/@img/sharp-libvips-*/lib | grep -E "libvips-cpp" || { echo "У $res немає libvips поза app.asar"; exit 1; }
+            echo "$res: component license files: $n"
+            ls "$res"/app.asar.unpacked/node_modules/@img/sharp-libvips-*/lib | grep -E "libvips-cpp" || { echo "$res has no libvips outside app.asar"; exit 1; }
           done
-          [ "$found" = 1 ] || { echo "Не знайдено розпакований застосунок у dist"; exit 1; }
-          echo "Ліцензії Electron у збірці:"
+          [ "$found" = 1 ] || { echo "No unpacked application found in dist"; exit 1; }
+          echo "Electron licenses in the build:"
           els=$(find dist -name "LICENSE.electron.txt" -o -name "LICENSES.chromium.html" | wc -l)
-          echo "Файлів ліцензій Electron/Chromium: $els"
-          [ "$els" -ge 2 ] || { echo "Немає ліцензій Electron/Chromium"; exit 1; }
+          echo "Electron/Chromium license files: $els"
+          [ "$els" -ge 2 ] || { echo "Electron/Chromium licenses are missing"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.name }}
           path: ${{ matrix.files }}
           if-no-files-found: error
-      - name: Додати до релізу
+      - name: Attach to the release
         if: ${{ inputs.tag != '' }}
         shell: bash
         env:
