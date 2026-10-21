@@ -47,11 +47,12 @@ npm run dist:mac    # dmg (потребує macOS)
 npm run dist:linux  # AppImage + deb
 ```
 
-Інсталятори для Windows і APK для Android з'являться у релізі 1.0.0; до того доступна вебверсія (її можна встановити як застосунок).
+Готові збірки для Windows, Android, macOS і Linux — у [релізах](https://github.com/Ingwalde/mortar-tablet/releases) і на [сторінці завантаження](https://ingwalde.github.io/mortar-tablet/download.html). Вебверсію можна встановити як застосунок.
+macOS і Linux збираються на GitHub Actions (workflow «Desktop», запуск вручну), Android — workflow «Android».
 
 Готові файли після `npm run dist:win`:
-- `dist/Планшет мінометника 1.0.0.exe` — portable, без інсталяції.
-- `dist/Планшет мінометника Setup 1.0.0.exe` — інсталятор (NSIS).
+- `dist/MortarTablet-<версія>-portable.exe` — portable, без інсталяції.
+- `dist/MortarTablet-Setup-<версія>.exe` — інсталятор (NSIS).
 
 ### Windows: помилка розпакування winCodeSign
 

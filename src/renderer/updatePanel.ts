@@ -2,7 +2,7 @@ import { toast } from "./dom";
 import { t } from "./i18n";
 import { isRemote } from "./platform";
 
-type Status = { state: string; version?: string; percent?: number; message?: string };
+type Status = { state: string; version?: string; percent?: number; message?: string; url?: string };
 
 let last: Status = { state: "idle" };
 let box: HTMLElement | null = null;
@@ -17,6 +17,8 @@ function text(s: Status): string {
       return t("updProgress", { p: s.percent ?? 0 });
     case "ready":
       return t("updReady", { v: s.version ?? "" });
+    case "manual":
+      return t("updManual", { v: s.version ?? "" });
     case "none":
       return t("updNone");
     case "error":
@@ -40,6 +42,13 @@ function paint(): void {
     b.className = "btn primary";
     b.textContent = t("updInstallBtn");
     b.onclick = () => void window.api.updater.install();
+    box.appendChild(b);
+  } else if (last.state === "manual" && last.url) {
+    const url = last.url;
+    const b = document.createElement("button");
+    b.className = "btn primary";
+    b.textContent = t("updOpenPage");
+    b.onclick = () => window.open(url, "_blank", "noopener");
     box.appendChild(b);
   } else if (last.state !== "unsupported") {
     const b = document.createElement("button");

@@ -7,7 +7,11 @@ const $ = (id) => document.getElementById(id);
 const KINDS = {
   setup: { re: /Setup.*\.exe$/i, link: "dlSetup", label: "Завантажити для Windows" },
   portable: { re: /portable\.exe$/i, link: "dlPortable", label: "Завантажити portable" },
-  apk: { re: /\.apk$/i, link: "dlApk", label: "Завантажити для Android" }
+  apk: { re: /\.apk$/i, link: "dlApk", label: "Завантажити для Android" },
+  macArm: { re: /mac-arm64\.dmg$/i, link: "dlMacArm", label: "Завантажити для Mac" },
+  macX64: { re: /mac-x64\.dmg$/i, link: "dlMacX64", label: "Завантажити для Mac" },
+  appImage: { re: /\.AppImage$/i, link: "dlAppImage", label: "Завантажити для Linux" },
+  deb: { re: /\.deb$/i, link: "dlDeb", label: "Завантажити для Linux" }
 };
 
 /** Лише https на github.com у межах нашого репозиторію: відповідь API — зовнішні дані. */
@@ -30,11 +34,13 @@ function detectPlatform() {
   if (/Android/i.test(ua)) return "android";
   if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
   if (/Windows/i.test(ua)) return "windows";
+  if (/Macintosh|Mac OS X/i.test(ua)) return "mac";
+  if (/Linux|X11/i.test(ua)) return "linux";
   return "other";
 }
 
 function openHow(platform) {
-  const id = { android: "howAndroid", ios: "howIos", windows: "howWin" }[platform];
+  const id = { android: "howAndroid", ios: "howIos", windows: "howWin", mac: "howMac", linux: "howLinux" }[platform];
   const el = id && $(id);
   if (el) el.open = true;
 }
@@ -106,7 +112,7 @@ function setMeta(found) {
   // версія — за ПК-інсталятором (стабільний реліз); тестова Android-збірка з пре-релізу лише позначається
   const newest = (found.setup ?? found.apk)?.rel;
   if (!newest) {
-    $("meta").textContent = "Інсталятори для Windows і Android з'являться у версії 1.0.0. Поки що користуйтеся вебверсією: вона працює в браузері й встановлюється як застосунок.";
+    $("meta").textContent = "Інсталятори поки що недоступні. Користуйтеся вебверсією: вона працює в браузері й встановлюється як застосунок.";
     return;
   }
   const date = new Date(newest.published_at).toLocaleDateString("uk-UA", { year: "numeric", month: "long", day: "numeric" });

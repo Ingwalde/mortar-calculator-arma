@@ -198,6 +198,8 @@ const DICT: Dict = {
   updAvailable: { uk: "доступна версія {v}, завантажую…", en: "version {v} available, downloading…" },
   updProgress: { uk: "завантаження {p}%", en: "downloading {p}%" },
   updReady: { uk: "версія {v} завантажена — перезапустіть, щоб оновитись", en: "version {v} downloaded — restart to update" },
+  updManual: { uk: "доступна версія {v} — завантажте її зі сторінки релізів", en: "version {v} is available — download it from the releases page" },
+  updOpenPage: { uk: "Відкрити сторінку завантаження", en: "Open the download page" },
   updNone: { uk: "встановлена остання версія", en: "you have the latest version" },
   updError: { uk: "не вдалося перевірити оновлення", en: "could not check for updates" },
   updUnsupported: { uk: "автооновлення недоступне (portable або режим розробки)", en: "auto-update is unavailable (portable or dev mode)" },
