@@ -199,6 +199,11 @@ export function markRights(marker?: Marker): MarkRights {
   return { friendMortar, edit: canEdit(me.role, ref), caption: canCaption(me.role, ref), remove: canDelete(me.role, ref) };
 }
 
+/** Мітку відділення не можна міняти, коли гру закінчено. */
+export function markLocked(marker: Marker): boolean {
+  return !!session && marker.sq === session.room && (phase === "ended" || fatal !== null);
+}
+
 export function memberName(id: string | undefined): string {
   if (!id) return "";
   return members.find((m) => m.id === id)?.callsign ?? "";

@@ -14,7 +14,7 @@ import { PYRAMID_TILE_SIZE, planPyramid, type PyramidPlan } from "@core/tilePyra
 import { spreadOutline } from "@core/spread";
 import { pointInPolygon, polygonArea } from "@core/buildings";
 import { buildingIndexFor, buildingsLoading, setBuildingsLoadedHook } from "./buildings";
-import { currentMeta, getCurrent, getVisibleMarkers } from "./state";
+import { currentMeta, getCurrent, getVisibleMarkers, type Marker } from "./state";
 import { $ } from "./dom";
 import { t } from "./i18n";
 import { reducedMotion } from "./motion";
@@ -1445,6 +1445,10 @@ function updateReadout(): void {
 // ---------- gestures ----------
 export interface TapHandlers {
   onMarkerTap: (id: string) => void;
+  /** Чи можна зараз пересунути мітку мишкою чи пальцем (у відділенні після кінця гри — ні). */
+  canDragMarker?: (id: string) => boolean;
+  /** Мітку пересунуто: застосунок зберігає зміну й перемальовує списки. */
+  onMarkerMoved?: (id: string) => void;
 }
 
 export function centerPx(): { px: number; py: number } {
@@ -1471,8 +1475,24 @@ export function hitTestMarker(sx: number, sy: number): string | null {
 const ptrs = new Map<number, { x: number; y: number }>();
 type Gesture =
   | { type: "pan"; start: { x: number; y: number }; last: { x: number; y: number }; t: number; moved: boolean }
-  | { type: "pinch"; d: number; mid: { x: number; y: number } };
+  | { type: "pinch"; d: number; mid: { x: number; y: number } }
+  /** Перетягування виділеної мітки: `grab` — зсув між центром мітки й точкою дотику, щоб вона не стрибала. */
+  | { type: "drag"; id: string; grab: { x: number; z: number }; start: { x: number; y: number }; t: number; moved: boolean };
 let gesture: Gesture | null = null;
+
+/** Виділена мітка під вказівником (лише вона перетягується; решта жестів рухає карту). */
+function selectedMarkerAt(x: number, y: number): Marker | null {
+  const id = callbacks.selectedId;
+  if (!id || tapHandlers?.canDragMarker?.(id) === false) return null;
+  const m = getVisibleMarkers().find((k) => k.id === id);
+  if (!m) return null;
+  const s = scrFromWorld(m.x, m.z);
+  return Math.hypot(s.sx - x, s.sy - y) <= 24 ? m : null;
+}
+
+function finishDrag(g: Extract<Gesture, { type: "drag" }>): void {
+  if (g.moved) tapHandlers?.onMarkerMoved?.(g.id);
+}
 
 function pos(e: PointerEvent) {
   const r = cv.getBoundingClientRect();
@@ -1484,17 +1504,39 @@ cv.addEventListener("pointerdown", (e) => {
   cv.setPointerCapture(e.pointerId);
   const p = pos(e);
   ptrs.set(e.pointerId, p);
-  if (ptrs.size === 1) gesture = { type: "pan", start: p, last: p, t: Date.now(), moved: false };
-  else if (ptrs.size === 2) {
+  if (ptrs.size === 1) {
+    const hit = selectedMarkerAt(p.x, p.y);
+    if (hit) {
+      const w = worldFromScr(p.x, p.y);
+      gesture = { type: "drag", id: hit.id, grab: { x: hit.x - w.x, z: hit.z - w.z }, start: p, t: Date.now(), moved: false };
+    } else gesture = { type: "pan", start: p, last: p, t: Date.now(), moved: false };
+  } else if (ptrs.size === 2) {
+    if (gesture?.type === "drag") finishDrag(gesture);
     const [a, b] = [...ptrs.values()];
     gesture = { type: "pinch", d: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
   }
 });
 cv.addEventListener("pointermove", (e) => {
+  if (!ptrs.size) {
+    // наведення мишки на виділену мітку: показуємо, що її можна тягти
+    const p = pos(e);
+    cv.style.cursor = selectedMarkerAt(p.x, p.y) ? "move" : "";
+    return;
+  }
   if (!ptrs.has(e.pointerId) || !gesture) return;
   const p = pos(e);
   ptrs.set(e.pointerId, p);
-  if (gesture.type === "pan" && ptrs.size === 1) {
+  if (gesture.type === "drag" && ptrs.size === 1) {
+    if (!gesture.moved && Math.hypot(p.x - gesture.start.x, p.y - gesture.start.y) <= 6) return;
+    gesture.moved = true;
+    const m = getVisibleMarkers().find((k) => k.id === (gesture as Extract<Gesture, { type: "drag" }>).id);
+    if (m) {
+      const w = worldFromScr(p.x, p.y);
+      m.x = w.x + gesture.grab.x;
+      m.z = w.z + gesture.grab.z;
+      requestDraw();
+    }
+  } else if (gesture.type === "pan" && ptrs.size === 1) {
     view.ox += p.x - gesture.last.x;
     view.oy += p.y - gesture.last.y;
     gesture.last = p;
@@ -1514,6 +1556,10 @@ cv.addEventListener("pointermove", (e) => {
 function endPtr(e: PointerEvent): void {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
+  if (gesture && gesture.type === "drag") {
+    finishDrag(gesture);
+    if (!gesture.moved && Date.now() - gesture.t < 500 && e.type === "pointerup") tap(gesture.start.x, gesture.start.y);
+  }
   if (gesture && gesture.type === "pan" && !gesture.moved && Date.now() - gesture.t < 500 && e.type === "pointerup") {
     tap(gesture.start.x, gesture.start.y);
   }

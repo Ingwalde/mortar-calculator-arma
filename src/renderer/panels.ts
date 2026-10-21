@@ -57,7 +57,7 @@ import { CAPTION_MAX, KINDS, isMortarMark, isTargetable, readClass, typeOf, type
 import { symbolSvg } from "@core/symbols";
 import { dangerRadius, friendlyWarnings, type DangerRadius, type FriendlyWarning } from "@core/shellEffects";
 import { ageOf } from "@core/age";
-import { markAuthor, markRights, mayUseSolution, memberName, shareLog, squadScope } from "./squad";
+import { markAuthor, markLocked, markRights, mayUseSolution, memberName, shareLog, squadScope } from "./squad";
 import { initSquadPanel, render as renderSquadPane } from "./squadPanel";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { NOTICES_TEXT } from "./licenses";
@@ -1704,7 +1704,21 @@ export function initPanels(): void {
   });
   fillTerrainSelect();
   renderStaticHints();
-  setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });
+  setTapHandlers({
+    onMarkerTap: (id) => selectMarker(id, true),
+    canDragMarker: (id) => {
+      const m = getCurrent().markers.find((x) => x.id === id);
+      return !!m && !markLocked(m);
+    },
+    onMarkerMoved: (id) => {
+      const m = getCurrent().markers.find((x) => x.id === id);
+      if (!m) return;
+      m.u = Date.now();
+      scheduleSave();
+      renderAll();
+      toast(t("markMoved", { n: m.name || kindLabel(m) }));
+    }
+  });
   startMapImportUi(() => onTerrainSwitched());
   onLangChange(onLanguageChanged);
   onHeightsLoaded(() => renderAll());
