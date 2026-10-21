@@ -265,5 +265,6 @@ migration of old marks, danger-warning geometry, report export and import, and a
 - **D7 Danger warning visibility:** the commander and mortarmen only.
 - **D8 Firing log sharing:** mortarmen see each other's entries live and the commander sees all of them; soldiers see none.
 - **D9 Report language:** decided: the language the application is set to.
-- **D10 Version number:** 1.1.0.
+- **D10 Version number:** decided: 1.1.0 is the whole squad mode (phases 2 to 6 together), not phase 2 alone. The marks, symbols, captions and danger warning of phase 2 stay unreleased on this branch until then.
+- **D12 Version 1.1.1 (after 1.1.0):** the numbers of the solution (azimuth, elevation, range, height difference) are shown in bright green; a selected mark can be dragged with the mouse on the map.
 - **D11 Old marks:** decided: `target` becomes a hostile infantry mark, `point` becomes a legacy dot (section 5).
