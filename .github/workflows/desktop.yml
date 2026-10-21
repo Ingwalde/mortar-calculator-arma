@@ -66,9 +66,9 @@ jobs:
           done
           [ "$found" = 1 ] || { echo "Не знайдено розпакований застосунок у dist"; exit 1; }
           echo "Ліцензії Electron у збірці:"
-          find dist -name "LICENSE*" -not -path "*/node_modules/*" -not -path "*/app.asar.unpacked/*" -not -path "*/legal/*" -not -name "*.json" 2>/dev/null | grep -iE "electron|chromium" | head
-          echo "Ліцензії Electron у node_modules/electron/dist:"
-          find node_modules/electron/dist -maxdepth 2 -iname "LICENSE*" | head
+          els=$(find dist -name "LICENSE.electron.txt" -o -name "LICENSES.chromium.html" | wc -l)
+          echo "Файлів ліцензій Electron/Chromium: $els"
+          [ "$els" -ge 2 ] || { echo "Немає ліцензій Electron/Chromium"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.name }}
