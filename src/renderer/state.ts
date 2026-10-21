@@ -339,26 +339,11 @@ export async function loadState(): Promise<void> {
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
-let mergedHook: (() => void) | null = null;
-
-/** Викликається, коли після збереження сервер дозлив у стан чужі правки — UI має перечитати його. */
-export function setMergedHook(hook: () => void): void {
-  mergedHook = hook;
-}
-
-// Після повернення зв'язку відправляємо те, що змінили без ПК (платформа шле mortar:flush).
-if (typeof window !== "undefined") window.addEventListener("mortar:flush", () => scheduleSave());
-
 export function scheduleSave(): void {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = undefined;
-    void window.api.store
-      .save(ROOT)
-      .then((merged) => {
-        if (merged && mergedHook) mergedHook();
-      })
-      .catch(() => undefined);
+    void window.api.store.save(ROOT).catch(() => undefined);
   }, 400);
 }
 

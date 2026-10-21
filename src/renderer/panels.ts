@@ -18,7 +18,6 @@ import {
   getVisibleMarkers,
   markDeleted,
   markersInFolder,
-  setMergedHook,
   removeCustomTerrain,
   scheduleSave,
   switchTerrain,
@@ -63,7 +62,6 @@ import { beginListRender, initRipple, reducedMotion, rollElement, rollNumbersIn,
 import { initExchange } from "./exchange";
 import { initStoragePanel } from "./storagePanel";
 import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudio";
-import { initLanPanel, refreshLanPanel, relocalizeLanPanel } from "./lanPanel";
 
 function typeLabel(type: MarkerType): string {
   return { mortar: t("typeMortar"), target: t("typeTarget"), point: t("typePoint") }[type];
@@ -1404,7 +1402,7 @@ function mapKey(): string {
   return getRoot().cur + ":" + JSON.stringify(getCurrent().map ?? null);
 }
 
-/** Інший клієнт (телефон чи ПК) змінив спільний стан — перечитуємо його й перемальовуємо UI. */
+/** Інша вкладка змінила стан — перечитуємо його й перемальовуємо UI. */
 export async function reloadFromStore(): Promise<void> {
   const before = mapKey();
   const result = applyExternalState(await window.api.store.load());
@@ -1431,7 +1429,7 @@ function listNames(names: string[]): string {
   return names.length > 2 ? shown + t("extMore", { n: names.length - 2 }) : shown;
 }
 
-/** Показує, що змінилось на іншому пристрої (ПК ↔ телефон) без перезавантаження. */
+/** Показує, що змінилось в іншій вкладці, без перезавантаження. */
 function announceExternal(sum: ReturnType<typeof takeExternalSummary>): void {
   if (!sum) return;
   const parts: string[] = [];
@@ -1440,8 +1438,7 @@ function announceExternal(sum: ReturnType<typeof takeExternalSummary>): void {
   if (sum.removed.length) parts.push(t("extRemoved", { list: listNames(sum.removed) }));
   if (sum.logAdded) parts.push(t("extLog", { n: sum.logAdded }));
   if (!parts.length) return;
-  const src = t(isRemote ? "extFromPc" : "extFromPhone");
-  toast(`${src}: ${parts.join("; ")}`, 4500);
+  toast(`${t("extOtherTab")}: ${parts.join("; ")}`, 4500);
   vibrate(40);
 }
 
@@ -1460,7 +1457,6 @@ function onLanguageChanged(): void {
   fillTerrainSelect();
   renderStaticHints();
   if ($<HTMLDialogElement>("aboutDlg").open) renderAbout();
-  relocalizeLanPanel();
   renderAll();
 }
 
@@ -1524,9 +1520,7 @@ export function initPanels(): void {
   setTapHandlers({ onMarkerTap: (id) => selectMarker(id, true) });
   startMapImportUi(() => onTerrainSwitched());
   onLangChange(onLanguageChanged);
-  initLanPanel();
   onHeightsLoaded(() => renderAll());
-  setMergedHook(() => void reloadFromStore());
   initSheet();
   initImmersive();
   initAboutDialog();
@@ -1546,8 +1540,7 @@ export function initPanels(): void {
     },
     shellLabel: shellName,
     weaponLabel: weaponName,
-    renderSetup,
-    refreshLan: () => void refreshLanPanel()
+    renderSetup
   });
   window.api.store.onChanged(() => void reloadFromStore());
   renderAll();

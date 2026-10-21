@@ -1,13 +1,12 @@
-// «Димовий» тест зібраного застосунку: запускає exe з тимчасовою папкою даних на вільних портах і перевіряє,
-// що піднялись HTTP/HTTPS-сервер, сторінка, service worker, сертифікат і службові маршрути.
+// «Димовий» тест зібраного застосунку: запускає exe з тимчасовою папкою даних і відкритим портом налагодження Chromium,
+// підключається до вікна й перевіряє, що сторінка завантажилась, preload дає API, вбудована карта й висоти читаються.
 // Ловить клас помилок «збірка не стартує» (як було з імпортом electron-updater) ще до релізу.
 //   node scripts/smoke-packaged.mjs [шлях до exe]      (типово dist/win-unpacked/Планшет мінометника.exe)
 import { spawn, execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, existsSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { request as httpsRequest } from "node:https";
 
 const exe = process.argv[2] ?? "dist/win-unpacked/Планшет мінометника.exe";
 if (!existsSync(exe)) {
@@ -27,13 +26,9 @@ function freePort() {
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const token = "SmokeTokenSmokeToken1234";
-const port = await freePort();
-const httpsPort = await freePort();
+const debugPort = await freePort();
 const dir = mkdtempSync(join(tmpdir(), "mortar-smoke-"));
-writeFileSync(join(dir, "lan.json"), JSON.stringify({ enabled: true, port, httpsPort, token }));
-
-const child = spawn(exe, [`--user-data-dir=${dir}`], { stdio: "ignore", windowsHide: true });
+const child = spawn(exe, [`--user-data-dir=${dir}`, `--remote-debugging-port=${debugPort}`], { stdio: "ignore", windowsHide: true });
 let failed = 0;
 const check = (ok, what) => {
   console.log(`${ok ? "✓" : "✗"} ${what}`);
@@ -49,85 +44,80 @@ function killTree() {
   }
 }
 
+/** Мінімальний клієнт протоколу налагодження Chromium: виконує вираз у сторінці й повертає значення. */
+function connect(wsUrl) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(wsUrl);
+    const waiting = new Map();
+    let id = 0;
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      const w = waiting.get(msg.id);
+      if (w) {
+        waiting.delete(msg.id);
+        msg.error ? w.reject(new Error(msg.error.message)) : w.resolve(msg.result);
+      }
+    };
+    ws.onerror = () => reject(new Error("не вдалось підключитись до вікна застосунку"));
+    ws.onopen = () =>
+      resolve({
+        evaluate: (expression) =>
+          new Promise((res, rej) => {
+            const n = ++id;
+            waiting.set(n, {
+              resolve: (r) => (r.exceptionDetails ? rej(new Error(r.exceptionDetails.text + " " + (r.exceptionDetails.exception?.description ?? ""))) : res(r.result.value)),
+              reject: rej
+            });
+            ws.send(JSON.stringify({ id: n, method: "Runtime.evaluate", params: { expression, awaitPromise: true, returnByValue: true } }));
+          }),
+        close: () => ws.close()
+      });
+  });
+}
+
 try {
-  // 1. чекаємо HTTP
-  const base = `http://127.0.0.1:${port}`;
-  let up = false;
+  // 1. чекаємо вікно застосунку
   const t0 = Date.now();
-  while (Date.now() - t0 < 40000) {
+  let target = null;
+  while (Date.now() - t0 < 40000 && !target) {
     if (child.exitCode !== null) break;
     try {
-      const r = await fetch(`${base}/`);
-      if (r.status > 0) {
-        up = true;
-        break;
-      }
+      const list = await (await fetch(`http://127.0.0.1:${debugPort}/json`)).json();
+      target = list.find((x) => x.type === "page" && x.webSocketDebuggerUrl) ?? null;
     } catch {
-      await sleep(250);
+      // вікна ще нема
     }
+    if (!target) await sleep(250);
   }
-  check(up, `HTTP-сервер піднявся${up ? ` за ${((Date.now() - t0) / 1000).toFixed(1)} с` : " (не піднявся: застосунок не стартує)"}`);
-  if (!up) throw new Error("не стартував");
+  check(!!target, `вікно застосунку відкрилось${target ? ` за ${((Date.now() - t0) / 1000).toFixed(1)} с` : " (не відкрилось: застосунок не стартує)"}`);
+  if (!target) throw new Error("не стартував");
 
-  const get = async (path, headers = {}) => {
-    const r = await fetch(base + path, { headers });
-    return { status: r.status, type: r.headers.get("content-type") ?? "", headers: r.headers, text: await r.text() };
-  };
-  const cookie = { cookie: `mk=${token}` };
-
-  const unauth = await get("/");
-  check(unauth.status === 401, "без токена — 401");
-  const page = await get(`/?k=${token}`);
-  check(page.status === 200 && page.text.includes('id="cv"'), "сторінка планшета віддається");
+  const page = await connect(target.webSocketDebuggerUrl);
+  // даємо рендереру завантажитись і виконати старт
+  for (let i = 0; i < 80; i++) {
+    if (await page.evaluate("!!document.getElementById('cv') && !!window.api")) break;
+    await sleep(250);
+  }
+  check(await page.evaluate("!!document.getElementById('cv')"), "сторінка планшета завантажилась (є полотно карти)");
+  check(await page.evaluate("typeof window.api?.store?.load === 'function' && window.api.remote === false"), "preload дає window.api");
   check(
-    /default-src 'self'/.test(page.headers.get("content-security-policy") ?? "") &&
-      page.headers.get("x-content-type-options") === "nosniff" &&
-      page.headers.get("x-frame-options") === "DENY",
-    "сторінка планшета віддається з CSP та захисними заголовками"
+    await page.evaluate("/default-src 'self'/.test(document.querySelector('meta[http-equiv=\"Content-Security-Policy\"]')?.content ?? '')"),
+    "сторінка має політику вмісту (CSP)"
   );
-  const sw = await get("/sw.js", cookie);
-  check(sw.status === 200 && /javascript/.test(sw.type), "service worker (sw.js) віддається");
-  const manifest = await get("/manifest.webmanifest", cookie);
-  check(manifest.status === 200 && manifest.text.includes("standalone"), "manifest.webmanifest");
-  const store = await get("/api/store", cookie);
-  check(store.status === 404 || store.status === 200, "стан (/api/store) відповідає");
-  const stat = await get("/api/tilestat/everon", cookie);
-  check(stat.status === 200 && stat.text.includes("avgBytes"), "оцінка тайлів (/api/tilestat)");
-  // вбудована карта Novyinovka віддається зі свіжої папки даних (без власного імпорту): тайл читається з app.asar
-  const bt = await fetch(`${base}/localtile/novyinovka/5/10/10`, { headers: cookie });
-  const btBuf = Buffer.from(await bt.arrayBuffer());
-  check(bt.status === 200 && (bt.headers.get("content-type") ?? "").includes("image/webp") && btBuf.length > 500, "вбудована карта Novyinovka (тайл з app.asar)");
-  const hRes = await fetch(`${base}/api/heights/bystrany`, { headers: cookie });
-  const hBuf = hRes.ok ? Buffer.from(await hRes.arrayBuffer()) : null;
-  check(!!hBuf && hBuf.length > 1_000_000 && hBuf.readInt32LE(0) > 100, "вбудовані висоти (стиснені) розпаковуються");
-  const prof = await get(`/ca/mortar-tablet-ca.mobileconfig?k=${token}`);
-  check(prof.status === 200 && prof.text.includes("com.apple.security.root"), "профіль довіри (.mobileconfig)");
+  check(await page.evaluate("typeof window.require === 'undefined' && typeof window.process === 'undefined'"), "рендерер без доступу до Node (пісочниця)");
 
-  // 2. HTTPS із довірою лише до створеного CA
-  const caFile = join(dir, "lan-ca.json");
-  let caPem = null;
-  for (let i = 0; i < 20 && !caPem; i++) {
-    if (existsSync(caFile)) caPem = JSON.parse(readFileSync(caFile, "utf8")).certPem;
-    else await sleep(250);
-  }
-  check(!!caPem, "локальний CA створено (lan-ca.json)");
-  if (caPem) {
-    const { default: forge } = await import("node-forge");
-    const cert = forge.pki.certificateFromPem(caPem);
-    check(cert.extensions.some((e) => e.id === "2.5.29.30"), "CA обмежений приватною мережею (NameConstraints)");
-  }
-  if (caPem) {
-    const status = await new Promise((resolve) => {
-      const req = httpsRequest({ host: "127.0.0.1", port: httpsPort, path: `/?k=${token}`, ca: caPem }, (res) => {
-        res.resume();
-        resolve(res.statusCode);
-      });
-      req.on("error", () => resolve(0));
-      req.end();
-    });
-    check(status === 200, "HTTPS віддає сторінку з довірою до власного CA");
-  }
-  // 3. запобіжники Electron у зібраному exe
+  // вбудована карта Novyinovka віддається зі свіжої папки даних (без власного імпорту): тайл читається з пакета застосунку
+  const tile = await page.evaluate(
+    "fetch('localtile://novyinovka/5/10/10').then(async (r) => ({ status: r.status, type: r.headers.get('content-type') ?? '', len: (await r.arrayBuffer()).byteLength }))"
+  );
+  check(tile.status === 200 && tile.type.includes("image/webp") && tile.len > 500, "вбудована карта Novyinovka (тайл з архіву застосунку)");
+  const heights = await page.evaluate(
+    "window.api.heights.read('bystrany').then((b) => (b ? { len: b.length, first: new DataView(b.buffer, b.byteOffset).getInt32(0, true) } : null))"
+  );
+  check(!!heights && heights.len > 1_000_000 && heights.first > 100, "вбудовані висоти (стиснені) розпаковуються");
+  page.close();
+
+  // 2. запобіжники Electron у зібраному exe
   try {
     const { getCurrentFuseWire, FuseV1Options } = await import("@electron/fuses");
     const wire = await getCurrentFuseWire(exe);

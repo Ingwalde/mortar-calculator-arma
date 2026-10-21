@@ -1,14 +1,13 @@
 /*
- * Service worker офлайн-режиму телефона. Працює лише в безпечному контексті (HTTPS або localhost),
- * тому на телефоні потрібне HTTPS-посилання з довірчим сертифікатом (див. панель «Перегляд з телефона»).
+ * Service worker сайту (PWA). Працює лише в безпечному контексті (HTTPS або localhost).
  *
  * Що кешується:
  *  - оболонка застосунку (сторінка, скрипти, стилі, іконки) — одразу при встановленні;
- *  - тайли карт і висоти — коли їх уже завантажено (під час перегляду або кнопкою «Зберегти карту офлайн»).
- * Стан (мітки, журнал) цей worker не чіпає: його зберігає сама сторінка (localStorage) і синхронізує з ПК.
+ *  - тайли карт модів і висоти — коли їх уже завантажено.
+ * Стан (мітки, журнал) цей worker не чіпає: його зберігає сама сторінка (localStorage).
  */
 const VERSION = new URL(self.location.href).searchParams.get("v") || "0";
-// Корінь сайту: "/" на ПК-сервері, "/<репозиторій>/" на GitHub Pages. Усі шляхи нижче — відносно нього.
+// Корінь сайту: "/<репозиторій>/" на GitHub Pages. Усі шляхи нижче — відносно нього.
 const ROOT = new URL("./", self.location.href).pathname;
 const SHELL = "mortar-shell-" + VERSION;
 const TILES = "mortar-tiles-v1";
@@ -98,7 +97,7 @@ function withTimeout(promise, ms) {
 async function navigate(request) {
   const cache = await caches.open(SHELL);
   try {
-    // Коли ПК недосяжний, браузер довго чекає — тримаємо швидкий відступ на кеш.
+    // Без мережі браузер довго чекає — тримаємо швидкий відступ на кеш.
     const res = await withTimeout(fetch(request), 4000);
     if (res.ok && new URL(request.url).pathname === ROOT) cache.put(ROOT, res.clone());
     return res;
@@ -148,8 +147,8 @@ self.addEventListener("fetch", (event) => {
   if (!url.pathname.startsWith(ROOT)) return;
   // шлях відносно кореня сайту, з початковим "/"
   const p = "/" + url.pathname.slice(ROOT.length);
-  // живі запити стану й подій — завжди напряму (їх офлайн-копію веде сторінка)
-  if (p === "/api/events" || p === "/api/store" || p.startsWith("/ca/") || p === "/sw.js") return;
+  // сам service worker — завжди напряму
+  if (p === "/sw.js") return;
   // сторінка завантаження (лише на сайті) — завжди з мережі, її не кешуємо як частину застосунку
   if (p === "/download.html" || p === "/download.js" || p.startsWith("/img/")) return;
   if (req.mode === "navigate") {
@@ -157,9 +156,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (
-    p.startsWith("/localtile/") ||
-    p.startsWith("/tile/") ||
-    p.startsWith("/api/heights/") ||
     p.startsWith("/tiles/") ||
     p.startsWith("/tiles-hd/") ||
     p.startsWith("/maps/") ||

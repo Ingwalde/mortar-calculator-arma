@@ -85,7 +85,7 @@ export function bundledPyramidDir(terrainId: string): string {
 }
 
 export async function getPyramidTile(terrainId: string, z: string, row: string, col: string): Promise<PyramidTile | null> {
-  // terrainId/z/row/col приходять з URL (в т.ч. з LAN) — лише прості сегменти, без виходу з каталогу піраміди.
+  // terrainId/z/row/col приходять з URL — лише прості сегменти, без виходу з каталогу піраміди.
   for (const seg of [terrainId, z, row, col]) if (!/^[A-Za-z0-9_-]+$/.test(seg)) return null;
   // власний імпорт користувача має пріоритет, далі — карта, що йде разом із застосунком
   const dirs = [pyramidDir(terrainId), ...(bundledMap(terrainId) ? [bundledPyramidDir(terrainId)] : [])];
@@ -100,37 +100,6 @@ export async function getPyramidTile(terrainId: string, z: string, row: string, 
     }
   }
   return null;
-}
-
-const avgCache = new Map<string, number | null>();
-
-/** Середній розмір тайла піраміди за вибіркою файлів (для оцінки обсягу офлайн-збереження). */
-export async function pyramidAvgBytes(terrainId: string): Promise<number | null> {
-  if (!/^[A-Za-z0-9_-]+$/.test(terrainId)) return null;
-  if (avgCache.has(terrainId)) return avgCache.get(terrainId)!;
-  const dir = pyramidDir(terrainId);
-  let sum = 0;
-  let n = 0;
-  try {
-    // беремо найдетальніший рівень (найбільше тайлів), кілька рядків, кілька файлів у кожному
-    const levels = (await readdir(dir)).filter((l) => /^\d+$/.test(l)).sort((a, b) => Number(b) - Number(a));
-    if (levels.length) {
-      const lvl = join(dir, levels[0]);
-      const rows = (await readdir(lvl)).slice(0, 6);
-      for (const row of rows) {
-        const files = (await readdir(join(lvl, row))).slice(0, 8);
-        for (const f of files) {
-          sum += (await stat(join(lvl, row, f))).size;
-          n++;
-        }
-      }
-    }
-  } catch {
-    // нема піраміди
-  }
-  const avg = n > 0 ? Math.round(sum / n) : null;
-  avgCache.set(terrainId, avg);
-  return avg;
 }
 
 const notFound = () => new Response("Not found", { status: 404 });

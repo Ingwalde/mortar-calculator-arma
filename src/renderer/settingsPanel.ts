@@ -23,8 +23,6 @@ export interface SettingsHooks {
   weaponLabel(w: WeaponId): string;
   /** Оновити підписи карти й прив'язки (ПК). */
   renderSetup(): void;
-  /** Оновити стан доступу з телефона (ПК). */
-  refreshLan(): void;
 }
 
 let hooks: SettingsHooks | null = null;
@@ -35,8 +33,6 @@ const dlg = (): HTMLDialogElement => $<HTMLDialogElement>("settingsDlg");
 export function openSettings(section?: string): void {
   if (section) activeSection = section;
   syncControls();
-  // кнопка збережених карт з'являється лише там, де є офлайн-режим
-  $("setOfflineOpen").closest<HTMLElement>(".set-row")!.hidden = $("offlineBtn").hidden;
   showSection(activeSection);
   if (!dlg().open) {
     dlg().showModal();
@@ -44,7 +40,6 @@ export function openSettings(section?: string): void {
     if (document.activeElement === $("setSearch")) $<HTMLInputElement>("setSearch").blur();
   }
   hooks?.renderSetup();
-  hooks?.refreshLan();
 }
 
 export function closeSettings(): void {
@@ -354,10 +349,6 @@ export function initSettings(h: SettingsHooks): void {
     hooks?.applyAll();
   };
 
-  $<HTMLButtonElement>("setOfflineOpen").onclick = () => {
-    closeSettings();
-    $("offlineBtn").click();
-  };
   $<HTMLButtonElement>("setAboutOpen").onclick = () => {
     closeSettings();
     $("aboutBtn").click();

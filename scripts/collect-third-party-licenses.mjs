@@ -56,7 +56,6 @@ const sections = [
   "Some entries are used only by desktop or Android builds; optional native packages depend on the build host.",
   "Electron/Chromium and Android transitive native dependencies require their separate notices.",
   "For sharp native source and release requirements, see legal/NATIVE-COMPONENTS.md.",
-  "node-forge is used under its BSD-3-Clause option; retaining its upstream license file does not select GPL.",
   ""
 ];
 for (const [dir, { info, files, supplemental }] of entries) {
