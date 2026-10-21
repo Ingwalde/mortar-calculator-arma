@@ -22,7 +22,7 @@ polygons on the map (phase lines, routes, no-fire areas as polygons), peer-to-pe
 | Roles | **Commander**, **mortarman**, **soldier**; the commander assigns who is a mortarman |
 | Sign-in | A **callsign** typed at joining; no accounts, no Discord |
 | Marks | Affiliation **friend / hostile** only. Kinds: infantry, armour, mortar, helicopter and a retreat cross. Captions explaining the symbols, author and time on every mark |
-| Soldier | Sees all marks, creates every kind except a mortar, moves only his own marks, can mark a building destroyed, has no solution and no firing log |
+| Soldier | Sees all marks, creates every kind except a mortar, moves any mark except a mortar, deletes only his own marks, can mark a building destroyed, has no solution and no firing log |
 | Firing log | Only for mortarmen and the commander |
 | Member removal | The commander can remove a member, and can **restore** access later |
 | Game over | The commander ends the game and gets a statistics report; the report can be edited by the commander and by members he allows, saved to a file and imported for viewing later |
@@ -52,8 +52,9 @@ The **server enforces** every rule below; the client only hides what a role may 
 | See all marks, captions, authors | yes | yes | yes |
 | Create a friend or hostile mark of kind infantry, armour, helicopter or retreat | yes | yes | yes |
 | Create or move a **mortar** mark | yes | yes | no |
-| Edit, move or delete a mark of someone else | yes | yes | no |
-| Edit, move or delete his own mark | yes | yes | yes |
+| Move a mark (change its position) | any mark | any mark | any mark except a mortar |
+| Edit (kind, affiliation, name) or delete a mark of someone else | yes | yes | no |
+| Edit or delete his own mark | yes | yes | yes |
 | Add or edit a caption | any mark | any mark | his own marks and hostile marks |
 | Mark a building destroyed or restore it | yes | yes | yes |
 | Open the solution (azimuth, elevation, charge) and the firing log | yes | yes | no |
@@ -146,7 +147,7 @@ Rules:
 - **Offline first**: the client applies its own operations at once, queues them, and replays them after a reconnect with the same `opId`s; the server ignores duplicates and rejects what is no longer allowed. The existing "changes waiting to sync" status is reused.
 - **Reconnect** sends the last sequence number seen; the server replies with the missed operations or a fresh snapshot.
 - **Message economy** (it matters for the free hosting limits): drags are sent only when released; changes of one mark within 300 ms are merged; no position streaming; no application heartbeat.
-- **Limits**: 60 operations per member per minute, a message at most 8 KB, 1000 marks and 30 members per squad, a caption of 120 characters.
+- **Limits**: 40 operations per member per minute, a message at most 8 KB, 100 marks and 20 members per squad, a caption of 120 characters.
 
 ## 9. Identity, access and removal
 
@@ -234,7 +235,7 @@ where it still fits; the server's ordering replaces it for squads.
 
 1. **Spec approval** (this document) and the open decisions of section 17.
 2. **Data model and local features** (no server): new mark model and migration, affiliation frames and kinds, captions and legend, author and time fields, friendly-fire warning, report data structures. *Done when* local use works, every kind has a caption, the migration test passes and the warning is covered by unit tests with fixed numbers.
-3. **Relay and protocol**: the server, the protocol, permissions, retention alarms, rate limits. *Done when* a table-driven test covers every cell of the permission matrix, duplicates and ordering are tested, a reconnect test passes, and a load test with 30 clients stays within the limits of section 10.
+3. **Relay and protocol**: the server, the protocol, permissions, retention alarms, rate limits. *Done when* a table-driven test covers every cell of the permission matrix, duplicates and ordering are tested, a reconnect test passes, and a load test with 20 clients stays within the limits of section 10.
 4. **Client sync and squad panel**: the sync engine with the offline queue, the role-aware interface, removal and restore, invitation links. *Done when* three browser clients in different roles pass an automated scenario (a soldier marks a hostile, a mortarman sees it and logs a mission, the commander removes and restores a member), and a dropped connection recovers without losing marks.
 5. **Game over and report**: report building, editing, export and import, retention. *Done when* the exported file imports back identically and the server holds no data after export or after 24 hours.
 6. **Hardening and release**: security review (SECURITY.md updated), documentation, packaged-app smoke test, real-device check on a phone and a PC, release 1.1.0. The documentation test and the README stay current in the same changes.
@@ -260,10 +261,10 @@ migration of old marks, danger-warning geometry, report export and import, and a
 - **D2 Fragmentation range:** decided: read from the game files (explosion parameters per shell).
 - **D3 Hosting:** the owner creates the account and the secrets (see "Owner setup" in section 10); a custom domain is optional.
 - **D4 Callsign rules:** 2 to 16 characters from letters, digits, `-`, `_` and space; unique in the squad ignoring case; look-alike duplicates (the same name with only case or spacing different) are refused.
-- **D5 Limits:** 30 members and 1000 marks per squad, 60 operations per minute per member, a message at most 8 KB, a caption of 120 characters.
-- **D6 Soldier details:** a soldier creates friend and hostile marks of infantry, armour, helicopter and retreat (his own position or other friendly units), moves and deletes only his own marks, and may caption his own marks and hostile marks of others.
+- **D5 Limits:** 20 members and 100 marks per squad, 40 operations per minute per member, a message at most 8 KB, a caption of 120 characters.
+- **D6 Soldier details:** a soldier creates friend and hostile marks of infantry, armour, helicopter and retreat (his own position or other friendly units), moves any mark except a mortar, deletes only his own marks, and may caption his own marks and hostile marks of others.
 - **D7 Danger warning visibility:** the commander and mortarmen only.
 - **D8 Firing log sharing:** mortarmen see each other's entries live and the commander sees all of them; soldiers see none.
 - **D9 Report language:** decided: the language the application is set to.
 - **D10 Version number:** 1.1.0.
-- **D11 Old marks:** `target` becomes a hostile infantry mark, `point` becomes a legacy dot (section 5). Proposed; the author may still change it.
+- **D11 Old marks:** decided: `target` becomes a hostile infantry mark, `point` becomes a legacy dot (section 5).
