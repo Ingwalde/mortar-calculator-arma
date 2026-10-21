@@ -32,7 +32,7 @@ We trust the operating system and the user; we do not trust the network (other d
   a certificate for a real website or a public address, only private IPv4 ranges, `*.local` and `localhost`.
   Even if the CA key were stolen, the harm is limited to the home network.
 - The server certificate contains only the PC's private addresses and `<name>.local` (no public IPs, VPN addresses or a bare name).
-- A CA created by an old version has no such constraints: the "View from a phone" panel then shows a warning and a "Reissue certificate" button
+- A CA created by an old version has no such constraints: the "Phone view" panel then shows a warning and a "Re-issue certificate" button
   (after that the profile has to be installed on the iPhone again).
 
 ## Standalone version and Android

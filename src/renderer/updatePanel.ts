@@ -80,5 +80,7 @@ export function initUpdater(): void {
     last = s;
     paint();
     if (s.state === "ready" && was !== "ready") toast(t("updReady", { v: s.version ?? "" }));
+    // macOS і .deb: самі не оновлюємось, тож один раз сповіщаємо про нову версію
+    if (s.state === "manual" && was !== "manual") toast(t("updManual", { v: s.version ?? "" }));
   });
 }
