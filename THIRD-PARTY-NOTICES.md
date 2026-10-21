@@ -1,29 +1,29 @@
-Сторонні матеріали, ліцензії та подяки
-======================================
+Third-party materials, licenses and credits
+===========================================
 
-Планшет мінометника — некомерційний фанатський інструмент для гри Arma Reforger. Він не пов'язаний з Bohemia Interactive і не схвалений нею.
-Arma, Arma Reforger і Enfusion — торгові марки Bohemia Interactive a.s.
+Mortar Tablet is a noncommercial fan tool for the game Arma Reforger. It is not affiliated with or endorsed by Bohemia Interactive.
+Arma, Arma Reforger and Enfusion are trademarks of Bohemia Interactive a.s.
 
-Авторські частини застосунку — Mortar Tablet Noncommercial License 1.0 (файл LICENSE).
-Ця ліцензія дозволяє лише некомерційне використання авторських частин і не змінює умов сторонніх матеріалів нижче.
-Сторонній код, бібліотеки, карти й дані зберігають власні ліцензії; попередні права, видані під MIT, не скасовуються.
+The authored parts of the application are under the Mortar Tablet Noncommercial License 1.0 (the LICENSE file).
+That license allows only noncommercial use of the authored parts and does not change the terms of the third-party materials below.
+Third-party code, libraries, maps and data keep their own licenses; rights granted earlier under the MIT license are not revoked.
 
 
-1. Дані й карти для гри
------------------------
+1. Game data and maps
+---------------------
 
-EnfusionMapMaker, автор nickludlam (https://github.com/nickludlam/EnfusionMapMaker)
-Ліцензія: Arma Public License Share Alike, APL-SA (https://www.bohemia.net/community/licenses/arma-public-license-share-alike).
-Використано: назви й координати пунктів Everon і Arland, схему онлайн-тайлів карти. Матеріал змінено: пункти переведено у формат застосунку
-й доповнено рангами важливості (файли src/core/terrains.ts і src/core/terrains-data.json). Ці дані поширюються на тих самих умовах APL-SA:
-лише некомерційне використання й лише для ігор серії Arma; жодних додаткових обмежень для одержувачів.
-Тайли Everon, Arland і Kolguyev розміщені на reforger.recoil.org. Вебверсія й Android завантажують їх із цього сервера;
-ПК-версія підтримує локальний кеш. Походження матеріалів і невирішені питання прав зафіксовано в legal/ASSET-PROVENANCE.md.
+EnfusionMapMaker, by nickludlam (https://github.com/nickludlam/EnfusionMapMaker)
+License: Arma Public License Share Alike, APL-SA (https://www.bohemia.net/community/licenses/arma-public-license-share-alike).
+Used: the names and coordinates of places on Everon and Arland, and the online map tile scheme. The material was changed: the places were converted to the application's format
+and supplemented with importance ranks (the files src/core/terrains.ts and src/core/terrains-data.json). This data is distributed under the same APL-SA terms:
+noncommercial use only and only for games of the Arma series; no additional restrictions for recipients.
+The Everon, Arland and Kolguyev tiles are hosted at reforger.recoil.org. The web version and Android download them from that server;
+the PC version supports a local cache. The origin of the materials and the unresolved rights questions are recorded in legal/ASSET-PROVENANCE.md.
 
 GeNeFRAG/ArmaReforger (https://github.com/GeNeFRAG/ArmaReforger)
-Використано: код розрахунків, балістичні таблиці M252 і 2Б14, каталог теренів, посилання на зображення й дані висот.
-Репозиторій заявляє MIT. Це не підтверджує права на першоджерела зображень і витягнутих ігрових даних;
-для них потрібна окрема перевірка походження (legal/ASSET-PROVENANCE.md). Ліцензія запозиченого коду:
+Used: the calculation code, the M252 and 2B14 ballistic tables, the terrain catalogue, the links to images and height data.
+The repository declares MIT. This does not confirm rights to the original sources of the images and of the game data extracted from them;
+those need a separate provenance review (legal/ASSET-PROVENANCE.md). The license of the borrowed code:
 
     MIT License
 
@@ -47,50 +47,50 @@ GeNeFRAG/ArmaReforger (https://github.com/GeNeFRAG/ArmaReforger)
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-Файли гри Arma Reforger (Bohemia Interactive): контури будівель, назви пунктів і окремі параметри розкиду прочитано з файлів гри.
-Некомерційне призначення застосунку саме по собі не є дозволом на поширення цих матеріалів; статус перевірки — у legal/ASSET-PROVENANCE.md.
+Arma Reforger game files (Bohemia Interactive): building outlines, place names and some dispersion parameters were read from the game files.
+The noncommercial purpose of the application is not, by itself, a permission to distribute these materials; the review status is in legal/ASSET-PROVENANCE.md.
 
-Моди Arma Reforger Workshop (автори й ліцензії за публічними сторінками, перевірено 2026-10-20):
-- Gogland - MANW_2025 — Temppa, APL (версія 1.3.7): https://reforger.armaplatform.com/workshop/65FCE7C94451AFF8
-- Bad Orb 5.0 — Aphex26, APL: https://reforger.armaplatform.com/workshop/64A51967EC407267
-- Bystrany — Der alte Benni, APL: https://reforger.armaplatform.com/workshop/6626CB89B6B9C913
-- Chernorus_Kirovograd — knisez, APL: https://reforger.armaplatform.com/workshop/6608D15676B2EACC
-- Mogadishu — KIOK, APL: https://reforger.armaplatform.com/workshop/5F1D02080409E128
-- Novyinovka - Russia — Itzz Coach, APL: https://reforger.armaplatform.com/workshop/689E376275A6AF90
-- Iron Hold Castle — WoodyCracudo, APL (версія 1.0.3, сторінку прочитано 2026-10-20): https://reforger.armaplatform.com/workshop/697F774C5FD21619
+Arma Reforger Workshop mods (authors and licenses as shown on the public pages, checked 2026-10-20):
+- Gogland - MANW_2025, by Temppa, APL (version 1.3.7): https://reforger.armaplatform.com/workshop/65FCE7C94451AFF8
+- Bad Orb 5.0, by Aphex26, APL: https://reforger.armaplatform.com/workshop/64A51967EC407267
+- Bystrany, by Der alte Benni, APL: https://reforger.armaplatform.com/workshop/6626CB89B6B9C913
+- Chernorus_Kirovograd, by knisez, APL: https://reforger.armaplatform.com/workshop/6608D15676B2EACC
+- Mogadishu, by KIOK, APL: https://reforger.armaplatform.com/workshop/5F1D02080409E128
+- Novyinovka - Russia, by Itzz Coach, APL: https://reforger.armaplatform.com/workshop/689E376275A6AF90
+- Iron Hold Castle, by WoodyCracudo, APL (version 1.0.3, page read 2026-10-20): https://reforger.armaplatform.com/workshop/697F774C5FD21619
 
-Текст APL: https://www.bohemia.net/en/licenses/arma-public-license
-З файлів модів прочитано розміри теренів, назви пунктів і висоти; для частини карт — контури будівель.
-Назви/координати переведено у формат застосунку, висоти перетворено на стиснуті сітки,
-контури будівель — на бінарні модулі. Для Novyinovka постачається також піраміда тайлів WebP.
-Права на матеріали модів і їхні залежності належать відповідним правовласникам.
-Моди мають залежності з іншими ліцензіями (зокрема APL-ND, APL-SA, CC BY-NC-SA 4.0); їхній перелік і статус перевірки — у legal/ASSET-PROVENANCE.md.
-Карта Novyinovka — перетворене (змінене за розміром і нарізане) власне 2D-зображення терену з цього мода (Itzz Coach, APL).
+The text of the APL: https://www.bohemia.net/en/licenses/arma-public-license
+From the mod files the terrain sizes, place names and heights were read; for some maps also the building outlines.
+The names/coordinates were converted to the application's format, the heights were turned into compressed grids,
+the building outlines into binary modules. For Novyinovka a WebP tile pyramid is shipped as well.
+The rights to the mod materials and to their dependencies belong to the respective rights holders.
+The mods have dependencies with other licenses (including APL-ND, APL-SA, CC BY-NC-SA 4.0); their list and review status are in legal/ASSET-PROVENANCE.md.
+The Novyinovka map is a converted (resized and tiled) 2D image of the terrain taken from that mod (Itzz Coach, APL).
 
 
-2. Програмні бібліотеки
------------------------
+2. Software libraries
+---------------------
 
-Повідомлення встановлених npm-залежностей збираються scripts/collect-third-party-licenses.mjs
-у resources/legal/npm-notices.txt і відображаються в застосунку. Це не повний аудит нативних бібліотек.
-ПК-пакування зберігає LICENSE/COPYING/NOTICE та README залежностей; Electron/Chromium потребують
-також LICENSE.electron.txt і LICENSES.chromium.html із відповідного дистрибутива Electron.
+The notices of the installed npm dependencies are gathered by scripts/collect-third-party-licenses.mjs
+into resources/legal/npm-notices.txt and shown in the application. This is not a full audit of the native libraries.
+The desktop packaging keeps the LICENSE/COPYING/NOTICE files and the READMEs of the dependencies; Electron/Chromium also need
+LICENSE.electron.txt and LICENSES.chromium.html from the matching Electron distribution.
 
-- Electron і Chromium — MIT та ліцензії складових Chromium (LICENSES.chromium.html).
-- sharp — Apache-2.0; вбудована libvips — LGPL-3.0-or-later (https://github.com/lovell/sharp-libvips), використовується лише в ПК-версії для нарізання карт.
-- node-forge — використано на умовах BSD-3-Clause, Copyright (c) 2010, Digital Bazaar, Inc.
-- qrcode — MIT, Copyright (c) 2012 Ryan Day; dijkstrajs — MIT, Copyright (C) 2008 Wyatt Baldwin.
-- nosleep.js — MIT, Copyright (c) Rich Tibbett.
-- electron-updater і builder-util-runtime — MIT, Copyright (c) 2015 Loopline Systems.
-- Capacitor (core, app, browser) — MIT, Copyright (c) 2017-present Drifty Co. і 2020-present Ionic.
-- Android-застосунок використовує бібліотеки AndroidX на умовах Apache-2.0.
+- Electron and Chromium: MIT and the licenses of the Chromium components (LICENSES.chromium.html).
+- sharp: Apache-2.0; the bundled libvips: LGPL-3.0-or-later (https://github.com/lovell/sharp-libvips), used only in the desktop version to cut maps into tiles (Windows, macOS and Linux builds).
+- node-forge: used under BSD-3-Clause, Copyright (c) 2010, Digital Bazaar, Inc.
+- qrcode: MIT, Copyright (c) 2012 Ryan Day; dijkstrajs: MIT, Copyright (C) 2008 Wyatt Baldwin.
+- nosleep.js: MIT, Copyright (c) Rich Tibbett.
+- electron-updater and builder-util-runtime: MIT, Copyright (c) 2015 Loopline Systems.
+- Capacitor (core, app, browser): MIT, Copyright (c) 2017-present Drifty Co. and 2020-present Ionic.
+- The Android app uses AndroidX libraries under Apache-2.0.
 
-Нативний комплект sharp містить також MPL-1.1, BSD, MIT, LGPL та спеціальні ліцензії кодеків і шрифтів.
-Версії, джерела та невиконані вимоги до релізу наведено в legal/NATIVE-COMPONENTS.md.
-Вихідний код бібліотек під LGPL/MPL, спосіб отримати його та право їх замінити — у legal/native/SOURCE-OFFER.md.
-Наявність цього повідомлення не означає завершеної перевірки прав на всі матеріали.
+The native bundle of sharp also contains MPL-1.1, BSD, MIT, LGPL and special codec and font licenses.
+The versions, the sources and the requirements still open for a release are in legal/NATIVE-COMPONENTS.md.
+The source code of the LGPL/MPL libraries, how to get it, and the right to replace them are in legal/native/SOURCE-OFFER.md.
+The presence of this notice does not mean that the review of rights to all materials is complete.
 
-Ліцензія MIT (стосується позначених вище MIT-бібліотек):
+The MIT license (applies to the MIT libraries marked above):
 
     Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
     (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,

@@ -1,13 +1,12 @@
-# Android-застосунок (Capacitor): та сама автономна веб-збірка всередині APK, усе (карти, висоти) в пакеті.
-# Запуск: вручну з вказанням тегу (APK додається до релізу). Автоматичний запуск при публікації релізу вимкнено до версії 1.0.0:
-# до того збірки для Android і ПК не випускаються, є лише вебверсія.
+# Android app (Capacitor): the same standalone web build inside the APK, everything (maps, heights) in the package.
+# Run: manually, optionally with a tag (the APK is then attached to that release). Without a tag the APK stays a build artifact.
 name: Android
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Тег релізу, до якого додати APK (порожньо — лише артефакт збірки)"
+        description: "Release tag to attach the APK to (empty: build artifact only)"
         required: false
 
 permissions:
@@ -34,8 +33,8 @@ jobs:
           path: .web-cache
           key: web-assets-${{ hashFiles('src/core/webMirror.ts', 'src/core/web-mod-maps.json', 'src/core/terrains-data.json', 'scripts/build-web-assets.ts') }}
       - run: npm run build:web
-      # деталізовані тайли (tiles-hd) лише для сайту: у пакеті Android вони зробили б APK завеликим
-      - name: Прибрати деталізовані тайли
+      # detailed tiles (tiles-hd) are for the site only: in the Android package they would make the APK too large
+      - name: Remove detailed tiles
         run: node scripts/prune-apk-assets.mjs
       - run: node scripts/sync-android-version.mjs
       - run: npx cap sync android
@@ -44,7 +43,7 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
-      - name: Підпис APK
+      - name: Sign the APK
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -66,7 +65,7 @@ jobs:
         with:
           name: android-apk
           path: ${{ env.APK_FILE }}
-      - name: Додати до релізу
+      - name: Attach to the release
         if: ${{ github.event.release.tag_name != '' || inputs.tag != '' }}
         env:
           GH_TOKEN: ${{ github.token }}

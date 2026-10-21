@@ -1,67 +1,68 @@
-# Безпека
+# Security
 
-Модель загрози: застосунок працює на ПК користувача й (за бажанням) віддає планшет у локальній мережі на телефони.
-Довіряємо ОС і самому користувачу; не довіряємо мережі (інші пристрої в Wi-Fi), вмісту, що приходить ззовні
-(імпортований JSON, зображення, відповіді серверів), і — за принципом «глибокого захисту» — самому рендереру.
+Threat model: the application runs on the user's PC and (optionally) serves the tablet to phones on the local network.
+We trust the operating system and the user; we do not trust the network (other devices on the Wi-Fi), content that comes from outside
+(imported JSON, images, server responses) and, as defence in depth, the renderer itself.
 
-## Що зроблено (0.9)
+## What has been done
 
-**Вікно застосунку**
-- Рендерер у пісочниці (`sandbox: true`, `contextIsolation`, без `nodeIntegration`); preload збирається як CommonJS
-  і відкриває лише вузьке типізоване `window.api`.
-- Політика вмісту (CSP) у зібраному `index.html`: скрипти лише свої, `eval` заборонено, без вбудованих плагінів, форм і `<base>`.
-- Заборона навігації й нових вікон: у браузер системи відкриваються лише `http(s)`-посилання; `<webview>` вимкнено.
-- Дозволи сторінки (камера, геолокація, сповіщення тощо) відхиляються, окрім запису в буфер обміну.
-- Запобіжники Electron (fuses): без `ELECTRON_RUN_AS_NODE`, `--inspect`, `NODE_OPTIONS`; код лише з `app.asar`
-  з перевіркою цілісності. Перевіряється `npm run smoke`.
+**The application window**
+- The renderer is sandboxed (`sandbox: true`, `contextIsolation`, no `nodeIntegration`); the preload is built as CommonJS
+  and exposes only a narrow typed `window.api`.
+- A content security policy (CSP) in the built `index.html`: only own scripts, `eval` is forbidden, no embedded plugins, forms or `<base>`.
+- Navigation and new windows are forbidden: only `http(s)` links are opened in the system browser; `<webview>` is turned off.
+- Page permissions (camera, geolocation, notifications and so on) are denied, except writing to the clipboard.
+- Electron fuses: no `ELECTRON_RUN_AS_NODE`, `--inspect` or `NODE_OPTIONS`; code is loaded only from `app.asar`
+  with an integrity check. Verified by `npm run smoke`.
 
-**IPC (рендерер → main)** — кожен виклик перевіряється, а не береться на віру:
-- ідентифікатори терену — лише `[A-Za-z0-9_-]{1,64}`, розміри карти — у розумних межах;
-- файл карти приймається лише той, що користувач щойно вибрав у системному діалозі (рендерер не може змусити main
-  прочитати довільний файл);
-- завантаження знімків і висот — лише за URL із каталогу терену, лише `https`, з обмеженням розміру (4 ГБ).
+**IPC (renderer → main)**: every call is validated, not taken on trust:
+- terrain identifiers are only `[A-Za-z0-9_-]{1,64}`, map sizes are within sensible limits;
+- a map file is accepted only if the user has just chosen it in the system dialog (the renderer cannot make the main process
+  read an arbitrary file);
+- images and heights are downloaded only from a URL in the terrain catalogue, only over `https`, with a size limit (4 GB).
 
-**LAN-сервер (телефони)**
-- Доступ за випадковим ключем (cookie `mk`); порівняння сталого часу; «Новий ключ» анулює старі посилання; за замовчуванням вимкнено.
-- Обмеження перебору: 30 невдалих спроб за хвилину з однієї адреси — блокування на хвилину (HTTP 429).
-- Заголовки: CSP, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, `CORP`.
-- Злиття стану від телефону стійке до `__proto__`/`constructor` у чужому JSON.
+**LAN server (phones)**
+- Access with a random key (the `mk` cookie); constant-time comparison; "New key" invalidates old links; off by default.
+- Brute-force limit: 30 failed attempts per minute from one address block the address for a minute (HTTP 429).
+- Headers: CSP, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, `CORP`.
+- Merging state from a phone is safe against `__proto__`/`constructor` in foreign JSON.
 
-**Локальний центр сертифікації (офлайн-режим iPhone)**
-- Закритий ключ CA не залишає ПК. CA має обмеження імен (RFC 5280 NameConstraints, критичне): ним неможливо підписати
-  сертифікат ні для справжнього сайту, ні для публічної адреси — лише приватні IPv4-діапазони, `*.local` і `localhost`.
-  Навіть якщо ключ CA викрадуть, шкода обмежена домашньою мережею.
-- Серверний сертифікат містить лише приватні адреси ПК й `<ім'я>.local` (без публічних IP, VPN і голого імені).
-- CA, створений до 0.9, обмежень не має: у панелі «Перегляд з телефона» з'явиться попередження й кнопка
-  «Перевипустити сертифікат» (після цього профіль на iPhone треба встановити заново).
+**Local certificate authority (iPhone offline mode)**
+- The CA private key never leaves the PC. The CA has name constraints (RFC 5280 NameConstraints, critical): it cannot sign
+  a certificate for a real website or a public address, only private IPv4 ranges, `*.local` and `localhost`.
+  Even if the CA key were stolen, the harm is limited to the home network.
+- The server certificate contains only the PC's private addresses and `<name>.local` (no public IPs, VPN addresses or a bare name).
+- A CA created by an old version has no such constraints: the "View from a phone" panel then shows a warning and a "Reissue certificate" button
+  (after that the profile has to be installed on the iPhone again).
 
-## Автономна версія й Android (0.10–0.14)
+## Standalone version and Android
 
-- **Сайт (PWA) і APK** працюють без сервера: стан лише в сховищі пристрою, CSP не дозволяє сторонніх скриптів; зовнішні запити — лише
-  тайли reforger.recoil.org (зображення) і перевірка нової версії на api.github.com.
-- **Обмін посиланням/QR:** мітки стискаються у фрагмент адреси (на сервер не йдуть). Розпакування має ліміти (400 тис. символів, 2 МБ після розпаковки,
-  1000 міток), координати й назви очищаються, а імпорт завжди проходить через діалог підтвердження. Id терену з чужого посилання порівнюється лише
-  з власними ключами (`Object.hasOwn`): `__proto__` тощо не стають теренами.
-- **Оновлення:** Android і веб лише повідомляють про нову версію; посилання з відповіді GitHub API відкриваються, тільки якщо це https на github.com
-  у межах нашого репозиторію. Android-застосунок відкриває посилання обміну лише з нашого сайту.
-- **Збірка:** карти модових теренів качаються зі службового релізу з перевіркою SHA-256 (`scripts/web-mod-maps.sha256`) і перевіркою шляхів
-  у tar перед розпакуванням. APK підписується ключем, що лежить у секретах репозиторію (копія ключа — поза репозиторієм).
+- **The site (PWA) and the APK** work without a server: the state lives only in the device storage, the CSP does not allow third-party scripts; the only external requests are
+  the reforger.recoil.org tiles (images) and the check for a new version at api.github.com.
+- **Sharing by link/QR:** markers are compressed into the address fragment (they do not go to a server). Unpacking has limits (400 thousand characters, 2 MB unpacked,
+  1000 markers), coordinates and names are sanitised, and an import always goes through a confirmation dialog. A terrain id from a foreign link is compared only
+  with own keys (`Object.hasOwn`): `__proto__` and similar do not become terrains.
+- **Updates:** on Android and the web the app only reports a new version; links from the GitHub API response are opened only if they are https on github.com
+  within this repository. On the PC, Windows (installer) and Linux (AppImage) update through `electron-updater`; macOS and the .deb package only
+  report a new release and open its page. The Android app opens share links only from this site.
+- **Build:** the mod terrain maps are downloaded from a service release with a SHA-256 check (`scripts/web-mod-maps.sha256`) and a check of the paths
+  in the tar before unpacking. The APK is signed with a key stored in the repository secrets (a copy of the key is kept outside the repository).
 
-## Відомі обмеження
+## Known limitations
 
-- **Збірки не підписані** цифровим підписом: Windows SmartScreen показує попередження при першому запуску.
-  Завантажуйте лише з [Releases](https://github.com/Ingwalde/mortar-tablet/releases) цього репозиторію.
-- **Автооновлення** довіряє релізам цього GitHub-репозиторію (перевіряється хеш файлу з `latest.yml`, але не підпис видавця).
-- **HTTP у локальній мережі** передає ключ у відкритому вигляді: на довіреній домашній Wi-Fi прийнятно; в чужій мережі
-  користуйтеся HTTPS-посиланням (потребує встановленого профілю довіри).
-- **APK** ставиться з невідомих джерел і не з Google Play; перевіряйте, що завантажуєте його лише з [Releases](https://github.com/Ingwalde/mortar-tablet/releases)
-  цього репозиторію. Автозберігання Android (`allowBackup`) увімкнене: мітки можуть потрапити в резервну копію Google.
-- Сторінки сайту не можуть задати `frame-ancestors` (GitHub Pages не дає заголовків): теоретично їх можна вбудувати в чужу сторінку; секретів там нема.
-- GitHub Actions підключені за мажорною версією (не за SHA); залежності для розробки (vitest і ланцюжок збірки) мають відомі попередження, але у виданий
-  застосунок не потрапляють.
-- `node-forge` має відомі попередження щодо перевірки підписів сторонніх сертифікатів; застосунок використовує його
-  лише для створення власних сертифікатів, тому вразливий шлях недосяжний.
+- **The builds are not code-signed** (Windows and macOS): Windows SmartScreen and macOS Gatekeeper show a warning at the first launch.
+  Download only from this repository's [Releases](https://github.com/Ingwalde/mortar-tablet/releases).
+- **Automatic updates** trust the releases of this GitHub repository (the hash of the file from `latest.yml` / `latest-linux.yml` is checked, but not the publisher's signature).
+- **HTTP on the local network** sends the key in the clear: acceptable on a trusted home Wi-Fi; on someone else's network
+  use the HTTPS link (it needs the trust profile installed).
+- **The APK** is installed from unknown sources and not from Google Play; make sure you download it only from this repository's [Releases](https://github.com/Ingwalde/mortar-tablet/releases).
+  Android auto backup (`allowBackup`) is on: markers can end up in a Google backup.
+- The site pages cannot set `frame-ancestors` (GitHub Pages does not allow headers): in theory they can be embedded in a foreign page; there are no secrets there.
+- GitHub Actions are pinned by major version (not by SHA); the development dependencies (vitest and the build chain) have known advisories, but they do not get into the
+  released application.
+- `node-forge` has known advisories about verifying signatures of third-party certificates; the application uses it only to create its own certificates,
+  so the vulnerable path is unreachable.
 
-## Повідомити про вразливість
+## Reporting a vulnerability
 
-Напишіть автору на адресу з поля `author` у `package.json`. Не публікуйте подробиці до виправлення.
+Write to the author at the address in the `author` field of `package.json`. Please do not publish details before a fix.

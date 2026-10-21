@@ -1,215 +1,232 @@
-# Планшет мінометника
+# Mortar Tablet
 
-**Миттєвий розрахунок вогню міномета для Arma Reforger: просто на карті, у браузері й на телефоні.**
+**Instant mortar fire calculation for Arma Reforger: right on the map, in the browser and on your phone.**
 
-Постав міномет, постав ціль, і за секунду маєш азимут у мілах, кут підвищення, заряд і час польоту з урахуванням різниці висот.
-Без таблиць, зошита й калькулятора: ти дивишся на карту, а не рахуєш.
+Place a mortar, place a target, and within a second you get the azimuth in mils, the elevation, the charge and the time of flight,
+with the height difference taken into account. No tables, notebook or calculator: you look at the map instead of doing arithmetic.
 
-**[Відкрити вебверсію](https://ingwalde.github.io/mortar-tablet/)** (працює в браузері, на телефоні встановлюється як застосунок)
+**[Open the web version](https://ingwalde.github.io/mortar-tablet/)** (runs in the browser; on a phone it can be installed as an app)
 
-![Планшет мінометника: карта Everon, міномет, цілі й кільце дальності](src/web/img/app-desktop.webp)
+![Mortar Tablet: the Everon map, a mortar, targets and a range ring](src/web/img/app-desktop.webp)
 
-## Чому це зручно
+## Why it is convenient
 
-- **Карта під рукою.** Everon, Arland, Kolguyev і карти популярних модів (Gogland, Bad Orb, Bystrany, Kirovograd, Mogadishu, Iron Hold Castle, Novyinovka): масштабування, сітка з координатами, назви пунктів, контури будівель.
-- **Приціл в один дотик.** Торкнувся будівлі, і приціл на ній; «Поставити мітку» ставить ціль точно в центр. Зруйновані цілі позначаються на карті.
-- **Справжня балістика.** M252 і 2Б14, осколково-фугасний, освітлювальний і димовий снаряди, найкращий заряд (★), поправка на висоту, час польоту.
-- **Видно, куди ляже.** Кільця дальності, лінія вогню, еліпс розкиду; постріл із анімацією польоту, гуркотом і влученням у момент прильоту.
-- **Разом із командою.** Діліться мітками посиланням чи QR-кодом, дивіться й правте карту з телефона по Wi-Fi, ведіть журнал стрільби.
-- **Зручно на телефоні.** Три темні теми, економний режим для слабких пристроїв, вібрація, екран не гасне.
-- **Безкоштовно для спільноти.** Без реклами й реєстрації; вихідний код доступний для некомерційного використання, модифікації та поширення.
+- **The map at hand.** Everon, Arland, Kolguyev and the maps of popular mods (Gogland, Bad Orb, Bystrany, Kirovograd, Mogadishu, Iron Hold Castle, Novyinovka): zoom, a coordinate grid, place names, building outlines.
+- **Aiming with one tap.** Tap a building and the reticle snaps to it; "Place marker" puts a target exactly at the centre. Destroyed targets are marked on the map.
+- **Real ballistics.** M252 and 2B14, high-explosive, illumination and smoke shells, the best charge (★), height correction, time of flight.
+- **See where it lands.** Range rings, the line of fire, a dispersion ellipse; a shot with flight animation, a rumble and an impact at the moment of arrival.
+- **Together with your crew.** Share markers by link or QR code, view and edit the map from a phone over Wi-Fi, keep a firing log.
+- **Comfortable on a phone.** Three dark themes, an economy mode for weak devices, vibration, the screen stays on.
+- **Free for the community.** No ads and no registration; the source code is available for noncommercial use, modification and distribution.
 
-## Розробка
+## Downloads
+
+Ready-made builds are on the [releases page](https://github.com/Ingwalde/mortar-tablet/releases) and on the
+[download page](https://ingwalde.github.io/mortar-tablet/download.html) (English and Ukrainian, chosen by the browser language).
+
+| Platform | File | Updates |
+| --- | --- | --- |
+| Web / iPhone | [the web version](https://ingwalde.github.io/mortar-tablet/) (add it to the home screen) | automatic |
+| Windows | `MortarTablet-Setup-<version>.exe` (installer) or `MortarTablet-<version>-portable.exe` | the installer updates itself; the portable build does not |
+| macOS | `MortarTablet-<version>-mac-arm64.dmg` (Apple Silicon) or `...-mac-x64.dmg` (Intel) | the app tells you when a new version is out |
+| Linux (x64) | `MortarTablet-<version>-linux-x86_64.AppImage` or `...-linux-amd64.deb` | the AppImage updates itself; for the .deb the app tells you when a new version is out |
+| Android | `MortarTablet-<version>.apk` (the maps are inside, no internet needed) | the app tells you when a new version is out |
+
+The Windows and macOS builds are not code-signed: Windows SmartScreen asks for confirmation ("More info" → "Run anyway"), and on macOS you open
+the app with right-click → "Open". macOS cannot update an unsigned app by itself, which is why it only reports new versions.
+Download files only from this repository's releases.
+
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Відкриє Electron-вікно з hot-reload. Логи рендерера дублюються в консоль main-процесу.
+Opens an Electron window with hot reload. The renderer logs are mirrored to the main process console.
 
-## Тести
+### Tests and checks
 
 ```bash
-npm test          # vitest run (балістика, геометрія, тайли, висоти)
-npm run typecheck # tsc --noEmit для main/preload і renderer/core
+npm test          # vitest run (ballistics, geometry, tiles, heights, documentation checks)
+npm run typecheck # tsc --noEmit for main/preload and renderer/core
+npm run check     # typecheck + tests + pack + a smoke test of the packaged app
 ```
 
-`scripts/check-places-local.mjs` і `scripts/test-import-module.mjs` — допоміжні
-скрипти для ручної перевірки прив'язки карти й sharp-піраміди на реальних файлах
-(потребують `maps/<terrain>_sat_*.png` у корені проєкту).
+`scripts/check-places-local.mjs` and `scripts/test-import-module.mjs` are helper scripts for checking the map calibration and the sharp tile pyramid
+by hand on real files (they need `maps/<terrain>_sat_*.png` in the project root).
 
-## Збірка
+### Builds
 
 ```bash
-npm run dist:win    # portable .exe + NSIS-інсталятор -> dist/
-npm run dist:mac    # dmg (потребує macOS)
+npm run pack        # only the unpacked app (dist/win-unpacked)
+npm run dist:setup  # only the NSIS installer
+npm run dist:win    # NSIS installer + portable .exe -> dist/
+npm run dist:mac    # dmg (needs macOS)
 npm run dist:linux  # AppImage + deb
+npm run build:web   # the standalone web version (PWA) -> out/web
 ```
 
-Готові збірки для Windows, Android, macOS і Linux — у [релізах](https://github.com/Ingwalde/mortar-tablet/releases) і на [сторінці завантаження](https://ingwalde.github.io/mortar-tablet/download.html). Вебверсію можна встановити як застосунок.
-macOS і Linux збираються на GitHub Actions (workflow «Desktop», запуск вручну), Android — workflow «Android».
+- `npm run check` is enough before a release; the full build is only needed for publishing. Antivirus software slows packaging down a lot
+  (thousands of small files): add the project's `dist` and `node_modules` folders to the Windows Defender exclusions.
+- **Windows, `winCodeSign` error:** if the build fails with `Cannot create symbolic link` while downloading `winCodeSign`, turn on Developer Mode
+  (Settings → Privacy & security → For developers). It is needed only on the machine that builds; it has no effect on the finished `.exe` for end users.
+- macOS and Linux builds are made on GitHub Actions (workflow `Desktop`, started manually) because they need those systems; the Android APK is built by the workflow `Android`;
+  the site is published by the workflow `Pages`. Giving a tag to `Desktop` or `Android` attaches the files to that release.
+- A release consists of: the version in `package.json` (and `package-lock.json`), the tag `v<version>`, the Windows files (including `latest.yml` and the `.blockmap`
+  for automatic updates), the files of the `Desktop` and `Android` workflows (`latest-linux.yml` too) and the native-library source archive
+  (see [Native libraries](#native-libraries)).
 
-Готові файли після `npm run dist:win`:
-- `dist/MortarTablet-<версія>-portable.exe` — portable, без інсталяції.
-- `dist/MortarTablet-Setup-<версія>.exe` — інсталятор (NSIS).
+## Viewing from a phone (LAN)
 
-### Windows: помилка розпакування winCodeSign
+In Settings (⚙) → "Network" → "View from a phone" turn on "Local network access": the PC starts a server (port 8765) and shows a link and a QR code. A phone on the same Wi-Fi
+opens the link in a browser (iPhone: Safari, Android: Chrome); nothing has to be installed.
 
-Якщо збірка падає на `Cannot create symbolic link` під час завантаження
-`winCodeSign` — увімкніть Режим розробника (Параметри → Конфіденційність і безпека →
-Для розробників). Це потрібно лише на машині, де відбувається збірка; на роботу
-готового `.exe` в кінцевих користувачів не впливає.
+To make it look like a standalone app (an icon, full screen): iPhone: Safari → "Share" → "Add to Home Screen"; Android: the Chrome menu → "Install app". The icons are generated by `node scripts/make-icons.mjs`.
 
-## Перегляд з телефона (LAN)
+- Markers, the log and the map are shared between the PC and the phone, and changes appear on the other device at once; each device keeps its own choice of mortar/target/shell and its own current terrain.
+- On a phone the bottom panel has a handle: drag it up or down, a tap collapses the panel to the handle. The arrows button on the map hides the whole interface (the same button or Esc brings it back).
+- Maps (import, tiles) are loaded from the PC; a map can only be imported in the PC app.
+- Markers and the log are merged record by record (by id and edit time, deletions as tombstones): if the PC and the phone change different markers at the same time, nothing is lost.
+- The phone does not turn the screen off while the tablet is open (Wake Lock, and over http a fallback through a hidden video; it starts on the first touch).
+- Access is protected by a random key in the link (it stays in the address so that launching from the icon keeps working, so do not share the link); "New key" invalidates old links. The server is off by default.
+- Windows Firewall asks for permission the first time you turn it on: choose "Private networks".
 
-У налаштуваннях (⚙) → «Мережа» → «Перегляд з телефона» увімкніть «Доступ з локальної мережі»: ПК підніме сервер (порт 8765), покаже посилання й QR-код. Телефон у тій самій Wi-Fi відкриває посилання в браузері (iPhone — Safari, Android — Chrome); встановлювати нічого не треба.
+### Offline mode on a phone (HTTPS)
 
-Щоб це виглядало як окремий застосунок (іконка, повний екран): iPhone — Safari → «Поділитися» → «На екран Додому»; Android — меню Chrome → «Установити застосунок». Іконки генерує `node scripts/make-icons.mjs`.
+Without the PC and Wi-Fi the phone works through a service worker, and iPhone allows that only over HTTPS. So the app creates its own local certificate authority
+(`lan-ca.json` in the data folder; the private key never leaves the PC) and signs with it a certificate for the PC's IP addresses (port 8766).
 
-- Мітки, журнал і карта спільні між ПК і телефоном, зміни з’являються на іншому пристрої одразу; вибір міномета/цілі/снаряда й поточний терен кожен пристрій тримає свої.
-- На телефоні панель знизу з бровкою: тягніть її вгору/вниз, тап ховає панель до бровки. Кнопка зі стрілками на карті ховає весь інтерфейс (повернути — та сама кнопка або Esc).
-- Карти (імпорт, тайли) вантажаться з ПК; імпортувати карту можна лише в застосунку на ПК.
-- Мітки й журнал зливаються за записами (за id і часом правки, видалення — надгробками): якщо ПК і телефон змінюють різні мітки одночасно, нічого не губиться.
-- Телефон не гасить екран, поки планшет відкритий (Wake Lock, а по http — запасний прийом через приховане відео; вмикається першим дотиком).
-- Доступ закритий випадковим ключем у посиланні (він лишається в адресі, щоб працював запуск з іконки — не діліться посиланням); «Новий ключ» анулює старі посилання. Сервер за замовчуванням вимкнений.
-- Windows Firewall при першому вмиканні спитає дозвіл — оберіть «Приватні мережі».
+1. On the PC: "View from a phone" → choose "Trust certificate (one time)" in the list, scan the QR with the iPhone and install the profile (Settings → Profile Downloaded).
+2. Settings → General → About → Certificate Trust Settings → turn on "Mortar Tablet Local CA".
+3. Open the "… offline (HTTPS)" link in Safari and add it to the home screen.
+4. In the phone app tap the "Offline" cloud icon → choose the detail level → "Save map".
 
-### Офлайн-режим телефона (HTTPS)
+What works without the PC: the app itself, calculations, markers and the log (stored on the phone and merged with the PC when the connection returns), the saved map tiles and heights.
+The storage address is tied to the PC's IP: if the IP changes, the saved data has to be downloaded again (it is best to give the PC a fixed IP).
 
-Без ПК і Wi-Fi телефон працює через service worker, а iPhone дозволяє його лише на HTTPS. Тому застосунок сам створює локальний центр сертифікації (`lan-ca.json` у папці даних, закритий ключ не залишає ПК) і підписує ним сертифікат на IP-адреси ПК (порт 8766).
+On the PC, Settings → "Maps and data" has "Map without internet" for Everon/Arland: the online tiles are saved to disk.
 
-1. На ПК: «Перегляд з телефона» → у списку виберіть «Сертифікат довіри (одноразово)», відскануйте QR на iPhone, встановіть профіль (Налаштування → Профіль завантажено).
-2. Налаштування → Загальні → Про пристрій → Довіра сертифікатам → увімкніть «Mortar Tablet Local CA».
-3. Відкрийте посилання «… — офлайн (HTTPS)» в Safari й додайте на головний екран.
-4. У застосунку на телефоні натисніть значок хмарки «Офлайн» → виберіть деталізацію → «Зберегти карту».
+## Standalone version (no PC)
 
-Що працює без ПК: сам застосунок, розрахунки, мітки й журнал (зберігаються на телефоні й зливаються з ПК, коли зв’язок повернеться), збережені тайли карти й висоти. Адреса сховища прив’язана до IP ПК: якщо IP змінився, збережене доведеться завантажити знову (краще задати ПК постійний IP).
+The same app built as a PWA (`npm run build:web` → `out/web`): it works on a phone without a PC and without Wi-Fi to a PC.
+Markers and the log live in the browser storage of the device; exchange is by file ("Export…" / "Import…" on the "Markers" tab) or by link/QR.
+Heights are built in; the Everon/Arland/Kolguyev map tiles are loaded straight from their original source (internet needed) and are not copied to the site.
+The mod maps are on the site. Importing your own maps is only possible in the PC app.
 
-На ПК в налаштуваннях → «Карти й дані» для Everon/Arland є «Карта без інтернету»: онлайн-тайли зберігаються на диск.
+- Publishing: the workflow `.github/workflows/pages.yml` (GitHub Pages), started manually or by a push to master that changes the site.
+- Locally: `WEB_SKIP_MOD_MAPS=1 npm run build:web` (without the mod maps, fast), then any static server on `out/web`.
+- What exactly is on the site (mod maps, heights) is described in `src/core/webMirror.ts`; downloaded files are cached in `.web-cache/`.
 
-## Автономна версія (без ПК)
+### Sharing markers by link and QR
 
-Той самий застосунок, зібраний як PWA (`npm run build:web` -> `out/web`): працює на телефоні без ПК і без Wi-Fi до ПК.
-Мітки й журнал лежать у сховищі браузера на пристрої, обмін — файлом («Експорт…» / «Імпорт…» на вкладці «Мітки»).
-Висоти вбудовані; тайли карт Everon/Arland/Kolguyev вантажаться напряму з їхнього першоджерела (потрібен інтернет), на сайт вони не копіюються.
-Карти модів лежать на сайті. Імпорт власних карт — лише в застосунку на ПК.
+"Export…" on the "Markers" tab offers "Copy link" and "Show QR". The markers are compressed and put into the address fragment
+(`<site>#s=…`), so the server never sees them. A phone points its camera at the QR, the web version opens, and the import is offered automatically (the map is switched if needed).
+A link can also be pasted into the "Import…" field ("Paste from clipboard"). Very large sets do not fit into a QR: then use the link or a file.
+The format and the checks are in `src/core/shareLink.ts`.
 
-- Публікація: workflow `.github/workflows/pages.yml` (GitHub Pages) — вручну або пушем у master зі змінами сайту.
-- Локально: `WEB_SKIP_MOD_MAPS=1 npm run build:web` (без карт модів, швидко), далі будь-який статичний сервер на `out/web`.
-- Що саме лежить на сайті (карти модів, висоти) — `src/core/webMirror.ts`; завантажене кешується в `.web-cache/`.
+Note for iPhone: a link opens in Safari, while an app added to the home screen has separate storage; in that case copy the link and paste it into "Import…" inside the app.
 
-### Обмін мітками посиланням і QR (0.11)
+### Shot and impact sound
 
-«Експорт…» на вкладці «Мітки» тепер має «Копіювати посилання» і «Показати QR». Мітки стискаються й кладуться у фрагмент адреси
-(`<сайт>#s=…`), сервер їх не бачить. Телефон наводить камеру на QR, відкривається веб-версія, імпорт пропонується сам (за потреби
-перемикається карта). Посилання можна також вставити в поле «Імпорт…» («Вставити з буфера»). Дуже великі набори в QR не вміщаються:
-тоді лишається посилання або файл. Формат і перевірки — `src/core/shareLink.ts`.
+The sound is synthesised with WebAudio. Most of the energy of a shot and an impact lies in the bass that phone speakers do not reproduce, so rumble harmonics and
+mid-frequency layers are added. To check without speakers: open the site with `?audiotest=1` and run `await __mortarAudioTest(6)` in the console (renders into a buffer).
 
-Примітка для iPhone: посилання відкриється в Safari, а встановлений на головний екран застосунок має окреме сховище; у такому разі
-скопіюйте посилання й вставте в «Імпорт…» всередині застосунку.
+### Destroyed buildings
 
-### Звук пострілу й влучання
+A target or point can be marked as destroyed (✕ in the list or a checkbox in the dialog). If the marker stands on a building (or right next to it, up to 3 m from a wall),
+that building turns red on the map together with the annexes that touch it, labelled "Destroyed" in the middle of the main block; without a building outline a red circle is drawn.
+A tap on the red building selects the marker, and the state can be changed or restored with the same ✕/↺ or in "Edit". The outlines come from the `.topo` files of worlds and mods (the BULD section):
+`node scripts/extract-buildings.mjs <id> <file.topo> <size, m> src/core/buildings/<id>.ts`; there is no data for Iron Hold Castle.
 
-Звук синтезується WebAudio. Основна енергія пострілу й влучання лежить у басах, яких не відтворюють динаміки телефонів, тому додано гармоніки гулу
-й середньочастотні шари. Перевірка без динаміків: відкрийте сайт з `?audiotest=1` і в консолі виконайте `await __mortarAudioTest(6)` (рендер у буфер).
+### Settings
 
-### Зруйновані будівлі
+The ⚙ button in the header opens the settings screen with sections and a search (on a phone the sections are a strip at the top). "Reset section" restores the defaults of a section.
 
-Ціль чи точку можна позначити зруйнованою (✕ у списку або галочка в діалозі). Якщо мітка стоїть на будівлі (або впритул, до 3 м від стіни), на карті
-ця будівля стає червоною разом із прибудовами, що торкаються її, з підписом «Зруйновано» посередині основного блоку; без контуру будівлі малюється червоний круг. Тап по червоній будівлі вибирає мітку,
-а змінити чи повернути стан можна тими самими ✕/↺ або в «Змінити». Контури беруться з .topo світів і модів (секція BULD):
-`node scripts/extract-buildings.mjs <id> <файл.topo> <розмір, м> src/core/buildings/<id>.ts`; для Iron Hold Castle даних немає.
+- **Appearance:** theme (green/red/blue), language, place names (shown, size, importance), range rings, economy mode.
+- **Sound and feedback:** shot sound (the speaker button on the map remains), volume, a sound test, vibration, "keep the screen on" (phone and site).
+- **Calculation:** shell dispersion; available and default shells for each mortar (disabled ones are not offered in the "Shell" list, the default is selected when a mortar is chosen). Charges are not configurable: the charge is picked automatically (★).
+- **Maps and data** (map, coordinate calibration, a manager of downloaded data: on PC; saved offline maps: on the site), **Network** (PC only), **Backups**, **Updates and about** (new version notices: site, Android and macOS/Linux).
 
-### Налаштування (0.15)
+Device settings (theme, sound, vibration and so on) are not shared between the PC and the phone. The shell selection logic is in `src/core/settings.ts`, the screen in `src/renderer/settingsPanel.ts`.
 
-Кнопка ⚙ у шапці відкриває екран налаштувань із розділами й пошуком (на телефоні розділи — смуга зверху). Кнопка «Скинути розділ» повертає типові значення розділу.
+### Aiming at a building and colour themes
 
-- **Вигляд:** тема (зелена/червона/синя), мова, назви пунктів (показ, розмір, важливість), кільця дальності, економний режим.
-- **Звук і відгук:** звук пострілу (кнопка-гучномовець на карті лишилась), гучність, перевірка звуку, вібрація, «не гасити екран» (телефон і сайт).
-- **Розрахунок:** розкид снарядів; доступні й типові снаряди для кожного міномета (вимкнені не показуються у списку «Снаряд», типовий підставляється при виборі міномета). Кільця (заряди) не налаштовуються: заряд обирається автоматично (★).
-- **Карти й дані** (карта, прив'язка координат, менеджер завантажених даних — на ПК; збережені офлайн-карти — на сайті), **Мережа** (лише ПК), **Резервні копії**, **Оновлення й про програму** (сповіщення про нову версію — для сайту й Android).
+A tap on a building aims the reticle at its centre; the building under the reticle is highlighted, and "Place marker" puts a target exactly at the centre and names it after the nearest
+settlement ("Montignac: Target 1", a place within 500 m). The theme is chosen in settings (⚙ → "Appearance"): green (default), red and blue. All three themes are always dark (the system light/dark theme is not used); red and blue are built like green:
+the same tone relations, only a different hue. Marker colours, the grid and the map itself stay as they are. The choice is stored on the device.
 
-Налаштування пристрою (тема, звук, вібрація тощо) не передаються між ПК і телефоном. Логіка вибору снарядів — `src/core/settings.ts`, екран — `src/renderer/settingsPanel.ts`.
+### Downloaded data and higher resolution
 
-### Приціл на будівлю і колірні теми
+- **PC:** ⚙ → "Maps and data" → "Downloaded data" → "Open manager": the online tile cache, imported maps and heights for each terrain with sizes and delete buttons.
+- **Site (PWA):** there is no offline map mode: the Everon/Arland/Kolguyev tiles come from the original source and are not stored on the site. Offline saving remains in the PC app and on a phone connected to the PC.
+- **Novyinovka** ships with the PC app (`resources/maps/novyinovka`, a full 8192 px pyramid), on the site and in the APK; your own import takes priority.
 
-Тап по будівлі наводить приціл у її центр; будівля під прицілом підсвічується, а «Поставити мітку» ставить ціль точно в центр і називає її за найближчим
-селищем («Montignac: Ціль 1», пункт до 500 м). Вибір теми — в налаштуваннях (⚙ → «Вигляд»): зелена (типова), червона й синя. Усі три теми завжди темні (системна світла/темна тема не використовується); червона й синя побудовані так само, як зелена:
-ті самі співвідношення тонів, лише інший колірний тон. Кольори міток, сітка й сама карта лишаються звичайними. Вибір зберігається на пристрої (старий нічний режим 0.13 став червоною темою).
+### Shell dispersion
 
-### Завантажені дані й вища роздільність
+⚙ → "Calculation" → "Shell dispersion": a switch, the mode "from the game data" or two numbers (% of the range), along the line of fire and across it, separately for M252 and 2B14.
+The "Calculation" tab keeps a short summary of the radii and a button to the settings.
+An ellipse is drawn around the target on the map (the major axis along the fire); the radii are also shown in metres. The ballistic tables have no dispersion,
+so the user sets the values; it is off by default. The calculations are in `src/core/spread.ts`.
 
-- **ПК:** ⚙ → «Карти й дані» → «Завантажені дані» → «Відкрити менеджер»: кеш онлайн-тайлів, імпортовані карти й висоти для кожного терену з розмірами та кнопками видалення.
-- **Сайт (PWA):** офлайн-режиму карт нема: тайли Everon/Arland/Kolguyev беруться з першоджерела й на сайті не зберігаються (раніше збережене стирається автоматично). Офлайн-збереження лишилось у ПК-застосунку й у телефона, підключеного до ПК.
-- **Novyinovka** тепер постачається разом із ПК-застосунком (`resources/maps/novyinovka`, повна піраміда 8192 px) і на сайті/в APK; власний імпорт має пріоритет.
+### Update notices
 
-### Розкид снарядів
+Web version: when the service worker has downloaded a new build, "Update" appears at the top. The Android app checks the latest release on GitHub twice a day and offers to download the APK.
+On the PC, Windows (installer) and Linux (AppImage) download and install updates by themselves; macOS and the .deb package check the latest release and offer to open the download page.
 
-⚙ → «Розрахунок» → «Розкид снарядів»: вмикач, режим «за даними гри» або два числа (% дальності) — вздовж лінії вогню й упоперек, окремо для M252 і 2Б14.
-У вкладці «Розрахунок» лишається короткий підсумок радіусів і кнопка переходу до налаштувань.
-На карті навколо цілі малюється еліпс (велика вісь уздовж вогню); радіуси також показано в метрах. У таблицях балістики розкиду нема, тому
-значення задає користувач; за замовчуванням вимкнено. Розрахунки — `src/core/spread.ts`.
+## Security
 
-### Сповіщення про оновлення (0.11)
+The renderer is sandboxed with a CSP, IPC is validated, the LAN server limits key guessing, the local CA is restricted to private networks,
+and the dangerous Electron modes are turned off in the build. Details and known limitations: [SECURITY.md](SECURITY.md).
+A check of the built app: `npm run smoke` (also part of `npm run check`).
 
-Веб-версія: коли service worker завантажив нову збірку, зверху з’являється «Оновити». Android-застосунок раз на пів доби перевіряє
-останній реліз на GitHub і пропонує завантажити APK.
+## Application data
 
-## Безпека
+Markers, settings, the tile cache and the height data are stored in the application's user-data folder
+(`%APPDATA%/mortar-tablet` on Windows; the per-user application-data folders of macOS and Linux), not in localStorage.
 
-Рендерер у пісочниці з CSP, IPC перевіряється, LAN-сервер обмежує перебір ключа, локальний CA обмежений приватною
-мережею, у збірці вимкнені небезпечні режими Electron. Подробиці й відомі обмеження — у [SECURITY.md](SECURITY.md).
-Перевірка зібраного exe: `npm run smoke` (також у `npm run check`).
+## License
 
-## Дані застосунку
+The authored parts of the application are under the [Mortar Tablet Noncommercial License 1.0](LICENSE).
+Free noncommercial use, modification and distribution are allowed, including in gaming communities and Discord. Selling, paid access, advertising, sponsorship
+monetisation and inclusion in commercial products or paid services need the author's separate written permission. The full terms are in the LICENSE file.
 
-Мітки, налаштування, кеш тайлів і дані висот зберігаються в
-`%APPDATA%/mortar-tablet` (Windows) — не в localStorage.
+This is a license with a noncommercial restriction, not an open-source license.
+It does not change the licenses of third-party code, libraries, maps and data, and it does not revoke
+the rights to earlier copies already received under the MIT license. The license change itself
+grants no additional rights to third-party materials and no permission to publish in app stores.
 
-## Ліцензія
+### Data source licenses
 
-Авторські частини застосунку — [Mortar Tablet Noncommercial License 1.0](LICENSE).
-Дозволено безкоштовне некомерційне використання, модифікацію та поширення, зокрема
-в ігрових спільнотах і Discord. Продаж, платний доступ, реклама, спонсорська
-монетизація та включення в комерційні продукти чи платні сервіси потребують окремого
-письмового дозволу автора. Повні умови визначає файл LICENSE.
+Notices for third-party materials: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+The application license and these notices are available in "About" → "Licenses and credits".
 
-Це ліцензія з некомерційним обмеженням, а не open-source ліцензія.
-Вона не змінює ліцензій стороннього коду, бібліотек, карт і даних та не скасовує
-права на попередні копії, уже отримані під MIT. Сама зміна ліцензії застосунку
-не надає додаткових прав на сторонні матеріали чи дозволу на публікацію в магазинах.
+- [EnfusionMapMaker](https://github.com/nickludlam/EnfusionMapMaker) (nickludlam), APL-SA: Everon/Arland place names, the online tile scheme.
+  The corresponding Everon/Arland records in `src/core/terrains-data.json` stay under APL-SA: noncommercial and for Arma only.
+  The rest of the file contains data from other sources; the license of the authored code does not change that.
+- [GeNeFRAG/ArmaReforger](https://github.com/GeNeFRAG/ArmaReforger): code under MIT; the source of the tables, the terrain catalogue and the links to maps and heights.
+  The repository's MIT license does not confirm rights to the original sources of all images and data.
 
-### Ліцензії джерел даних
+Documents in [`legal/`](legal): the release review status ([RELEASE-REVIEW.md](legal/RELEASE-REVIEW.md)), the origin of the maps
+([ASSET-PROVENANCE.md](legal/ASSET-PROVENANCE.md)) and the requirements for the native libraries ([NATIVE-COMPONENTS.md](legal/NATIVE-COMPONENTS.md)).
+`npm run licenses:collect` gathers the notices of the installed runtime dependencies; the npm build commands run it automatically.
 
-Повідомлення про сторонні матеріали — у [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
-Ліцензія застосунку й ці повідомлення доступні в «Про програму» → «Ліцензії та подяки».
+A noncommercial project, not affiliated with Bohemia Interactive.
 
-- [EnfusionMapMaker](https://github.com/nickludlam/EnfusionMapMaker) (nickludlam) — APL-SA: назви пунктів Everon/Arland, схема онлайн-тайлів.
-  Відповідні записи Everon/Arland у `src/core/terrains-data.json` лишаються під APL-SA: лише некомерційно й лише для Arma.
-  Решта файлу містить дані з інших джерел; ліцензія авторського коду цього не змінює.
-- [GeNeFRAG/ArmaReforger](https://github.com/GeNeFRAG/ArmaReforger) — код під MIT; джерело таблиць, каталогу теренів і посилань на карти/висоти.
-  MIT репозиторію не підтверджує права на першоджерела всіх зображень і даних.
+### Native libraries
 
-Поточний статус підготовки релізу — [legal/RELEASE-REVIEW.md](legal/RELEASE-REVIEW.md).
-Походження карт — [legal/ASSET-PROVENANCE.md](legal/ASSET-PROVENANCE.md),
-вимоги нативних бібліотек — [legal/NATIVE-COMPONENTS.md](legal/NATIVE-COMPONENTS.md).
-`npm run licenses:collect` збирає повідомлення встановлених runtime-залежностей;
-команди збірки через npm запускають його автоматично.
+The desktop builds use the libvips image library through sharp (LGPL and other licenses). Their license texts, the written offer of the source code and
+the instructions for rebuilding and replacing the library are in [`legal/native/`](legal/native): [SOURCE-OFFER.md](legal/native/SOURCE-OFFER.md) and
+[REBUILD-LIBVIPS.md](legal/native/REBUILD-LIBVIPS.md). The source archive for a release is produced by `node scripts/collect-native-sources.mjs`
+and attached to that release.
 
-Некомерційний проєкт, не пов'язаний з Bohemia Interactive.
+## Map tile format
 
-## Формат тайлів карт
+Imported maps are cut into **WebP** tiles (JPEG before): the files are a third to a half smaller at the same quality. Old JPEG pyramids work as they are; to convert them to WebP,
+close the app and run `node scripts/convert-pyramids-webp.mjs` (`--keep` keeps the originals, `--only=bystrany,mogadishu` limits the set of maps).
 
-Імпортовані карти тепер нарізаються у **WebP** (раніше JPEG): файли на третину-половину менші при тій самій якості. Старі піраміди з JPEG працюють як є; щоб перевести їх у WebP, закрийте застосунок і запустіть `node scripts/convert-pyramids-webp.mjs` (`--keep` залишає оригінали, `--only=bystrany,mogadishu` обмежує набір карт).
+## Documentation
 
-## Швидкі збірки
-
-| Команда | Що робить | Час |
-|---|---|---|
-| `npm run pack` | лише розпакований застосунок (`dist/win-unpacked`) | ~15 с |
-| `npm run check` | typecheck + тести + `pack` + димовий тест зібраного застосунку | ~45 с |
-| `npm run dist:setup` | тільки інсталятор NSIS | ~1 хв |
-| `npm run dist:win` | інсталятор + portable (для релізу) | ~2,5 хв |
-
-Для перевірки перед релізом достатньо `npm run check`; повну збірку роблять лише для публікації. Антивірус сильно сповільнює пакування (тисячі дрібних файлів): додайте `dist` і `node_modules` проєкту у винятки Windows Defender.
+All documentation is written in English, and this README is kept in step with the code: the test `test/docs.test.ts` (part of `npm test`) fails if the README mentions
+an npm script, a script file, a workflow or a document that does not exist, contains a hard-coded version number, or if any documentation file is not in English.
+When you change a command, a build or a platform, change this README in the same commit.
