@@ -7,6 +7,7 @@ import { clampPlacesScale, normalizePlacesLevel, type PlaceTier } from "@core/pl
 import { webModMap } from "@core/webMirror";
 import { bundledMap } from "@core/bundledMaps";
 import { defaultSpread, normalizeSpread, type SpreadSettings } from "@core/spread";
+import { readCaption, readClass, type Affiliation, type LegacyType, type MarkKind } from "@core/marks";
 
 /** Снаряди кожної гармати з таблиць балістики (для налаштувань доступних снарядів). */
 export const VALID_SHELLS: ValidShells = {
@@ -17,7 +18,7 @@ export const VALID_SHELLS: ValidShells = {
 export type ThemeName = "green" | "red" | "blue";
 export const THEMES: ThemeName[] = ["green", "red", "blue"];
 
-export type MarkerType = "mortar" | "target" | "point";
+export type MarkerType = LegacyType;
 
 export interface Marker {
   id: string;
@@ -33,6 +34,14 @@ export interface Marker {
   u: number;
   /** Ціль/точку позначено зруйнованою (вручну); у мінометів не буває. */
   destroyed?: boolean;
+  /** Приналежність (свій / чужий); у старої довільної точки нема. */
+  aff?: Affiliation;
+  /** Вид знака; `type` виводиться з приналежності й виду (див. core/marks.ts). */
+  kind: MarkKind;
+  /** Підпис до мітки, до 120 символів. */
+  caption?: string;
+  /** Час створення (мс). */
+  c?: number;
 }
 
 export type MapState = { kind: "none" } | { kind: "pyramid"; width: number; height: number };
@@ -161,7 +170,10 @@ function normalizeMarker(m: unknown): Marker | null {
   if (!m || typeof m !== "object") return null;
   const r = m as Record<string, unknown>;
   if (!isFinite(Number(r.x)) || !isFinite(Number(r.z))) return null;
-  const type: MarkerType = r.type === "mortar" || r.type === "target" ? r.type : "point";
+  const cls = readClass(r);
+  const type: MarkerType = cls.type;
+  const caption = readCaption(r.caption);
+  const created = Number(r.c);
   const h = r.h === null || r.h === undefined || r.h === "" ? null : Number(r.h);
   return {
     id: typeof r.id === "string" ? r.id : uid(),
@@ -173,7 +185,11 @@ function normalizeMarker(m: unknown): Marker | null {
     w: r.w === "2B14" ? "2B14" : "M252",
     folder: typeof r.folder === "string" ? r.folder.slice(0, 40) : "",
     u: isFinite(Number(r.u)) ? Number(r.u) : 0,
-    ...(r.destroyed === true && type !== "mortar" ? { destroyed: true } : {})
+    ...(r.destroyed === true && type !== "mortar" ? { destroyed: true } : {}),
+    ...(cls.aff ? { aff: cls.aff } : {}),
+    kind: cls.kind,
+    ...(caption ? { caption } : {}),
+    ...(Number.isFinite(created) && created > 0 ? { c: created } : {})
   };
 }
 

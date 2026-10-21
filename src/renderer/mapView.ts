@@ -19,6 +19,8 @@ import { $ } from "./dom";
 import { t } from "./i18n";
 import { reducedMotion } from "./motion";
 import { isRemote, onlineTileSrc, pyramidTileSrc } from "./platform";
+import { symbolKey, symbolSvg } from "@core/symbols";
+import type { Affiliation, MarkKind } from "@core/marks";
 import { heightAt, onHeightsLoaded } from "./terrainHeight";
 
 const cv = $<HTMLCanvasElement>("cv");
@@ -1364,33 +1366,39 @@ function typeLabel(type: string): string {
   return ({ mortar: t("typeMortar"), target: t("typeTarget"), point: t("typePoint") } as Record<string, string>)[type];
 }
 
+function kindLabel(kind: MarkKind): string {
+  const keys = { infantry: "kindInfantry", armour: "kindArmour", mortar: "kindMortar", helicopter: "kindHelicopter", retreat: "kindRetreat", legacy: "typePoint" } as const;
+  return t(keys[kind]);
+}
+
+/** Зображення знаків (з SVG), кеш за приналежністю й видом; після завантаження карта перемальовується. */
+const symbolImages = new Map<string, HTMLImageElement>();
+function symbolImage(aff: Affiliation | undefined, kind: MarkKind): HTMLImageElement | null {
+  const key = symbolKey(aff, kind);
+  let img = symbolImages.get(key);
+  if (!img) {
+    img = new Image();
+    img.onload = () => requestDraw();
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(symbolSvg(aff, kind));
+    symbolImages.set(key, img);
+  }
+  return img.complete && img.naturalWidth > 0 ? img : null;
+}
+
 function drawMarkers(c: Record<string, string>): void {
   for (const m of getVisibleMarkers()) {
     const s = scrFromWorld(m.x, m.z);
     if (s.sx < -40 || s.sy < -40 || s.sx > W + 40 || s.sy > H + 40) continue;
-    const col = (c as Record<string, string>)[m.type] || c.point;
-    const r = m.id === callbacks.selectedId ? 9 : 7;
-    ctx.fillStyle = col;
-    ctx.strokeStyle = c.surface;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    if (m.type === "target") {
-      ctx.moveTo(s.sx, s.sy - r - 2);
-      ctx.lineTo(s.sx + r + 2, s.sy);
-      ctx.lineTo(s.sx, s.sy + r + 2);
-      ctx.lineTo(s.sx - r - 2, s.sy);
-      ctx.closePath();
-    } else if (m.type === "mortar") {
-      ctx.arc(s.sx, s.sy, r, 0, Math.PI * 2);
-    } else {
-      ctx.rect(s.sx - r + 1, s.sy - r + 1, (r - 1) * 2, (r - 1) * 2);
-    }
+    const selected = m.id === callbacks.selectedId;
+    const size = selected ? 38 : 32;
+    const half = size / 2;
+    const col = m.aff === "friend" ? c.mortar : m.aff === "hostile" ? c.target : c.point;
+    const img = symbolImage(m.aff, m.kind);
     if (m.destroyed) ctx.globalAlpha = 0.55;
-    ctx.fill();
-    ctx.stroke();
+    if (img) ctx.drawImage(img, s.sx - half, s.sy - half, size, size);
     if (m.destroyed) {
       // зруйновано: хрест поверх приглушеної мітки
-      const k = r + 4;
+      const k = half * 0.85;
       ctx.strokeStyle = c.ink;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -1401,24 +1409,25 @@ function drawMarkers(c: Record<string, string>): void {
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
-    if (m.id === callbacks.selectedId) {
+    if (selected) {
       ctx.strokeStyle = col;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(s.sx, s.sy, r + 6, 0, Math.PI * 2);
+      ctx.arc(s.sx, s.sy, half + 5, 0, Math.PI * 2);
       ctx.stroke();
     }
     ctx.font = '600 13px "IBM Plex Sans Condensed",sans-serif';
     ctx.textBaseline = "middle";
-    const label = m.name || typeLabel(m.type);
+    const label = m.name || (m.kind === "legacy" ? typeLabel(m.type) : kindLabel(m.kind));
     const tw = ctx.measureText(label).width;
+    const lx = s.sx + half + 4;
     ctx.fillStyle = c.surface;
     ctx.globalAlpha = 0.85;
-    ctx.fillRect(s.sx + r + 5, s.sy - 9, tw + 8, 18);
+    ctx.fillRect(lx, s.sy - 9, tw + 8, 18);
     ctx.globalAlpha = 1;
     ctx.fillStyle = c.ink;
     if (m.destroyed) ctx.globalAlpha = 0.6;
-    ctx.fillText(label, s.sx + r + 9, s.sy);
+    ctx.fillText(label, lx + 4, s.sy);
     ctx.globalAlpha = 1;
   }
 }

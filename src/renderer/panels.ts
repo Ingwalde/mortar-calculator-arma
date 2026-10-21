@@ -53,6 +53,8 @@ import { initWakeLock, setKeepAwake } from "./wakeLock";
 import { closeSettings, initSettings, openSettings } from "./settingsPanel";
 import { isRemote } from "./platform";
 import { initOffline } from "./offline";
+import { CAPTION_MAX, KINDS, isMortarMark, isTargetable, readClass, typeOf, type Affiliation, type MarkKind } from "@core/marks";
+import { symbolSvg } from "@core/symbols";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
@@ -66,6 +68,11 @@ import { playShot, playTestSound, setShotMuted, setShotVolume } from "./shotAudi
 function typeLabel(type: MarkerType): string {
   return { mortar: t("typeMortar"), target: t("typeTarget"), point: t("typePoint") }[type];
 }
+const KIND_KEYS = { infantry: "kindInfantry", armour: "kindArmour", mortar: "kindMortar", helicopter: "kindHelicopter", retreat: "kindRetreat" } as const;
+/** Підпис виду мітки; для старої довільної точки — «Точка». */
+function kindLabel(m: { kind: MarkKind; type: MarkerType }): string {
+  return m.kind === "legacy" ? typeLabel(m.type) : t(KIND_KEYS[m.kind]);
+}
 function weaponName(w: WeaponId): string {
   return { M252: t("weaponShortM252"), "2B14": t("weaponShort2B14") }[w];
 }
@@ -75,9 +82,9 @@ function shellName(k: string): string {
 
 let selectedId: string | null = null;
 
-function nextName(type: MarkerType): string {
-  const n = getCurrent().markers.filter((m) => m.type === type).length + 1;
-  return typeLabel(type) + " " + n;
+function nextName(aff: Affiliation | undefined, kind: MarkKind): string {
+  const n = getCurrent().markers.filter((m) => m.aff === aff && m.kind === kind).length + 1;
+  return kindLabel({ kind, type: typeOf(aff, kind) }) + " " + n;
 }
 
 // ---------- folders/missions ----------
@@ -152,17 +159,15 @@ function renderMarksListInner(): void {
     if (m.id === selectedId) li.className = "sel";
     if (m.destroyed) li.classList.add("destroyed");
     const badge = document.createElement("div");
-    badge.className = "badge b-" + m.type;
-    const bs = document.createElement("span");
-    if (m.type === "target") bs.appendChild(targetIcon());
-    else bs.textContent = { mortar: t("badgeMortar"), point: t("badgePoint") }[m.type];
-    badge.appendChild(bs);
+    badge.className = "badge sym";
+    // знак — статичний SVG власної розмітки (без введеного користувачем тексту)
+    badge.innerHTML = symbolSvg(m.aff, m.kind);
     const info = document.createElement("div");
     info.className = "info";
     info.tabIndex = 0;
     const name = document.createElement("div");
     name.className = "name";
-    name.textContent = m.name || typeLabel(m.type);
+    name.textContent = m.name || kindLabel(m);
     const sub = document.createElement("div");
     sub.className = "sub";
     const part = (cls: string, text: string): HTMLSpanElement => {
@@ -180,7 +185,14 @@ function renderMarksListInner(): void {
     coords.append(part("gref", gridRef(m.x, m.z)), part("c", "X " + fmtM(m.x)), part("c", "Z " + fmtM(m.z)));
     if (m.h !== null && isFinite(m.h)) coords.appendChild(part("c", "h " + fmtM(m.h)));
     sub.append(...(tags.childElementCount ? [tags] : []), coords);
-    info.append(name, sub);
+    const parts: HTMLElement[] = [name];
+    if (m.caption) {
+      const cap = document.createElement("div");
+      cap.className = "cap";
+      cap.textContent = m.caption;
+      parts.push(cap);
+    }
+    info.append(...parts, sub);
     info.onclick = () => selectMarker(m.id, true);
     info.onkeydown = (e) => {
       if (e.key === "Enter") selectMarker(m.id, true);
@@ -222,7 +234,7 @@ function toggleDestroyed(id: string): void {
   m.u = Date.now();
   scheduleSave();
   renderAll();
-  toast(t(m.destroyed ? "markDestroyed" : "markRestored", { n: m.name || typeLabel(m.type) }));
+  toast(t(m.destroyed ? "markDestroyed" : "markRestored", { n: m.name || kindLabel(m) }));
 }
 
 export function selectMarker(id: string, center: boolean): void {
@@ -261,18 +273,30 @@ function vibrate(ms: number): void {
 // ---------- marker dialog ----------
 const dlg = $<HTMLDialogElement>("dlg");
 let editing: Marker | null = null;
-let dlgType: MarkerType = "target";
+let dlgAff: Affiliation | undefined = "hostile";
+let dlgKind: MarkKind = "infantry";
 let dlgWeapon: WeaponId = "M252";
 
-function setDlgType(t: MarkerType): void {
-  dlgType = t;
-  for (const b of $("fType").querySelectorAll<HTMLButtonElement>("button")) {
-    b.setAttribute("aria-pressed", b.dataset.t === t ? "true" : "false");
+/** Тип для розрахунку, що відповідає вибраним приналежності й виду. */
+function dlgType(): MarkerType {
+  return typeOf(dlgAff, dlgKind);
+}
+
+function setDlgClass(aff: Affiliation | undefined, kind: MarkKind): void {
+  dlgAff = aff;
+  dlgKind = kind;
+  for (const b of $("fAff").querySelectorAll<HTMLButtonElement>("button")) {
+    b.setAttribute("aria-pressed", b.dataset.a === aff ? "true" : "false");
   }
-  $("fWeapon").hidden = t !== "mortar";
-  // «зруйновано» буває лише в цілі й точки
+  for (const b of $("fKind").querySelectorAll<HTMLButtonElement>("button")) {
+    b.setAttribute("aria-pressed", b.dataset.k === kind ? "true" : "false");
+  }
+  const type = dlgType();
+  // зброя потрібна лише своєму мінометові: від його позиції йде розрахунок
+  $("fWeapon").hidden = type !== "mortar";
+  // «зруйновано» не буває лише у свого міномета
   const row = document.getElementById("fDestroyedRow");
-  if (row) row.hidden = t === "mortar";
+  if (row) row.hidden = type === "mortar";
 }
 function setDlgWeapon(w: WeaponId): void {
   dlgWeapon = w;
@@ -284,20 +308,31 @@ $("fWeapon").onclick = (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
   if (b) setDlgWeapon(b.dataset.w as WeaponId);
 };
-$("fType").onclick = (e) => {
+function onClassChanged(aff: Affiliation | undefined, kind: MarkKind): void {
+  const before = { aff: dlgAff, kind: dlgKind };
+  setDlgClass(aff, kind);
+  const nameInput = $<HTMLInputElement>("fName");
+  // автоназва («Піхота 3») оновлюється разом із видом, власна назва лишається
+  const labels = [...KINDS.map((k) => t(KIND_KEYS[k])), typeLabel("point")].map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const autoNameRe = new RegExp(`^(${labels.join("|")}) \\d+$`);
+  if (!editing && autoNameRe.test(nameInput.value) && (before.aff !== aff || before.kind !== kind)) nameInput.value = nextName(aff, kind);
+}
+$("fAff").onclick = (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
   if (!b) return;
-  const newType = b.dataset.t as MarkerType;
-  setDlgType(newType);
-  const nameInput = $<HTMLInputElement>("fName");
-  const autoNameRe = new RegExp(`^(${typeLabel("mortar")}|${typeLabel("target")}|${typeLabel("point")}) \\d+$`);
-  if (!editing && autoNameRe.test(nameInput.value)) nameInput.value = nextName(newType);
+  onClassChanged(b.dataset.a as Affiliation, dlgKind === "legacy" ? "infantry" : dlgKind);
+};
+$("fKind").onclick = (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button");
+  if (!b) return;
+  onClassChanged(dlgAff ?? "hostile", b.dataset.k as MarkKind);
 };
 
 interface DialogPreset {
   /** Назва, запропонована для нової мітки (наприклад, за селищем поруч). */
   name?: string;
-  type: MarkerType;
+  aff?: Affiliation;
+  kind: MarkKind;
   x: number;
   z: number;
   h: number | null;
@@ -318,11 +353,11 @@ function fillFolderDatalist(): void {
 export function openMarkerDialog(marker?: Marker, preset?: DialogPreset): void {
   editing = marker ?? null;
   const d: DialogPreset = marker ?? preset!;
-  setDlgType(d.type);
+  setDlgClass(marker ? marker.aff : d.aff, marker ? marker.kind : d.kind);
   const lastMortar = [...getCurrent().markers].reverse().find((x) => x.type === "mortar");
   setDlgWeapon(marker?.w ?? lastMortar?.w ?? "M252");
   $("dlgTitle").textContent = marker ? t("dlgTitleEdit") : t("dlgTitleNew");
-  $<HTMLInputElement>("fName").value = marker ? marker.name : (preset?.name ?? nextName(d.type));
+  $<HTMLInputElement>("fName").value = marker ? marker.name : (preset?.name ?? nextName(dlgAff, dlgKind));
   $<HTMLInputElement>("fX").value = isFinite(d.x) ? String(Math.round(d.x)) : "";
   $<HTMLInputElement>("fZ").value = isFinite(d.z) ? String(Math.round(d.z)) : "";
   $<HTMLInputElement>("fH").value = d.h !== null && isFinite(d.h) ? String(d.h) : "";
@@ -332,7 +367,9 @@ export function openMarkerDialog(marker?: Marker, preset?: DialogPreset): void {
   $<HTMLInputElement>("fFolder").value = marker ? marker.folder : lastUsedFolder();
   $<HTMLButtonElement>("fDel").hidden = !marker;
   $<HTMLInputElement>("fDestroyed").checked = !!marker?.destroyed;
-  $("fDestroyedRow").hidden = d.type === "mortar";
+  $("fDestroyedRow").hidden = dlgType() === "mortar";
+  $<HTMLInputElement>("fCaption").value = marker?.caption ?? "";
+  $<HTMLInputElement>("fCaption").maxLength = CAPTION_MAX;
   showModalNoKeyboard(dlg);
 
   if (!marker && d.h === null && isFinite(d.x) && isFinite(d.z)) {
@@ -380,10 +417,14 @@ $<HTMLFormElement>("dlgForm").addEventListener("submit", (e) => {
   }
   const hv = $<HTMLInputElement>("fH").value.trim();
   const h = hv === "" ? null : parseFloat(hv);
-  const destroyedNow = dlgType !== "mortar" && $<HTMLInputElement>("fDestroyed").checked;
+  const type = dlgType();
+  const destroyedNow = type !== "mortar" && $<HTMLInputElement>("fDestroyed").checked;
+  const caption = $<HTMLInputElement>("fCaption").value.replace(/\s+/g, " ").trim().slice(0, CAPTION_MAX);
   const data = {
-    name: $<HTMLInputElement>("fName").value.trim().slice(0, 40) || nextName(dlgType),
-    type: dlgType,
+    name: $<HTMLInputElement>("fName").value.trim().slice(0, 40) || nextName(dlgAff, dlgKind),
+    type,
+    ...(dlgAff ? { aff: dlgAff } : {}),
+    kind: dlgKind,
     x,
     z,
     h: h !== null && isFinite(h) ? h : null,
@@ -393,10 +434,14 @@ $<HTMLFormElement>("dlgForm").addEventListener("submit", (e) => {
   const S = getCurrent();
   if (editing) {
     Object.assign(editing, data, { u: Date.now() });
+    if (!dlgAff) delete editing.aff;
+    if (caption) editing.caption = caption;
+    else delete editing.caption;
     if (destroyedNow) editing.destroyed = true;
     else delete editing.destroyed;
   } else {
-    const m: Marker = { id: uid(), ...data, u: Date.now(), ...(destroyedNow ? { destroyed: true } : {}) };
+    const now = Date.now();
+    const m: Marker = { id: uid(), ...data, u: now, c: now, ...(caption ? { caption } : {}), ...(destroyedNow ? { destroyed: true } : {}) };
     S.markers.push(m);
     selectedId = m.id;
     if (m.type === "mortar") {
@@ -421,7 +466,9 @@ $<HTMLButtonElement>("placeBtn").onclick = () => {
   }
   const w = centerWorld();
   const hasMortar = getCurrent().markers.some((m) => m.type === "mortar");
-  const type: MarkerType = hasMortar ? "target" : "mortar";
+  const aff: Affiliation = hasMortar ? "hostile" : "friend";
+  const kind: MarkKind = hasMortar ? "infantry" : "mortar";
+  const type: MarkerType = typeOf(aff, kind);
   // приціл на будівлі: мітка стає точно в її центр, а ціль отримує назву за найближчим селищем
   const aim = aimBuilding();
   const x = aim ? aim.cx : w.x;
@@ -429,13 +476,13 @@ $<HTMLButtonElement>("placeBtn").onclick = () => {
   let name: string | undefined;
   if (aim && type !== "mortar") {
     const place = nearestPlace(currentMeta().preset?.places, x, z, 500);
-    if (place) name = `${place.name}: ${nextName(type)}`.slice(0, 40);
+    if (place) name = `${place.name}: ${nextName(aff, kind)}`.slice(0, 40);
   }
-  openMarkerDialog(undefined, { type, x, z, h: null, fromMap: true, name });
+  openMarkerDialog(undefined, { aff, kind, x, z, h: null, fromMap: true, name });
 };
 $<HTMLButtonElement>("addManual").onclick = () => {
   const hasMortar = getCurrent().markers.some((m) => m.type === "mortar");
-  openMarkerDialog(undefined, { type: hasMortar ? "target" : "mortar", x: NaN, z: NaN, h: null });
+  openMarkerDialog(undefined, { aff: hasMortar ? "hostile" : "friend", kind: hasMortar ? "infantry" : "mortar", x: NaN, z: NaN, h: null });
   $<HTMLInputElement>("fX").value = "";
   $<HTMLInputElement>("fZ").value = "";
   setTimeout(() => $<HTMLInputElement>("fGrid").focus(), 50);
@@ -458,7 +505,7 @@ function firePair(): { m: Marker; t: FirePairPoint } | null {
     const w = centerWorld();
     target = { x: w.x, z: w.z, h: null, name: t("centerName") };
   } else {
-    const found = markersInFolder(S.sel.targetFolder).find((x) => x.id === S.sel.t && x.type !== "mortar");
+    const found = markersInFolder(S.sel.targetFolder).find((x) => x.id === S.sel.t && isTargetable(x));
     if (found) target = found;
   }
   if (!target) return null;
@@ -549,7 +596,7 @@ function fillFolderOptions(sel: HTMLSelectElement, current: string, wantMortar: 
   sel.add(new Option(t("allFolders"), ALL_FOLDERS));
   const names = new Set(
     getCurrent()
-      .markers.filter((m) => (m.type === "mortar") === wantMortar)
+      .markers.filter((m) => (wantMortar ? isMortarMark(m) : isTargetable(m)))
       .map((m) => m.folder)
   );
   for (const f of [...names].sort((a, b) => a.localeCompare(b, "uk"))) sel.add(new Option(f || t("noFolder"), f));
@@ -577,7 +624,7 @@ function fillFireSelects(): void {
   if (mortars.length && !mortars.some((m) => m.id === S.sel.m)) S.sel.m = mortars[0].id;
   selM.value = S.sel.m ?? "";
   selT.add(new Option(t("centerOption"), "__center"));
-  for (const m of markersInFolder(S.sel.targetFolder).filter((x) => x.type !== "mortar")) {
+  for (const m of markersInFolder(S.sel.targetFolder).filter((x) => isTargetable(x))) {
     selT.add(new Option(m.destroyed ? "✕ " + m.name : m.name, m.id));
   }
   if (![...selT.options].some((o) => o.value === S.sel.t)) S.sel.t = "__center";
@@ -1147,6 +1194,12 @@ function fixCalibAtCenter(key: "a" | "b"): void {
 }
 
 // ---------- backup ----------
+/** Приналежність, вид і type імпортованої мітки (старі копії без них виводяться зі `type`). */
+function importClass(m: { aff?: unknown; kind?: unknown; type?: unknown }): { type: MarkerType; aff?: Affiliation; kind: MarkKind } {
+  const c = readClass(m);
+  return { type: c.type, ...(c.aff ? { aff: c.aff } : {}), kind: c.kind };
+}
+
 $<HTMLButtonElement>("copyJson").onclick = () => copyText(JSON.stringify({ markers: getCurrent().markers }, null, 1));
 $<HTMLButtonElement>("importJson").onclick = () => {
   try {
@@ -1161,7 +1214,7 @@ $<HTMLButtonElement>("importJson").onclick = () => {
       const marker: Marker = {
         id: ids.has(m.id) ? uid() : String(m.id ?? uid()),
         name: String(m.name ?? "").slice(0, 40),
-        type: m.type === "mortar" || m.type === "target" ? m.type : "point",
+        ...importClass(m),
         x: Number(m.x),
         z: Number(m.z),
         h: m.h === null || m.h === undefined || m.h === "" ? null : Number(m.h),
@@ -1460,6 +1513,36 @@ function onLanguageChanged(): void {
   renderAll();
 }
 
+/** Довідка «?» на вкладці міток: що означають знаки (рамка й п'ять видів). */
+const CAPTION_KEYS = { infantry: "capInfantry", armour: "capArmour", mortar: "capMortar", helicopter: "capHelicopter", retreat: "capRetreat" } as const;
+function initLegend(): void {
+  const dlg = $<HTMLDialogElement>("legendDlg");
+  $<HTMLButtonElement>("legendBtn").onclick = () => {
+    const ul = $("legendList");
+    ul.textContent = "";
+    for (const k of KINDS) {
+      const li = document.createElement("li");
+      const pair = document.createElement("span");
+      pair.className = "pair";
+      // знаки — статичний SVG власної розмітки
+      pair.innerHTML = symbolSvg("friend", k) + symbolSvg("hostile", k);
+      const text = document.createElement("div");
+      const title = document.createElement("b");
+      title.textContent = t(KIND_KEYS[k]);
+      const cap = document.createElement("div");
+      cap.textContent = t(CAPTION_KEYS[k]);
+      text.append(title, cap);
+      li.append(pair, text);
+      ul.appendChild(li);
+    }
+    dlg.showModal();
+  };
+  $<HTMLButtonElement>("legendClose").onclick = () => dlg.close();
+  dlg.addEventListener("click", (e) => {
+    if (e.target === dlg) dlg.close();
+  });
+}
+
 function initAboutDialog(): void {
   const dlg = $<HTMLDialogElement>("aboutDlg");
   $<HTMLButtonElement>("aboutBtn").onclick = () => {
@@ -1524,6 +1607,7 @@ export function initPanels(): void {
   initSheet();
   initImmersive();
   initAboutDialog();
+  initLegend();
   initWakeLock();
   slideIndicator(document.querySelector<HTMLElement>(".tabs"), { active: 'button[aria-selected="true"]' });
   for (const seg of document.querySelectorAll<HTMLElement>(".seg")) slideIndicator(seg, { active: 'button[aria-pressed="true"]' });

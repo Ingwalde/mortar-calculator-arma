@@ -91,6 +91,7 @@ html.no-splash #splash{display:none}
           <button class="btn" id="addManual" data-i18n="addManualBtn">Додати за координатами</button>
           <button class="btn" id="exportFolderBtn" data-i18n="exportBtn">Експорт…</button>
           <button class="btn" id="importFolderBtn" data-i18n="importFolderBtn">Імпорт…</button>
+          <button class="btn icon-only" id="legendBtn" type="button" data-i18n-aria-label="legendAria" aria-label="Що означають знаки" title="?">?</button>
         </div>
       </section>
 
@@ -304,15 +305,22 @@ html.no-splash #splash{display:none}
   <form method="dialog" id="dlgForm">
     <h3 id="dlgTitle">Мітка</h3>
     <div class="field" style="margin-bottom:8px"><label for="fName" data-i18n="fieldName">Назва</label><input id="fName" maxlength="40"></div>
-    <div class="seg" id="fType" role="group" data-i18n-aria-label="markTypeAria" aria-label="Тип мітки" style="margin-bottom:8px">
-      <button type="button" data-t="mortar" data-i18n="typeMortar">Міномет</button>
-      <button type="button" data-t="target" data-i18n="typeTarget">Ціль</button>
-      <button type="button" data-t="point" data-i18n="typePoint">Точка</button>
+    <div class="seg" id="fAff" role="group" data-i18n-aria-label="affAria" aria-label="Приналежність" style="margin-bottom:8px">
+      <button type="button" data-a="friend" data-i18n="affFriend">Свій</button>
+      <button type="button" data-a="hostile" data-i18n="affHostile">Чужий</button>
+    </div>
+    <div class="seg kinds" id="fKind" role="group" data-i18n-aria-label="kindAria" aria-label="Вид мітки" style="margin-bottom:8px">
+      <button type="button" data-k="infantry" data-i18n="kindInfantry">Піхота</button>
+      <button type="button" data-k="armour" data-i18n="kindArmour">Броня</button>
+      <button type="button" data-k="mortar" data-i18n="kindMortar">Міномет</button>
+      <button type="button" data-k="helicopter" data-i18n="kindHelicopter">Гелікоптер</button>
+      <button type="button" data-k="retreat" data-i18n="kindRetreat">Відступ</button>
     </div>
     <div class="seg" id="fWeapon" role="group" data-i18n-aria-label="fireLabelMortar" aria-label="Міномет" style="margin-bottom:8px">
       <button type="button" data-w="M252" data-i18n="weaponM252">M252 (США, 81 мм)</button>
       <button type="button" data-w="2B14" data-i18n="weapon2B14">2Б14 «Піднос» (82 мм)</button>
     </div>
+    <div class="field" style="margin-bottom:8px"><label for="fCaption" data-i18n="fieldCaption">Підпис</label><input id="fCaption" maxlength="120" autocomplete="off" data-i18n-placeholder="captionPlaceholder" placeholder="Коротко: що, скільки, куди"></div>
     <div class="field" style="margin-bottom:8px"><label for="fGrid" data-i18n="fieldGrid">Сітка (напр. 0483 1172) — заповнить X і Z</label><input id="fGrid" autocomplete="off"></div>
     <div class="row">
       <div class="field"><label for="fX" data-i18n="fieldX">X, м (схід)</label><input id="fX" type="number" inputmode="decimal" step="any"></div>
@@ -329,6 +337,12 @@ html.no-splash #splash{display:none}
       </span>
     </div>
   </form>
+</dialog>
+<dialog id="legendDlg">
+  <h3 data-i18n="legendTitle">Умовні знаки</h3>
+  <p class="hint" data-i18n="legendIntro">Рамка показує, чия це мітка: синій прямокутник свої, червоний ромб чужі.</p>
+  <ul class="legend-list" id="legendList"></ul>
+  <div class="dlg-actions"><span></span><button type="button" class="btn primary" id="legendClose" data-i18n="closeBtn">Закрити</button></div>
 </dialog>
 <dialog id="offlineDlg">
   <h3 data-i18n="offlineTitle">Офлайн-режим</h3>
