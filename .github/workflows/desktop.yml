@@ -65,7 +65,10 @@ jobs:
             ls "$res"/app.asar.unpacked/node_modules/@img/sharp-libvips-*/lib | grep -E "libvips-cpp" || { echo "У $res немає libvips поза app.asar"; exit 1; }
           done
           [ "$found" = 1 ] || { echo "Не знайдено розпакований застосунок у dist"; exit 1; }
-          find dist -maxdepth 4 \( -name "LICENSE.electron.txt" -o -name "LICENSES.chromium.html" \) | head
+          echo "Ліцензії Electron у збірці:"
+          find dist -name "LICENSE*" -not -path "*/node_modules/*" -not -path "*/app.asar.unpacked/*" -not -path "*/legal/*" -not -name "*.json" 2>/dev/null | grep -iE "electron|chromium" | head
+          echo "Ліцензії Electron у node_modules/electron/dist:"
+          find node_modules/electron/dist -maxdepth 2 -iname "LICENSE*" | head
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.name }}
