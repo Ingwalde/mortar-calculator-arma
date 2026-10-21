@@ -64,6 +64,8 @@ function terrainName(id: string): string {
 
 function errorText(e: JoinError): string {
   const keys: Record<JoinError, Parameters<typeof t>[0]> = {
+    limit: "squadErrLimit",
+    disabled: "squadErrDisabled",
     bad_code: "squadErrBadCode",
     bad_callsign: "squadErrBadCallsign",
     callsign_taken: "squadErrTaken",

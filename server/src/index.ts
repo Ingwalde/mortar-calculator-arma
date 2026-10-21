@@ -2,7 +2,7 @@
  * Реле режиму відділення: Worker приймає запити, а кожне відділення живе в одному Durable Object (SquadRoomDO).
  * Уся логіка прав і протоколу — в ../../src/core/squad (Room); тут лише транспорт, хешування й сховище.
  *
- *   POST /create          { callsign }  ->  { room, code, key, memberId }
+ *   POST /create          { callsign, terrain }  ->  { room, code, key, memberId }
  *   GET  /ws/<room>       WebSocket (Hibernation API), перше повідомлення — hello
  */
 import { DurableObject } from "cloudflare:workers";
@@ -12,6 +12,13 @@ import { Room, type Effect } from "../../src/core/squad/room";
 
 export interface Env {
   SQUAD: DurableObjectNamespace<SquadRoomDO>;
+  GATE: DurableObjectNamespace<GateDO>;
+  /** Скільки відділень можна створити з однієї адреси за добу. */
+  CREATE_LIMIT_PER_DAY?: string;
+  /** Скільки відділень можна створити на всьому сервері за добу (захист безкоштовного ліміту). */
+  CREATE_LIMIT_GLOBAL_PER_DAY?: string;
+  /** "1" — тимчасово не створювати нових відділень (наявні працюють). */
+  CREATE_DISABLED?: string;
 }
 
 const CORS = {
@@ -45,6 +52,15 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
     if (url.pathname === "/create" && req.method === "POST") {
+      if (env.CREATE_DISABLED === "1") return json({ error: "disabled" }, 503);
+      // обмеження створення: з однієї адреси й на весь сервер за добу; адреса не зберігається, лише її хеш на добу
+      const day = new Date().toISOString().slice(0, 10);
+      const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
+      const perIp = env.GATE.get(env.GATE.idFromName("ip:" + (await sha256(ip + ":" + day))));
+      const global = env.GATE.get(env.GATE.idFromName("all:" + day));
+      const limitIp = Number(env.CREATE_LIMIT_PER_DAY ?? "10");
+      const limitAll = Number(env.CREATE_LIMIT_GLOBAL_PER_DAY ?? "300");
+      if (!(await perIp.take(limitIp)) || !(await global.take(limitAll))) return json({ error: "limit" }, 429);
       let body: { callsign?: unknown; terrain?: unknown };
       try {
         body = (await req.json()) as { callsign?: unknown };
@@ -70,6 +86,21 @@ export default {
     return new Response("not found", { status: 404 });
   }
 };
+
+/** Лічильник створень за добу (по одному на адресу й один загальний); сам себе видаляє наприкінці доби. */
+export class GateDO extends DurableObject<Env> {
+  async take(limit: number): Promise<boolean> {
+    const n = ((await this.ctx.storage.get<number>("n")) ?? 0) + 1;
+    if (n > limit) return false;
+    await this.ctx.storage.put("n", n);
+    if (n === 1) await this.ctx.storage.setAlarm(Date.now() + 26 * 3600 * 1000);
+    return true;
+  }
+
+  async alarm(): Promise<void> {
+    await this.ctx.storage.deleteAll();
+  }
+}
 
 interface Attachment {
   memberId: string | null;
@@ -200,8 +231,9 @@ export class SquadRoomDO extends DurableObject<Env> {
               ws.close(1008, e.code);
             }
           } else if (room.accepts(e.aud, id)) ws.send(JSON.stringify(e.msg));
-        } catch {
-          /* сокет закрито — прибере webSocketClose */
+        } catch (err) {
+          // сокет закрито — прибере webSocketClose; причину лишаємо в журналі Worker, щоб було видно втрати
+          console.warn("send failed", String(err));
         }
       }
     }

@@ -230,6 +230,8 @@ const DICT: Dict = {
   squadErrRemoved: { uk: "Вас вилучено з цього відділення", en: "You were removed from this squad" },
   squadErrEnded: { uk: "Гру вже закінчено", en: "The game is already over" },
   squadErrGone: { uk: "Такого відділення нема або його видалено", en: "There is no such squad or it was deleted" },
+  squadErrLimit: { uk: "Забагато нових відділень сьогодні: спробуйте завтра", en: "Too many new squads today: try again tomorrow" },
+  squadErrDisabled: { uk: "Створення нових відділень тимчасово вимкнено", en: "Creating new squads is temporarily switched off" },
   squadErrNetwork: { uk: "Нема зв'язку із сервером відділення", en: "No connection to the squad server" },
   squadErrInvite: { uk: "Встав посилання-запрошення повністю", en: "Paste the whole invitation link" },
   squadLinkOnline: { uk: "На зв'язку", en: "Online" },

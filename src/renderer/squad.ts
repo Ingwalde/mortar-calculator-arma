@@ -609,14 +609,16 @@ function begin(s: Session, dump?: SyncDump): void {
   save();
 }
 
-export type JoinError = "bad_code" | "bad_callsign" | "callsign_taken" | "full" | "removed" | "ended" | "gone" | "network" | "version" | "invalid";
+export type JoinError = "limit" | "disabled" | "bad_code" | "bad_callsign" | "callsign_taken" | "full" | "removed" | "ended" | "gone" | "network" | "version" | "invalid";
 
 /** Створює відділення на поточному терені; створювач — командир. */
 export async function createSquad(callsign: string): Promise<JoinError | null> {
   try {
     const res = await fetch(RELAY_URL + "/create", { method: "POST", body: JSON.stringify({ callsign, terrain: getRoot().cur }) });
     const j = (await res.json()) as { room?: string; code?: string; key?: string; memberId?: string; error?: string };
-    if (!res.ok || !j.room || !j.code || !j.key || !j.memberId) return j.error === "bad_callsign" ? "bad_callsign" : "network";
+    if (!res.ok || !j.room || !j.code || !j.key || !j.memberId) {
+      return j.error === "bad_callsign" ? "bad_callsign" : j.error === "limit" ? "limit" : j.error === "disabled" ? "disabled" : "network";
+    }
     begin({ room: j.room, key: j.key, memberId: j.memberId, callsign, code: j.code, terrain: getRoot().cur });
     // кімната вже знає командира: стартові мітки терену (якщо вони є) командир додає вручну
     connect({});
