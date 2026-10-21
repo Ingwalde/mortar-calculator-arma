@@ -204,6 +204,7 @@ const DICT: Dict = {
   ageMin: { uk: "{n} хв тому", en: "{n} min ago" },
   ageHour: { uk: "{n} год тому", en: "{n} h ago" },
   ageDay: { uk: "{n} дн тому", en: "{n} d ago" },
+  markMoved: { uk: "Мітку «{n}» пересунуто", en: "“{n}” moved" },
   tabSquad: { uk: "Відділення", en: "Squad" },
   squadAdded: { uk: "{who}: нова мітка «{what}»", en: "{who} added “{what}”" },
   squadDenied: { uk: "Немає прав на цю зміну", en: "You are not allowed to do that" },

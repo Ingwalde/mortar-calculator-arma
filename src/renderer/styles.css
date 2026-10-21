@@ -134,7 +134,9 @@ p.hint{font-size:14px;color:var(--muted);margin:4px 0 12px;max-width:60ch}
 .solution-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
 .solution-meta>div{background:color-mix(in srgb,var(--ink) 6%,transparent);border-radius:12px;padding:12px 14px}
 .solution-meta .v{font-size:18px;font-weight:700;margin-top:4px}
-.solution-hero .k,.solution-meta .k{font-size:12px;color:var(--muted)}
+.solution-hero .k,.solution-meta .k{font-size:12px;color:var(--muted)}
+/* числа розрахунку — яскраво-зелені в будь-якій темі: їх читають одним поглядом, прицілюючись */
+.solution-hero .v,.solution-meta .v{color:#4cff8a}
 .solution-hero .u,.solution-meta .u{font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
 
 .charges{width:100%;border-collapse:collapse;margin-top:12px;font-size:15px}
