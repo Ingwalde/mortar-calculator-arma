@@ -22,7 +22,7 @@ polygons on the map (phase lines, routes, no-fire areas as polygons), peer-to-pe
 | Roles | **Commander**, **mortarman**, **soldier**; the commander assigns who is a mortarman |
 | Sign-in | A **callsign** typed at joining; no accounts, no Discord |
 | Marks | Affiliation **friend / hostile** only. Kinds: infantry, armour, mortar, helicopter and a retreat cross. Captions explaining the symbols, author and time on every mark |
-| Soldier | Sees all marks, creates every kind except a mortar, moves any mark except a mortar, deletes only his own marks, can mark a building destroyed, has no solution and no firing log |
+| Soldier | Sees all marks, creates every kind except a mortar, moves any mark (a mortar too), deletes only his own marks, can mark a building destroyed, has no solution and no firing log |
 | Firing log | Only for mortarmen and the commander |
 | Member removal | The commander can remove a member, and can **restore** access later |
 | Game over | The commander ends the game and gets a statistics report; the report can be edited by the commander and by members he allows, saved to a file and imported for viewing later |
@@ -52,7 +52,7 @@ The **server enforces** every rule below; the client only hides what a role may 
 | See all marks, captions, authors | yes | yes | yes |
 | Create a friend or hostile mark of kind infantry, armour, helicopter or retreat | yes | yes | yes |
 | Create or move a **mortar** mark | yes | yes | no |
-| Move a mark (change its position) | any mark | any mark | any mark except a mortar |
+| Move a mark (change its position) | any mark | any mark | any mark |
 | Edit (kind, affiliation, name) or delete a mark of someone else | yes | yes | no |
 | Edit or delete his own mark | yes | yes | yes |
 | Add or edit a caption | any mark | any mark | his own marks and hostile marks |
@@ -93,8 +93,7 @@ Five symbols, drawn as small SVG pictures embedded in the application (no runtim
 - **Retreat**: a bold cross without a frame, blue for friend and red for hostile, with a dark outline for contrast on any terrain.
 - Line weights are bold (frame 6, symbols 6 to 9 in a 100-unit box) so that the marks read at 30 px on dark and light maps.
 
-The infantry and armour pictures and the frames are taken from the symbol library milsymbol (MIT license, with its notice added to
-THIRD-PARTY-NOTICES.md); the mortar, helicopter and retreat pictures are own drawings. Every symbol has a short caption in
+All pictures are own drawings that follow the look of APP-6 (the standard frames and symbols); no symbol library is used. Every symbol has a short caption in
 Ukrainian and English (shown by the "?" legend and on tap): infantry, armour, mortar, helicopter, retreat.
 
 ## 7. Danger warning for friendly marks
@@ -234,7 +233,7 @@ where it still fits; the server's ordering replaces it for squads.
 ## 15. Phases and acceptance
 
 1. **Spec approval** (this document) and the open decisions of section 17.
-2. **Data model and local features** (no server): new mark model and migration, affiliation frames and kinds, captions and legend, author and time fields, friendly-fire warning, report data structures. *Done when* local use works, every kind has a caption, the migration test passes and the warning is covered by unit tests with fixed numbers.
+2. **Data model and local features** (no server) — **done**: new mark model and migration, affiliation frames and kinds, captions and legend, author and time fields, friendly-fire warning, report data structures. *Done when* local use works, every kind has a caption, the migration test passes and the warning is covered by unit tests with fixed numbers.
 3. **Relay and protocol**: the server, the protocol, permissions, retention alarms, rate limits. *Done when* a table-driven test covers every cell of the permission matrix, duplicates and ordering are tested, a reconnect test passes, and a load test with 20 clients stays within the limits of section 10.
 4. **Client sync and squad panel**: the sync engine with the offline queue, the role-aware interface, removal and restore, invitation links. *Done when* three browser clients in different roles pass an automated scenario (a soldier marks a hostile, a mortarman sees it and logs a mission, the commander removes and restores a member), and a dropped connection recovers without losing marks.
 5. **Game over and report**: report building, editing, export and import, retention. *Done when* the exported file imports back identically and the server holds no data after export or after 24 hours.
@@ -262,7 +261,7 @@ migration of old marks, danger-warning geometry, report export and import, and a
 - **D3 Hosting:** the owner creates the account and the secrets (see "Owner setup" in section 10); a custom domain is optional.
 - **D4 Callsign rules:** 2 to 16 characters from letters, digits, `-`, `_` and space; unique in the squad ignoring case; look-alike duplicates (the same name with only case or spacing different) are refused.
 - **D5 Limits:** 20 members and 100 marks per squad, 40 operations per minute per member, a message at most 8 KB, a caption of 120 characters.
-- **D6 Soldier details:** a soldier creates friend and hostile marks of infantry, armour, helicopter and retreat (his own position or other friendly units), moves any mark except a mortar, deletes only his own marks, and may caption his own marks and hostile marks of others.
+- **D6 Soldier details:** a soldier creates friend and hostile marks of infantry, armour, helicopter and retreat (his own position or other friendly units), moves any mark (a mortar too), deletes only his own marks, and may caption his own marks and hostile marks of others.
 - **D7 Danger warning visibility:** the commander and mortarmen only.
 - **D8 Firing log sharing:** mortarmen see each other's entries live and the commander sees all of them; soldiers see none.
 - **D9 Report language:** decided: the language the application is set to.

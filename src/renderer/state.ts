@@ -63,6 +63,8 @@ export interface FireLogEntry {
   range: number;
   heightDiff: number | null;
   tof: number | null;
+  /** Свої мітки в небезпечній зоні навколо цілі на момент розрахунку (1.1.0). */
+  warnings?: { name: string; distance: number; radius: number }[];
 }
 
 /** Найбільша кількість записів журналу на терен — старіші відкидаються. */
@@ -210,6 +212,15 @@ function normalizeFireLogEntry(e: unknown): FireLogEntry | null {
   if (!isFinite(Number(r.at)) || !isFinite(Number(r.elevation)) || !isFinite(Number(r.bearingMils))) return null;
   const heightDiff = r.heightDiff === null || r.heightDiff === undefined ? null : Number(r.heightDiff);
   const tof = r.tof === null || r.tof === undefined ? null : Number(r.tof);
+  const warnings: NonNullable<FireLogEntry["warnings"]> = [];
+  if (Array.isArray(r.warnings)) {
+    for (const w of r.warnings.slice(0, 5)) {
+      const o = w as Record<string, unknown> | null;
+      if (o && typeof o.name === "string" && isFinite(Number(o.distance)) && isFinite(Number(o.radius))) {
+        warnings.push({ name: o.name.slice(0, 40), distance: Number(o.distance), radius: Number(o.radius) });
+      }
+    }
+  }
   return {
     id: typeof r.id === "string" ? r.id : uid(),
     at: Number(r.at),
@@ -225,7 +236,8 @@ function normalizeFireLogEntry(e: unknown): FireLogEntry | null {
     milsPerCircle: isFinite(Number(r.milsPerCircle)) ? Number(r.milsPerCircle) : 6400,
     range: isFinite(Number(r.range)) ? Number(r.range) : 0,
     heightDiff: heightDiff !== null && isFinite(heightDiff) ? heightDiff : null,
-    tof: tof !== null && isFinite(tof) ? tof : null
+    tof: tof !== null && isFinite(tof) ? tof : null,
+    ...(warnings.length ? { warnings } : {})
   };
 }
 

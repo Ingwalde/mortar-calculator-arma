@@ -55,6 +55,8 @@ import { isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { CAPTION_MAX, KINDS, isMortarMark, isTargetable, readClass, typeOf, type Affiliation, type MarkKind } from "@core/marks";
 import { symbolSvg } from "@core/symbols";
+import { dangerRadius, friendlyWarnings, type DangerRadius, type FriendlyWarning } from "@core/shellEffects";
+import { ageOf } from "@core/age";
 import { initUpdater, mountUpdateBox } from "./updatePanel";
 import { NOTICES_TEXT } from "./licenses";
 import { ruinedBuildingIcon, targetIcon } from "./icons";
@@ -793,6 +795,13 @@ export function renderFire(): void {
     warn.textContent = t("outOfRange", { weapon: weaponName(w), min: r.min, max: r.max });
     box.appendChild(warn);
   } else {
+    // свої мітки в небезпечній зоні навколо цілі (розкид + осколки зі снарядів гри); не блокує наведення
+    const danger = dangerRadius(w, S.sel.shell, sols[0].charge, dist, getRoot().spread);
+    const friends = S.markers
+      .filter((f) => f.aff === "friend")
+      .map((f) => ({ id: f.id, name: f.name || kindLabel(f), x: f.x, z: f.z, u: f.u }));
+    const warns = friendlyWarnings(p.t, friends, danger);
+    if (danger && warns.length) box.appendChild(buildFriendlyWarning(warns, danger));
     const table = document.createElement("table");
     table.className = "charges";
     table.innerHTML = `<thead><tr><th>${t("colCharge")}</th><th>${t("cellElevationMils")}</th><th>${t("colTof")}</th></tr></thead>`;
@@ -852,7 +861,8 @@ export function renderFire(): void {
         milsPerCircle: weapon.milsPerCircle,
         range: dist,
         heightDiff: dh,
-        tof: best.timeOfFlight ?? null
+        tof: best.timeOfFlight ?? null,
+        ...(warns.length ? { warnings: warns.slice(0, 5).map((x) => ({ name: x.name, distance: Math.round(x.distance), radius: Math.round(x.radius) })) } : {})
       });
       toast(t("savedToLog"));
       if (!$("pane-log").hidden) renderLog();
@@ -869,6 +879,32 @@ export function renderFire(): void {
   box.appendChild(note2);
   renderTable(dist);
   requestDraw();
+}
+
+function ageText(updatedAt: number): string {
+  const a = ageOf(updatedAt);
+  return a.unit === "now" ? t("ageNow") : t(a.unit === "min" ? "ageMin" : a.unit === "h" ? "ageHour" : "ageDay", { n: a.n });
+}
+
+/** Попередження про своїх у небезпечній зоні: рядок над таблицею зарядів (розрахунок). */
+function buildFriendlyWarning(warns: FriendlyWarning[], danger: DangerRadius): HTMLElement {
+  const box = document.createElement("div");
+  box.className = "warn-soft";
+  box.setAttribute("role", "status");
+  const head = document.createElement("b");
+  head.textContent = "⚠ " + t("warnFriendlyTitle", { r: Math.round(danger.radius), a: Math.round(danger.dispersion), f: Math.round(danger.fragments) });
+  box.appendChild(head);
+  for (const x of warns.slice(0, 3)) {
+    const line = document.createElement("div");
+    line.textContent = t("warnFriendlyItem", { name: x.name, d: Math.round(x.distance), age: ageText(x.updatedAt) });
+    box.appendChild(line);
+  }
+  if (warns.length > 3) {
+    const more = document.createElement("div");
+    more.textContent = t("warnMore", { n: warns.length - 3 });
+    box.appendChild(more);
+  }
+  return box;
 }
 
 function renderTable(dist: number | null): void {
@@ -999,6 +1035,13 @@ function renderLogInner(): void {
     const meta = document.createElement("div");
     meta.className = "sub";
     meta.textContent = `${weaponName(e.weapon)} • ${shellName(e.shell)} • ${e.mortarGrid} → ${e.targetGrid}`;
+    const warnEls: HTMLElement[] = [];
+    for (const wn of e.warnings ?? []) {
+      const el = document.createElement("div");
+      el.className = "logwarn";
+      el.textContent = "⚠ " + t("logWarnItem", { name: wn.name, d: wn.distance, r: wn.radius });
+      warnEls.push(el);
+    }
 
     const acts = document.createElement("div");
     acts.className = "logact";
@@ -1021,7 +1064,7 @@ function renderLogInner(): void {
     };
     acts.append(copyBtn, delBtn);
 
-    li.append(top, vals, meta, acts);
+    li.append(top, vals, meta, ...warnEls, acts);
     ul.appendChild(li);
   }
 }
