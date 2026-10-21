@@ -15,6 +15,7 @@ license declared there, not ownership of every dependency of the mod.
 | Official-map building outlines | Bohemia Interactive game `.topo` files | `src/core/buildings/{everon,arland,kolguyev}.ts` | Converted to BLD1/base64 by `scripts/extract-buildings.mjs`. The outlines are polygon geometry only; no separate redistribution authority was established. |
 | Calculation reference code and tables | GeNeFRAG / Gerhard Fröhlich, MIT | `src/core/ballistics.ts`, `src/core/ballistic-data.json`, `test/vendor/BallisticCalculator.reference.cjs` | Preserve the MIT notice. Separately document the provenance of the numerical dataset; do not assume that all isolated numbers/formulas are copyrightable. |
 | Game dispersion parameters | Arma Reforger game prefabs | `src/core/spread.ts` | A few numerical parameters and independently written calculation code, not an extracted image. Record their origin; do not equate these automatically with the legal status of copied maps or databases. |
+| Shell fragmentation distance | Arma Reforger game files (Bohemia Interactive), prefabs of the mortar shells and their warheads | `src/core/shell-effects.json`, `src/core/shellEffects.ts`, `scripts/extract-shell-effects.mjs` | One number per shell (`DamageDistance` of the fragmentation effect, metres) read from the game files of Arma Reforger Server (`data002.pak`) on 2026-10-21 and used for the friendly-fire warning. The script keeps the origin chain of every value. No prefab or asset is copied into the repository. |
 
 ## Workshop terrains
 
