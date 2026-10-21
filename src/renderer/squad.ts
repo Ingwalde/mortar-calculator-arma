@@ -631,6 +631,7 @@ export async function createSquad(callsign: string): Promise<JoinError | null> {
 export function joinSquad(invite: Invite, callsign: string): Promise<JoinError | null> {
   return new Promise((resolve) => {
     let done = false;
+    let joined: Session | null = null;
     const sock = new WebSocket(socketUrl(invite.room));
     const finish = (r: JoinError | null): void => {
       if (done) return;
@@ -650,8 +651,10 @@ export function joinSquad(invite: Invite, callsign: string): Promise<JoinError |
       const m = JSON.parse(e.data) as ServerMsg;
       if (m.t === "error") return finish(m.code as JoinError);
       if (m.t === "welcome" && m.key) {
-        // ключ отримано: далі живе звичайне з'єднання (воно й отримає зліпок)
-        begin({ room: invite.room, key: m.key, memberId: m.memberId, callsign, code: null, terrain: "" });
+        // ключ отримано; чекаємо зліпок, щоб знати карту відділення ще до першої мітки
+        joined = { room: invite.room, key: m.key, memberId: m.memberId, callsign, code: null, terrain: "" };
+      } else if (m.t === "snapshot" && joined) {
+        begin({ ...joined, terrain: m.terrain });
         finish(null);
         connect({});
         emit();
