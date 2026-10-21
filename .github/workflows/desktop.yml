@@ -1,0 +1,61 @@
+# Настільні збірки для macOS і Linux (Windows збирається локально: npm run dist:win).
+# Запуск: вручну (Actions -> Desktop -> Run workflow). Без тегу результат лишається артефактом збірки; з тегом файли
+# додаються до релізу. Збірки не підписані (macOS покаже попередження про невідомого розробника).
+name: Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Тег релізу, до якого додати файли (порожньо — лише артефакт збірки)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: mac-arm64
+            os: macos-latest
+            args: --mac dmg --arm64
+            files: "dist/*.dmg"
+          - name: mac-x64
+            os: macos-15-intel
+            args: --mac dmg --x64
+            files: "dist/*.dmg"
+          - name: linux-x64
+            os: ubuntu-latest
+            args: --linux AppImage deb --x64
+            files: "dist/*.AppImage dist/*.deb"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run licenses:collect
+      - run: npx electron-vite build
+      - run: npx electron-builder ${{ matrix.args }} --publish never
+      - name: Вміст пакунка
+        shell: bash
+        run: ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.name }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+      - name: Додати до релізу
+        if: ${{ inputs.tag != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: gh release upload "$TAG" ${{ matrix.files }} --clobber
