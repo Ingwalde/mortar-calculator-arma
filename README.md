@@ -201,6 +201,8 @@ close the app and run `node scripts/convert-pyramids-webp.mjs` (`--keep` keeps t
 
 ## Documentation
 
+Design documents are in [`docs/`](docs): the plan for the squad mode is [docs/squad-mode.md](docs/squad-mode.md).
+
 All documentation is written in English, and this README is kept in step with the code: the test `test/docs.test.ts` (part of `npm test`) fails if the README mentions
 an npm script, a script file, a workflow or a document that does not exist, contains a hard-coded version number, or if any documentation file is not in English.
 When you change a command, a build or a platform, change this README in the same commit.
