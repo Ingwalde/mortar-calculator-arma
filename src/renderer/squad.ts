@@ -616,6 +616,15 @@ export function leaveSquad(keepMarks: boolean): void {
   clearLocal(keepMarks);
 }
 
+/** Повторна спроба зайти (після того, як командир відновив доступ). */
+export function retrySquad(): void {
+  if (!session) return;
+  fatal = null;
+  attempt = 0;
+  connect({});
+  emit();
+}
+
 export function sendAdmin(action: AdminAction): void {
   send({ t: "admin", opId: newOpId(), action });
 }

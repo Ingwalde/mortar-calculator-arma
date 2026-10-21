@@ -279,6 +279,7 @@ const DICT: Dict = {
   squadSoldierHint: { uk: "Солдат бачить усі мітки, ставить свої й ворожі, рухає будь-які; розрахунок і журнал — для мінометників і командира.", en: "A soldier sees all marks, places friendly and hostile ones and moves any; the solution and the log are for mortarmen and the commander." },
   squadEndedBanner: { uk: "Гру закінчено. Зміни закриті; звіт буде в наступній версії.", en: "The game is over. Changes are closed." },
   squadRemovedBanner: { uk: "Вас вилучено з відділення. Командир може відновити доступ.", en: "You were removed from the squad. The commander can restore your access." },
+  squadRetryBtn: { uk: "Спробувати знову", en: "Try again" },
   squadWhoLog: { uk: "записав {who}", en: "logged by {who}" },
   extOtherTab: { uk: "З іншої вкладки", en: "From another tab" },
   updManual: { uk: "доступна версія {v} — завантажте її зі сторінки релізів", en: "version {v} is available — download it from the releases page" },

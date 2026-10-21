@@ -8,7 +8,7 @@ import { ask, toast } from "./dom";
 import { getRoot, currentMeta } from "./state";
 import { findPreset } from "@core/terrains";
 import { onLangChange, t } from "./i18n";
-import { createSquad, joinSquad, leaveSquad, onSquadChange, resumeSquad, sendAdmin, shareLocalMarks, squadInfo, type JoinError } from "./squad";
+import { createSquad, joinSquad, leaveSquad, onSquadChange, resumeSquad, retrySquad, sendAdmin, shareLocalMarks, squadInfo, type JoinError } from "./squad";
 import { switchTerrain } from "./state";
 
 const CALLSIGN_KEY = "mortar.callsign";
@@ -143,7 +143,7 @@ function statusLine(): HTMLElement {
   const box = el("div", "squad-status");
   const link = squadInfo.link;
   const dot = el("span", "dot " + link);
-  box.append(dot, el("span", "", t(link === "online" ? "squadLinkOnline" : link === "connecting" ? "squadLinkConnecting" : "squadLinkOffline")));
+  box.append(dot, el("span", "", squadInfo.removed ? "" : t(link === "online" ? "squadLinkOnline" : link === "connecting" ? "squadLinkConnecting" : "squadLinkOffline")));
   if (squadInfo.pending) box.appendChild(el("span", "squad-pending", t("squadPending", { n: squadInfo.pending })));
   return box;
 }
@@ -196,7 +196,10 @@ function renderIn(root: HTMLElement): void {
   const role = squadInfo.role;
   const commander = role === "commander";
   root.appendChild(statusLine());
-  if (squadInfo.removed) root.appendChild(el("p", "squad-msg", t("squadRemovedBanner")));
+  if (squadInfo.removed) {
+    root.appendChild(el("p", "squad-msg", t("squadRemovedBanner")));
+    root.appendChild(button(t("squadRetryBtn"), retrySquad));
+  }
   if (squadInfo.phase === "ended") root.appendChild(el("p", "squad-msg", t("squadEndedBanner")));
   if (role) root.appendChild(el("p", "squad-you", t("squadYouAre", { role: roleName(role), name: s.callsign })));
   if (role === "soldier") root.appendChild(el("p", "hint small", t("squadSoldierHint")));
