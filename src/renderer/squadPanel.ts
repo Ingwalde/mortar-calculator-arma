@@ -10,6 +10,7 @@ import { findPreset } from "@core/terrains";
 import { onLangChange, t } from "./i18n";
 import { createSquad, joinSquad, leaveSquad, onSquadChange, resumeSquad, retrySquad, sendAdmin, shareLocalMarks, squadInfo, type JoinError } from "./squad";
 import { switchTerrain } from "./state";
+import { openFileButton, renderReport } from "./reportPanel";
 
 const CALLSIGN_KEY = "mortar.callsign";
 
@@ -120,6 +121,10 @@ function renderStart(root: HTMLElement): void {
   jr.appendChild(join);
   root.append(jf, jr);
   if (message) root.appendChild(el("p", "squad-msg", message));
+  const file = el("div", "row");
+  file.style.marginTop = "16px";
+  file.appendChild(openFileButton());
+  root.appendChild(file);
 }
 
 async function run(action: () => Promise<JoinError | null>, callsign: string): Promise<void> {
@@ -162,7 +167,17 @@ function memberRow(m: MemberInfo, commander: boolean, me: string): HTMLElement {
   dot.title = m.online ? t("squadOnlineDot") : "";
   const name = el("span", "squad-name", m.callsign + (m.id === me ? ` (${t("squadYouLabel")})` : ""));
   li.append(dot, name);
-  if (commander && m.id !== me && !m.removed) {
+  if (commander && m.id !== me && !m.removed && squadInfo.phase === "ended") {
+    // після кінця гри ролі вже не міняються: командир лише дозволяє правити звіт
+    li.appendChild(el("span", "badge", roleName(m.role)));
+    const l = el("label", "check");
+    const cb = el("input");
+    cb.type = "checkbox";
+    cb.checked = m.editor;
+    cb.onchange = () => sendAdmin({ a: "editor", member: m.id, allowed: cb.checked });
+    l.append(cb, document.createTextNode(" " + t("squadEditorToggle")));
+    li.appendChild(l);
+  } else if (commander && m.id !== me && !m.removed) {
     const sel = el("select");
     sel.setAttribute("aria-label", t("squadMembers", { n: "" }));
     for (const r of ["soldier", "mortarman", "commander"] as Role[]) sel.add(new Option(roleName(r), r, false, r === m.role));
@@ -331,19 +346,29 @@ function renderIn(root: HTMLElement): void {
 export function render(): void {
   const root = document.getElementById("pane-squad");
   if (!root) return;
-  const focus = document.activeElement instanceof HTMLInputElement && root.contains(document.activeElement) ? document.activeElement.id : "";
-  const saved = { c: (root.querySelector<HTMLInputElement>("#squadCallsign")?.value ?? ""), i: (root.querySelector<HTMLInputElement>("#squadInvite")?.value ?? "") };
+  // не губимо те, що користувач уже вписав, коли панель перемальовується (відповідь сервера, чужа правка)
+  const active = document.activeElement;
+  const focus = (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) && root.contains(active) ? { id: active.id, value: active.value, at: active.selectionStart } : null;
+  const typed = new Map<string, string>();
+  for (const i of root.querySelectorAll<HTMLInputElement>("#squadCallsign, #squadInvite")) typed.set(i.id, i.value);
+  const scroll = root.parentElement?.scrollTop ?? 0;
   root.textContent = "";
   if (squadInfo.session) renderIn(root);
-  else {
-    renderStart(root);
-    // не губимо те, що користувач уже вписав, коли панель перемальовується
-    const c = root.querySelector<HTMLInputElement>("#squadCallsign");
-    const i = root.querySelector<HTMLInputElement>("#squadInvite");
-    if (c && saved.c) c.value = saved.c;
-    if (i && saved.i) i.value = saved.i;
-    if (focus) root.querySelector<HTMLInputElement>("#" + focus)?.focus();
+  else renderStart(root);
+  renderReport(root);
+  for (const [id, v] of typed) {
+    const i = root.querySelector<HTMLInputElement>("#" + id);
+    if (i && v) i.value = v;
   }
+  if (focus && focus.id) {
+    const e = root.querySelector<HTMLInputElement | HTMLTextAreaElement>("#" + focus.id);
+    if (e) {
+      e.value = focus.value;
+      e.focus();
+      if (focus.at !== null) e.setSelectionRange(focus.at, focus.at);
+    }
+  }
+  if (root.parentElement) root.parentElement.scrollTop = scroll;
 }
 
 /** Запрошення з адреси сторінки: відкриває вкладку й підставляє посилання. */

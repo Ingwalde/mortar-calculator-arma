@@ -8,13 +8,15 @@
 import { RELAY_URL, inviteLink, socketUrl, type Invite } from "@core/squad/config";
 import { PROTOCOL_VERSION, type AdminAction, type MemberInfo, type Role, type ServerMsg, type SquadMark } from "@core/squad/protocol";
 import { SquadSync, newOpId, type SyncDump, type Wanted } from "@core/squad/sync";
-import { canCaption, canCreate, canDelete, canEdit, canUseSolution } from "@core/squad/permissions";
+import { canCaption, canCreate, canDelete, canEdit, canEditReport, canUseSolution } from "@core/squad/permissions";
+import { applyReportEdit, readReport, type Report, type ReportEdit } from "@core/squad/report";
 import { typeOf } from "@core/marks";
 import { getRoot, normalizeFireLogEntry, onStateChanged, scheduleSave, switchTerrain, type FireLogEntry, type Marker, type TerrainState } from "./state";
 import { toast } from "./dom";
 import { t } from "./i18n";
 
 const STORE_KEY = "mortar.squad.v1";
+const REPORT_KEY = "mortar.report.v1";
 const PUSH_DELAY_MS = 300;
 const PING_MS = 50_000;
 /** Нижче за ліміт сервера (40 дій на хвилину): не надсилаємо швидше, ніж він приймає. */
@@ -46,6 +48,10 @@ let link: Link = "offline";
 let me: { role: Role; editor: boolean } | null = null;
 let members: MemberInfo[] = [];
 let phase: "active" | "ended" = "active";
+/** Звіт: від сервера (його можна правити) або відкритий із файлу (лише перегляд); зберігається на пристрої. */
+let report: Report | null = readStoredReport();
+let reportFromServer = false;
+let exporting = false;
 let fatal: "removed" | null = null;
 let applying = false;
 let sent = new Set<string>();
@@ -89,6 +95,64 @@ export const squadInfo = {
     return session?.code ? inviteLink(session.room, session.code) : null;
   }
 };
+
+function readStoredReport(): Report | null {
+  try {
+    const raw = localStorage.getItem(REPORT_KEY);
+    return raw ? readReport(JSON.parse(raw)) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setReport(r: Report | null, fromServer: boolean): void {
+  report = r;
+  reportFromServer = fromServer && r !== null;
+  try {
+    if (r) localStorage.setItem(REPORT_KEY, JSON.stringify(r));
+    else localStorage.removeItem(REPORT_KEY);
+  } catch {
+    /* сховище недоступне: звіт лишиться до закриття сторінки */
+  }
+}
+
+export const reportInfo = {
+  get report(): Report | null {
+    return report;
+  },
+  /** Звіт можна правити: гру закінчено, ми в відділенні й маємо на це право. */
+  get editable(): boolean {
+    return !!session && !fatal && phase === "ended" && reportFromServer && !!me && canEditReport(me.role, me.editor);
+  }
+};
+
+export function editReport(edit: ReportEdit): void {
+  send({ t: "report", opId: newOpId(), edit });
+}
+
+/** Звіт збережено у файл: сервер може забути відділення. */
+export function reportExported(): void {
+  exporting = true;
+  send({ t: "exported", opId: newOpId() });
+}
+
+export function closeReport(): void {
+  setReport(null, false);
+  emit();
+}
+
+/** Відкриває звіт із тексту файлу для перегляду; false, якщо це не звіт. */
+export function openReportText(text: string): boolean {
+  try {
+    const r = readReport(JSON.parse(text));
+    if (!r) return false;
+    setReport(r, false);
+    emit();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function onSquadChange(cb: () => void): void {
   listeners.push(cb);
@@ -364,6 +428,7 @@ function onMessage(msg: ServerMsg): void {
       });
       setLink("online");
       pendingLogs = pendingLogs.filter((e) => !msg.log?.some((l) => l.id === e.id));
+      if (msg.report) setReport(msg.report, true);
       drain();
       flushLogs();
       break;
@@ -421,9 +486,18 @@ function onMessage(msg: ServerMsg): void {
       break;
     case "ended":
       phase = "ended";
+      setReport(msg.report, true);
       toast(t("squadEnded"));
       emit();
       break;
+    case "reportEdit": {
+      const next = report && reportFromServer ? applyReportEdit(report, msg.edit) : null;
+      if (next) {
+        setReport(next, true);
+        emit();
+      }
+      break;
+    }
     case "error":
       onFatal(msg.code);
       break;
@@ -443,7 +517,8 @@ function onFatal(code: string): void {
     toast(t("squadKicked"), 5000);
     emit();
   } else if (code === "gone") {
-    toast(t("squadGone"), 5000);
+    toast(t(exporting ? "repExported" : "squadGone"), 5000);
+    exporting = false;
     clearLocal(true);
   } else if (code === "version") {
     disconnect();

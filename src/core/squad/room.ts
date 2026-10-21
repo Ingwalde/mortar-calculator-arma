@@ -6,7 +6,8 @@
  */
 import { LIMITS, PROTOCOL_VERSION, callsignKey, readCallsign } from "./protocol";
 import type { AdminAction, ClientMsg, ErrorCode, FireEntry, MarkOp, MemberInfo, RejectReason, Role, ServerMsg, SquadMark } from "./protocol";
-import { canAdmin, canCaption, canCreate, canDelete, canEdit, canMove, canSetStatus, canUseSolution } from "./permissions";
+import { canAdmin, canCaption, canCreate, canDelete, canEdit, canEditReport, canMove, canSetStatus, canUseSolution } from "./permissions";
+import { applyReportEdit, buildReport, type Report } from "./report";
 
 export const IDLE_MS = 3 * 24 * 3600 * 1000;
 export const ENDED_MS = 24 * 3600 * 1000;
@@ -39,6 +40,8 @@ export interface SquadState {
   members: Record<string, Member>;
   marks: Record<string, StoredMark>;
   log: { s: number; entry: FireEntry }[];
+  /** Звіт: з'являється, коли командир закінчує гру. */
+  report: Report | null;
 }
 
 export type Audience = { kind: "all" } | { kind: "roles"; roles: Role[] } | { kind: "member"; id: string };
@@ -110,7 +113,8 @@ export class Room {
       seq: 0,
       members: { [i.memberId]: { id: i.memberId, callsign, role: "commander", keyHash: i.keyHash, removed: false, editor: false, joinedAt: i.now } },
       marks: {},
-      log: []
+      log: [],
+      report: null
     };
     const room = new Room(state);
     room.dirty.add(metaKey).add(memberKey(i.memberId));
@@ -119,9 +123,9 @@ export class Room {
 
   /** Відновлення зі сховища (записи, які віддав `takeChanges`). Повертає null, якщо запису кімнати немає. */
   static restore(entries: Record<string, unknown>): Room | null {
-    const meta = entries[metaKey] as Omit<SquadState, "members" | "marks" | "log"> | undefined;
+    const meta = entries[metaKey] as Omit<SquadState, "members" | "marks" | "log" | "report"> | undefined;
     if (!meta || meta.v !== 1) return null;
-    const state: SquadState = { ...meta, members: {}, marks: {}, log: [] };
+    const state: SquadState = { ...meta, members: {}, marks: {}, log: [], report: (entries.r as Report | undefined) ?? null };
     for (const [k, v] of Object.entries(entries)) {
       if (k.startsWith("m:")) state.members[(v as Member).id] = v as Member;
       else if (k.startsWith("k:")) state.marks[(v as StoredMark).id] = v as StoredMark;
@@ -135,9 +139,10 @@ export class Room {
     const puts: Record<string, unknown> = {};
     for (const k of this.dirty) {
       if (k === metaKey) {
-        const { members: _m, marks: _k, log: _l, ...meta } = this.state;
+        const { members: _m, marks: _k, log: _l, report: _r, ...meta } = this.state;
         puts[k] = meta;
-      } else if (k.startsWith("m:")) puts[k] = this.state.members[k.slice(2)];
+      } else if (k === "r") puts[k] = this.state.report;
+      else if (k.startsWith("m:")) puts[k] = this.state.members[k.slice(2)];
       else if (k.startsWith("k:")) puts[k] = this.state.marks[k.slice(2)];
       else if (k.startsWith("l:")) puts[k] = this.state.log.find((e) => e.entry.id === k.slice(2));
     }
@@ -220,6 +225,7 @@ export class Room {
     const m = this.state.members[id];
     if (!m || m.removed) return [{ k: "close", member: id, code: "removed" }];
     if (msg.t === "ping" || msg.t === "hello") return [];
+    if (msg.t === "report" || msg.t === "exported") return this.reportMsg(m, msg, now);
     if (msg.t === "sync") return this.allow(id, now) ? [toMember(id, this.snapshot(id))] : [];
     if (this.seen.has(msg.opId)) return [toMember(id, { t: "ack", v: PROTOCOL_VERSION, opId: msg.opId, seq: this.seen.get(msg.opId)! })];
     if (!this.allow(id, now)) return reject(id, msg.opId, "rate");
@@ -358,8 +364,10 @@ export class Room {
         s.phase = "ended";
         s.endedAt = now;
         s.seq++;
+        s.report = buildReport(s, now);
+        this.dirty.add("r");
         this.touch(now, true);
-        return [send({ kind: "all" }, { t: "ended", v: PROTOCOL_VERSION, at: now })];
+        return [send({ kind: "all" }, { t: "ended", v: PROTOCOL_VERSION, at: now, report: s.report })];
       }
       case "terrain": {
         s.terrain = a.id;
@@ -420,6 +428,24 @@ export class Room {
     return out;
   }
 
+  // ---------- звіт ----------
+
+  private reportMsg(m: Member, msg: Extract<ClientMsg, { t: "report" | "exported" }>, now: number): Effect[] {
+    const s = this.state;
+    if (s.phase !== "ended" || !s.report) return reject(m.id, msg.opId, "invalid");
+    if (!canEditReport(m.role, m.editor)) return reject(m.id, msg.opId, "permission");
+    this.remember(msg.opId);
+    // файл збережено: сервер забуває все про відділення
+    if (msg.t === "exported") return [{ k: "wipe" }];
+    const next = applyReportEdit(s.report, msg.edit);
+    if (!next) return reject(m.id, msg.opId, "invalid");
+    s.report = next;
+    s.seq++;
+    this.dirty.add("r");
+    this.touch(now, true);
+    return [send({ kind: "all" }, { t: "reportEdit", v: PROTOCOL_VERSION, by: m.id, edit: msg.edit })];
+  }
+
   // ---------- допоміжне ----------
 
   private snapshot(id: string): ServerMsg {
@@ -437,7 +463,8 @@ export class Room {
       you: { id: m.id, role: m.role, callsign: m.callsign, editor: m.editor },
       marks,
       members: this.memberList(m.role === "commander"),
-      log: canUseSolution(m.role) ? s.log.map((e) => e.entry) : null
+      log: canUseSolution(m.role) ? s.log.map((e) => e.entry) : null,
+      report: s.report
     };
   }
 

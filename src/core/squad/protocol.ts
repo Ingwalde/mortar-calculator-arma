@@ -3,6 +3,7 @@
  * Чистий TypeScript без DOM і без залежностей від хостингу: його використовують і клієнт, і реле-сервер, і тести.
  */
 import { CAPTION_MAX, isAffiliation, type Affiliation, type MarkKind } from "../marks";
+import { readReportEdit, type Report, type ReportEdit } from "./report";
 
 export const PROTOCOL_VERSION = 1;
 
@@ -84,6 +85,8 @@ export type ClientMsg =
   | { t: "op"; v: number; opId: string; op: MarkOp }
   | { t: "log"; v: number; opId: string; entry: FireEntry }
   | { t: "admin"; v: number; opId: string; action: AdminAction }
+  | { t: "report"; v: number; opId: string; edit: ReportEdit }
+  | { t: "exported"; v: number; opId: string }
   | { t: "sync"; v: number }
   | { t: "ping"; v: number };
 
@@ -109,6 +112,8 @@ export type ServerMsg =
       marks: SquadMark[];
       members: MemberInfo[];
       log: FireEntry[] | null;
+      /** Звіт, якщо гру закінчено. */
+      report: Report | null;
     }
   | { t: "op"; v: number; seq: number; opId: string; by: string; at: number; op: MarkOp; mark: SquadMark | null }
   | { t: "ack"; v: number; opId: string; seq: number }
@@ -116,7 +121,8 @@ export type ServerMsg =
   | { t: "members"; v: number; members: MemberInfo[] }
   | { t: "log"; v: number; seq: number; entry: FireEntry }
   | { t: "terrain"; v: number; id: string }
-  | { t: "ended"; v: number; at: number }
+  | { t: "ended"; v: number; at: number; report: Report }
+  | { t: "reportEdit"; v: number; by: string; edit: ReportEdit }
   | { t: "code"; v: number; code: string }
   | { t: "error"; v: number; code: ErrorCode };
 
@@ -244,6 +250,12 @@ export function parseClientMessage(raw: unknown): ParseResult {
       return { ok: true, msg: { t: "ping", v: PROTOCOL_VERSION } };
     case "sync":
       return { ok: true, msg: { t: "sync", v: PROTOCOL_VERSION } };
+    case "report": {
+      const edit = readReportEdit(o.edit);
+      return isId(o.opId) && edit ? { ok: true, msg: { t: "report", v: PROTOCOL_VERSION, opId: o.opId, edit } } : { ok: false, code: "invalid" };
+    }
+    case "exported":
+      return isId(o.opId) ? { ok: true, msg: { t: "exported", v: PROTOCOL_VERSION, opId: o.opId } } : { ok: false, code: "invalid" };
     case "hello": {
       if (typeof o.code !== "string" || o.code.length > 128) return { ok: false, code: "invalid" };
       if (typeof o.callsign !== "string" || o.callsign.length > 64) return { ok: false, code: "invalid" };

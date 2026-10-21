@@ -385,6 +385,57 @@ describe("керування командира", () => {
   });
 });
 
+describe("звіт після гри", () => {
+  const edit = (title: string): ClientMsg => ({ t: "report", v: V, opId: "rp" + title, edit: { k: "title", value: title } });
+
+  it("при закінченні гри з'являється звіт і йде всім; новий зліпок теж його містить", () => {
+    const h = squad();
+    h.op("Alpha", "o1", create("k1"));
+    h.admin("end", { a: "end" });
+    const ended = h.last("Bravo", "ended");
+    expect(ended && ended.t === "ended" && ended.report.marks.map((m) => m.id)).toEqual(["k1"]);
+    h.rejoin("Bravo");
+    const snap = h.last("Bravo", "snapshot");
+    expect(snap && snap.t === "snapshot" && snap.report?.marks).toHaveLength(1);
+  });
+
+  it("правити звіт можуть командир і ті, кому дозволено; решта отримує відмову", () => {
+    const h = squad();
+    expect(reasonOf(h.send("Alpha", edit("рано")))).toBe("invalid");
+    h.admin("end", { a: "end" });
+    expect(reasonOf(h.send("Alpha", edit("a")))).toBe("permission");
+    expect(reasonOf(h.send("Командир", edit("Бій")))).toBeUndefined();
+    expect(h.room.state.report!.title).toBe("Бій");
+    expect(h.last("Bravo", "reportEdit")).toBeTruthy();
+    h.admin("ed", { a: "editor", member: h.id("Alpha"), allowed: true });
+    expect(reasonOf(h.send("Alpha", edit("Правка мінометника")))).toBeUndefined();
+    expect(h.room.state.report!.title).toBe("Правка мінометника");
+    h.admin("ed2", { a: "editor", member: h.id("Alpha"), allowed: false });
+    expect(reasonOf(h.send("Alpha", edit("ще")))).toBe("permission");
+    expect(reasonOf(h.send("Командир", { t: "report", v: V, opId: "bad", edit: { k: "mark", id: "nope", name: "x" } }))).toBe("invalid");
+  });
+
+  it("експорт стирає все лише за наявності права, і лише після кінця гри", () => {
+    const h = squad();
+    expect(reasonOf(h.send("Командир", { t: "exported", v: V, opId: "x0" }))).toBe("invalid");
+    h.admin("end", { a: "end" });
+    expect(reasonOf(h.send("Bravo", { t: "exported", v: V, opId: "x1" }))).toBe("permission");
+    expect(h.wiped).toBe(false);
+    h.send("Командир", { t: "exported", v: V, opId: "x2" });
+    expect(h.wiped).toBe(true);
+  });
+
+  it("звіт зберігається й відновлюється разом із кімнатою", () => {
+    const h = squad();
+    h.admin("end", { a: "end" });
+    h.send("Командир", edit("Збережений"));
+    const stored = h.room.takeChanges().puts;
+    expect(Object.keys(stored)).toContain("r");
+    const copy = Room.restore(JSON.parse(JSON.stringify(stored)))!;
+    expect(copy.state.report?.title).toBe("Збережений");
+  });
+});
+
 describe("зберігання й час життя", () => {
   it("записи зі сховища відновлюють ту саму кімнату", () => {
     const h = squad();
