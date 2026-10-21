@@ -194,7 +194,7 @@ The relay code lives in a new `server/` folder with its own tests and a deployme
 3. Create an API token: **My Profile → API Tokens → Create Token**, use the template **Edit Cloudflare Workers**, restrict it to your account, and copy it once.
 4. Copy the **Account ID** (shown on the Workers & Pages overview page).
 5. Add both to the GitHub repository as secrets, from a terminal so that they are not typed anywhere else:
-   `gh secret set CLOUDFLARE_API_TOKEN` and `gh secret set CLOUDFLARE_ACCOUNT_ID`.
+   `gh secret set CLOUDFLARE_API_TOKEN` and `gh secret set CLOUDFLARE_ACCOUNT_ID`. On Windows PowerShell do not pipe the value (the pipe adds a line break that breaks the header): copy the token and run `gh secret set CLOUDFLARE_API_TOKEN --body (Get-Clipboard -Raw).Trim()`.
 6. Keep the token private; if it ever leaks, delete it in the same page and create a new one. The deployment runs in GitHub Actions, so the token never needs to be on a development computer. Local development uses `wrangler dev`, which needs no account.
 
 The menu names above may differ slightly from the live dashboard.

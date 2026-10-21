@@ -134,6 +134,12 @@ await mort.next((m) => m.t === "ended");
 mort.send({ t: "op", opId: "m2", op: { k: "move", id: "k3", x: 1, z: 1, u: null } });
 assert.equal((await mort.next((m) => m.t === "reject")).reason, "ended");
 
+// clean up: the commander deletes the squad, everybody is disconnected and the room is gone
+cmd.send({ t: "admin", opId: "a7", action: { a: "delete" } });
+assert.equal((await mort.next((m) => m.t === "error")).code, "gone");
+const ghost = new Client("ghost");
+await assert.rejects(() => ghost.open(sq.room, { code: rot.code, callsign: "Ghost" }));
+
 for (const c of [cmd, mort, back]) c.close();
 console.log("e2e: ok");
 process.exit(0);
