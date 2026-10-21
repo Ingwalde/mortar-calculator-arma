@@ -1,0 +1,29 @@
+# Checks every pull request: types, tests and the documentation test. It is a required check for master.
+name: Check
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # without postinstall scripts: Electron's binary is not needed for types and tests
+      - run: npm ci --ignore-scripts
+      - run: npm run licenses:collect
+      - run: npm run typecheck
+      - run: npm test
