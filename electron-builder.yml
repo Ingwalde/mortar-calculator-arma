@@ -79,4 +79,5 @@ linux:
     - target: deb
       arch: [x64]
   category: Utility
+  maintainer: Ingwald <gdimas0603@gmail.com>
   artifactName: MortarTablet-${version}-linux-${arch}.${ext}
