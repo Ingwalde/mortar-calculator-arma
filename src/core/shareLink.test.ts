@@ -21,7 +21,40 @@ describe("shareLink", () => {
     expect(back!.terrain).toBe("everon");
     expect(back!.terrainName).toBe("Everon");
     expect(back!.folder).toBeNull();
-    expect(back!.markers).toEqual(d.markers);
+    // старі мітки без приналежності й виду отримують їх зі старого типу
+    expect(back!.markers).toEqual(
+      d.markers.map((m) => {
+        const extra = m.type === "mortar" ? { aff: "friend", kind: "mortar" } : m.type === "target" ? { aff: "hostile", kind: "infantry" } : { kind: "legacy" };
+        return { ...m, ...extra };
+      })
+    );
+  });
+
+  it("зберігає приналежність, вид і підпис", async () => {
+    const markers: XMarker[] = [
+      { id: "n1", name: "БТР", type: "target", x: 100, z: 200, h: null, w: "M252", folder: "М", u: 5, aff: "hostile", kind: "armour", caption: "іде на північ" },
+      { id: "n2", name: "Відступ", type: "point", x: 300, z: 400, h: null, w: "M252", folder: "М", u: 6, aff: "friend", kind: "retreat" },
+      { id: "n3", name: "Гелік", type: "target", x: 500, z: 600, h: 40, w: "2B14", folder: "М", u: 7, aff: "hostile", kind: "helicopter", destroyed: true }
+    ];
+    const d = buildExport(markers, { terrain: "everon", folder: null, types: new Set(["mortar", "target", "point"] as const), now: 1 });
+    const back = await decodeShare(await encodeShare(d));
+    expect(back!.markers).toEqual(markers);
+  });
+
+  it("старе посилання без розширення читається: вид виводиться зі старого типу", async () => {
+    const old = { v: 1, t: "everon", f: "М", m: [["m1", "Міномет", 0, 10, 20, null, 0, 1], ["t1", "Ціль", 1, 30, 40, null, 1, 2], ["p1", "Точка", 2, 50, 60, null, 0, 3]] };
+    const bytes = new TextEncoder().encode(JSON.stringify(old));
+    const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+    const packed = new Uint8Array(await new Response(stream).arrayBuffer());
+    let bin = "";
+    for (const b of packed) bin += String.fromCharCode(b);
+    const payload = btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const back = await decodeShare(payload);
+    expect(back!.markers.map((m) => [m.type, m.aff, m.kind])).toEqual([
+      ["mortar", "friend", "mortar"],
+      ["target", "hostile", "infantry"],
+      ["point", undefined, "legacy"]
+    ]);
   });
 
   it("з однієї папки: папка береться з заголовка, а не повторюється в кожній мітці", async () => {
