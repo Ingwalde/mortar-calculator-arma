@@ -1051,10 +1051,20 @@ class SetupForm : Form
             ProcessStartInfo psi = new ProcessStartInfo(payload, args);
             psi.UseShellExecute = false;
             Process p = Process.Start(psi);
+            // Оновлення на місці: NSIS спершу видаляє стару версію (розмір папки падає), потім копіює нову. Тому відлік іде від найменшого
+            // розміру, який побачили, а смужка ніколи не відкочується назад і не доходить до кінця, поки інсталятор не завершився.
+            long smallest = DirSize(watch);
+            double best = 0.12;
             while (!p.WaitForExit(350))
             {
-                double f = Math.Min(1.0, DirSize(watch) / expectedBytes);
-                UiSync(delegate { SetProgress(0.12 + f * 0.85); });
+                long cur = DirSize(watch);
+                if (cur < smallest) smallest = cur;
+                double f = Math.Min(1.0, (cur - smallest) / Math.Max(1.0, expectedBytes - smallest));
+                double v = Math.Min(0.97, 0.12 + f * 0.85);
+                if (v > best) best = v;
+                double shown = best;
+                Trace(shown, cur);
+                UiSync(delegate { SetProgress(shown); });
             }
             exitCode = p.ExitCode;
             if (exitCode != 0)
@@ -1084,8 +1094,17 @@ class SetupForm : Form
         }
     }
 
+    /// <summary>Для перевірок: якщо задано MORTAR_SETUP_TRACE, у цей файл дописуються відсоток і розмір папки.</summary>
+    static void Trace(double v, long size)
+    {
+        string f = Environment.GetEnvironmentVariable("MORTAR_SETUP_TRACE");
+        if (string.IsNullOrEmpty(f)) return;
+        try { File.AppendAllText(f, string.Format(CultureInfo.InvariantCulture, "{0:F3} {1}\r\n", v, size)); } catch { }
+    }
+
     void SetProgress(double v)
     {
+        if (v < strip.Value) return;
         strip.Value = v;
         progPct.Text = (int)Math.Round(v * 100) + "%";
     }

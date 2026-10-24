@@ -30,7 +30,14 @@ function updateStatus(): void {
 }
 window.addEventListener("mortar:storage-error", () => toast(t("storageFailed")));
 
+/** ПК-застосунок: власна смуга вікна замість стандартного заголовка. */
+function initTitleBar(): void {
+  if (!window.api.titleBar.enabled) return;
+  document.documentElement.classList.add("framed", "tb-" + window.api.titleBar.platform);
+}
+
 async function boot(): Promise<void> {
+  initTitleBar();
   await loadState();
   setLangSilent(getRoot().lang);
   document.documentElement.lang = getLang();

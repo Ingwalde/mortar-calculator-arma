@@ -93,6 +93,12 @@ const api = {
       ipcRenderer.invoke("heights:importFromUrl", terrainId, url),
     read: (terrainId: string): Promise<Uint8Array | null> => ipcRenderer.invoke("heights:read", terrainId)
   },
+  /** Власна смуга вікна (лише ПК-застосунок): платформа, і колір рідних кнопок керування. */
+  titleBar: {
+    enabled: true,
+    platform: process.platform as string,
+    setColor: (color: string): Promise<void> => ipcRenderer.invoke("window:titleBar", color)
+  },
   versions: {
     node: process.versions.node,
     chrome: process.versions.chrome,

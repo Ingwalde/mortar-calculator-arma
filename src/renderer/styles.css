@@ -660,3 +660,12 @@ dialog.selsheet.in::backdrop{opacity:1}
 .storage-root .k{font-size:12px;color:var(--muted)}
 .storage-path{margin:4px 0 10px;font:12.5px/1.35 ui-monospace,Consolas,monospace;word-break:break-all}
 .storage-root .hint{margin:8px 0 0}
+
+/* власна смуга вікна в ПК-застосунку: перетягується, зі справа лишається місце для рідних кнопок керування */
+#titlebar{display:none}
+html.framed #titlebar{display:flex;position:fixed;left:0;right:0;top:0;height:36px;z-index:60;align-items:center;gap:8px;padding:0 12px;background:var(--bg);border-bottom:1px solid var(--line);-webkit-app-region:drag;user-select:none}
+html.framed #titlebar .logo{width:18px;height:18px;flex:0 0 auto}
+html.framed #titlebar .ttl{font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+html.framed.tb-win32 #titlebar,html.framed.tb-linux #titlebar{padding-right:150px}
+html.framed.tb-darwin #titlebar{padding-left:84px}
+html.framed .app{top:36px}
