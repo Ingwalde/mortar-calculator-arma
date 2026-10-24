@@ -11,8 +11,11 @@ import { onLangChange, t } from "./i18n";
 import { createSquad, joinSquad, leaveSquad, onSquadChange, resumeSquad, retrySquad, sendAdmin, shareLocalMarks, squadInfo, type JoinError } from "./squad";
 import { switchTerrain } from "./state";
 import { openFileButton, renderReport } from "./reportPanel";
+import { isNativeApp, isRemote } from "./platform";
 
 const CALLSIGN_KEY = "mortar.callsign";
+/** Сайт у браузері (не застосунок на ПК і не APK): там пропонуємо сторінку завантаження. */
+const webOnly = isRemote && !isNativeApp;
 
 let busy = false;
 let message = "";
@@ -43,6 +46,14 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""):
   if (cls) e.className = cls;
   if (text) e.textContent = text;
   return e;
+}
+
+export function downloadButton(): HTMLAnchorElement {
+  const a = el("a", "btn", t("downloadAppBtn"));
+  a.href = "download.html";
+  a.target = "_blank";
+  a.rel = "noopener";
+  return a;
 }
 
 function button(label: string, onClick: () => void, cls = "btn"): HTMLButtonElement {
@@ -95,13 +106,21 @@ function renderStart(root: HTMLElement): void {
   field.append(label, callsign, el("div", "hint small", t("squadCallsignHint")));
   root.appendChild(field);
 
+  // створити відділення
+  const make = el("section", "squad-block");
+  make.appendChild(el("h3", "", t("squadCreateHead")));
+  make.appendChild(el("p", "hint small", t("squadCreateHint", { terrain: currentMeta().name })));
   const create = button(t("squadCreateBtn"), () => void run(() => createSquad(callsign.value.trim()), callsign.value), "btn primary");
   create.disabled = busy;
-  root.append(el("div", "row squad-row", ""), el("p", "hint small", t("squadCreateHint", { terrain: currentMeta().name })));
-  root.querySelector(".squad-row")!.appendChild(create);
+  const makeRow = el("div", "row");
+  makeRow.appendChild(create);
+  make.appendChild(makeRow);
+  root.appendChild(make);
 
+  // приєднатися за запрошенням
+  const join = el("section", "squad-block");
+  join.appendChild(el("h3", "", t("squadJoinHead")));
   const jf = el("div", "field");
-  jf.style.marginTop = "16px";
   const jl = el("label", "", t("squadJoinLabel"));
   const invite = el("input");
   invite.id = "squadInvite";
@@ -109,7 +128,7 @@ function renderStart(root: HTMLElement): void {
   invite.value = invitePrefill;
   jl.htmlFor = invite.id;
   jf.append(jl, invite);
-  const join = button(t("squadJoinBtn"), () => {
+  const joinBtn = button(t("squadJoinBtn"), () => {
     const inv = parseInvite(invite.value);
     if (!inv) {
       message = t("squadErrInvite");
@@ -118,15 +137,17 @@ function renderStart(root: HTMLElement): void {
     }
     void run(() => joinSquad(inv, callsign.value.trim()), callsign.value);
   });
-  join.disabled = busy;
+  joinBtn.disabled = busy;
   const jr = el("div", "row");
-  jr.appendChild(join);
-  root.append(jf, jr);
+  jr.appendChild(joinBtn);
+  join.append(jf, jr);
+  root.appendChild(join);
+
   if (message) root.appendChild(el("p", "squad-msg", message));
-  const file = el("div", "row");
-  file.style.marginTop = "16px";
-  file.appendChild(openFileButton());
-  root.appendChild(file);
+  const extra = el("div", "row squad-extra");
+  extra.appendChild(openFileButton());
+  if (webOnly) extra.appendChild(downloadButton());
+  root.appendChild(extra);
 }
 
 async function run(action: () => Promise<JoinError | null>, callsign: string): Promise<void> {
@@ -215,38 +236,45 @@ function renderIn(root: HTMLElement): void {
   root.appendChild(statusLine());
   if (squadInfo.removed) {
     root.appendChild(el("p", "squad-msg", t("squadRemovedBanner")));
-    root.appendChild(button(t("squadRetryBtn"), retrySquad));
+    const again = el("div", "row");
+    again.appendChild(button(t("squadRetryBtn"), retrySquad));
+    root.appendChild(again);
   }
   if (squadInfo.phase === "ended") root.appendChild(el("p", "squad-msg", t("squadEndedBanner")));
-  if (role) root.appendChild(el("p", "squad-you", t("squadYouAre", { role: roleName(role), name: s.callsign })));
-  if (role === "soldier") root.appendChild(el("p", "hint small", t("squadSoldierHint")));
 
-  // карта відділення
+  // хто я й карта відділення
+  const info = el("section", "squad-block");
+  if (role) info.appendChild(el("p", "squad-you", t("squadYouAre", { role: roleName(role), name: s.callsign })));
+  if (role === "soldier") info.appendChild(el("p", "hint small", t("squadSoldierHint")));
   if (s.terrain) {
     const known = !!terrainName(s.terrain);
-    const line = el("p", "squad-map", t("squadMapLine", { terrain: terrainName(s.terrain) || s.terrain }) + (known ? "" : " " + t("squadMapUnknown")));
-    root.appendChild(line);
+    info.appendChild(el("p", "squad-map", t("squadMapLine", { terrain: terrainName(s.terrain) || s.terrain }) + (known ? "" : " " + t("squadMapUnknown"))));
     if (known && s.terrain !== getRoot().cur) {
-      root.appendChild(
+      const go = el("div", "row");
+      go.appendChild(
         button(t("squadMapSwitch"), () => {
           switchTerrain(s.terrain);
           afterTerrainSwitch?.();
           render();
         })
       );
+      info.appendChild(go);
     }
   }
-  root.appendChild(el("p", "hint small", t("squadLocalHint")));
+  info.appendChild(el("p", "hint small", t("squadLocalHint")));
+  root.appendChild(info);
 
   // запрошення
   const link = squadInfo.link_;
   const inv = el("section", "squad-block");
   inv.appendChild(el("h3", "", t("squadInviteTitle")));
   if (link) {
+    const boxWrap = el("div", "field");
     const box = el("input");
     box.readOnly = true;
     box.value = link;
     box.onfocus = () => box.select();
+    boxWrap.appendChild(box);
     const row = el("div", "row");
     row.appendChild(
       button(t("squadInviteCopy"), () => {
@@ -257,7 +285,7 @@ function renderIn(root: HTMLElement): void {
       })
     );
     if (typeof navigator.share === "function") row.appendChild(button(t("squadInviteShare"), () => void navigator.share({ url: link }).catch(() => undefined)));
-    inv.append(box, row);
+    inv.append(boxWrap, row);
     const img = el("img", "squad-qr");
     img.alt = "QR";
     img.width = 160;
@@ -332,7 +360,7 @@ function renderIn(root: HTMLElement): void {
     root.appendChild(tools);
   }
 
-  const leave = el("div", "row");
+  const leave = el("div", "row squad-leave");
   leave.appendChild(
     button(t("squadLeaveBtn"), () => {
       void ask(t("squadLeaveTitle"), t("squadLeaveText"), t("squadLeaveBtn")).then(async (ok) => {
@@ -373,12 +401,25 @@ export function render(): void {
   if (root.parentElement) root.parentElement.scrollTop = scroll;
 }
 
-/** Запрошення з адреси сторінки: відкриває вкладку й підставляє посилання. */
+/** Запрошення з адреси сторінки: питає позивний і одразу заходить у відділення. */
 export function openInvite(inv: Invite): boolean {
-  if (squadInfo.session) return false;
+  if (squadInfo.session) {
+    toast(t("squadAlready"));
+    return true;
+  }
   invitePrefill = `${inv.room}.${inv.code}`;
-  showTab?.();
-  render();
+  void (async () => {
+    const answer = await ask(t("squadJoinTitle"), t("squadJoinText"), t("squadJoinBtn"), [{ key: "callsign", label: t("squadCallsign"), value: remembered() }]);
+    if (!answer) {
+      // передумав: лишаємо форму з підставленим запрошенням
+      showTab?.();
+      render();
+      return;
+    }
+    showTab?.();
+    await run(() => joinSquad(inv, answer.callsign.trim()), answer.callsign);
+    if (!squadInfo.session && message) toast(message, 4500);
+  })();
   return true;
 }
 

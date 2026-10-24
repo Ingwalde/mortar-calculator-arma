@@ -51,7 +51,7 @@ import { onLangChange, t } from "./i18n";
 import { initImmersive, initSheet } from "./sheet";
 import { initWakeLock, setKeepAwake } from "./wakeLock";
 import { closeSettings, initSettings, openSettings } from "./settingsPanel";
-import { isRemote } from "./platform";
+import { isNativeApp, isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { CAPTION_MAX, KINDS, isMortarMark, isTargetable, readClass, typeOf, type Affiliation, type MarkKind } from "@core/marks";
 import { symbolSvg } from "@core/symbols";
@@ -1419,6 +1419,18 @@ function renderAbout(): void {
   if (!el) return;
   el.innerHTML = t("aboutHtml");
   mountUpdateBox(el);
+  if (isRemote && !isNativeApp) {
+    // сайт у браузері: кнопка на сторінку завантаження застосунків
+    const row = document.createElement("p");
+    const a = document.createElement("a");
+    a.className = "btn";
+    a.href = "download.html";
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = t("downloadAppBtn");
+    row.appendChild(a);
+    el.appendChild(row);
+  }
   const lic = document.createElement("details");
   lic.className = "about-licenses";
   const sum = document.createElement("summary");
