@@ -51,7 +51,7 @@ import { onLangChange, t } from "./i18n";
 import { initImmersive, initSheet } from "./sheet";
 import { initWakeLock, setKeepAwake } from "./wakeLock";
 import { closeSettings, initSettings, openSettings } from "./settingsPanel";
-import { isRemote } from "./platform";
+import { isNativeApp, isRemote } from "./platform";
 import { initOffline } from "./offline";
 import { CAPTION_MAX, KINDS, isMortarMark, isTargetable, readClass, typeOf, type Affiliation, type MarkKind } from "@core/marks";
 import { symbolSvg } from "@core/symbols";
@@ -1725,6 +1725,8 @@ export function initPanels(): void {
   initSheet();
   initImmersive();
   initAboutDialog();
+  // сайт у браузері: кнопка в шапці на сторінку завантаження застосунків (у застосунку на ПК й в APK її нема)
+  $<HTMLAnchorElement>("downloadBtn").hidden = !(isRemote && !isNativeApp);
   initLegend();
   initSquadPanel({
     showTab: () => showTab("squad"),
