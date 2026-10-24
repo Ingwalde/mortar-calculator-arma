@@ -53,6 +53,10 @@ The relay is a Cloudflare Worker with one Durable Object per squad (`server/`, d
 - **Limitations:** whoever has the invitation link can join and take a free callsign (the commander can remove them); callsigns that differ only in look-alike letters from other alphabets are
   not detected; the relay's operator (the hosting provider) can see network metadata under its own policy; a device that is lost still holds a member key until the commander removes that member.
 
+## The Windows installer
+
+`MortarTablet-Setup-<version>.exe` is a small program of ours (`installer/Installer.cs`) that contains the usual NSIS installer. It unpacks it into a new temporary folder, runs it silently with the folder chosen by the user and deletes the folder afterwards; with `/S` (automatic updates) it only passes the arguments on. It installs for the current user without administrator rights, or updates an existing all-users installation (the NSIS installer then asks Windows for permission). It never reads or sends data; the only thing it writes besides the installation is the choice of the maps folder (`data-dir.txt`). Like the other Windows builds it is not code-signed, and a custom unsigned installer may be flagged by an antivirus; check the file against the hash in `latest.yml` or download it only from this repository's releases.
+
 ## Known limitations
 
 - **The builds are not code-signed** (Windows and macOS): Windows SmartScreen and macOS Gatekeeper show a warning at the first launch.

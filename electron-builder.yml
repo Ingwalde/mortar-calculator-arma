@@ -61,13 +61,13 @@ publish:
   owner: Ingwalde
   repo: mortar-tablet
 nsis:
-  # майстер з вибором папки, без прав адміністратора й без питання «для всіх користувачів» (build/installer.nsh)
+  # NSIS-інсталятор лише розпаковує файли й тихо запускається власним вікном установки (installer/Installer.cs, scripts/build-setup-ui.mjs);
+  # з нього й робиться MortarTablet-Setup-<версія>.exe, тож цей файл має інше ім'я й не публікується
   oneClick: false
   allowToChangeInstallationDirectory: true
   perMachine: false
-  # першим вікном вибирається мова (українська або англійська); решту тексту майстра перекладає NSIS
+  # мови потрібні лише деінсталятору (його вікно стандартне)
   multiLanguageInstaller: true
-  displayLanguageSelector: true
   installerLanguages:
     - uk_UA
     - en_US
@@ -76,7 +76,9 @@ nsis:
   runAfterFinish: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
-  artifactName: MortarTablet-Setup-${version}.${ext}
+  # різницеве оновлення не використовується: оновлення завантажується цілим файлом, який збирає scripts/build-setup-ui.mjs
+  differentialPackage: false
+  artifactName: MortarTablet-Payload-${version}.${ext}
 portable:
   artifactName: MortarTablet-${version}-portable.${ext}
 mac:

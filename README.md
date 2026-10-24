@@ -37,7 +37,7 @@ Ready-made builds are on the [releases page](https://github.com/Ingwalde/mortar-
 
 The Windows and macOS builds are not code-signed: Windows SmartScreen asks for confirmation ("More info" → "Run anyway"), and on macOS you open
 the app with right-click → "Open". macOS cannot update an unsigned app by itself, which is why it only reports new versions.
-Download files only from this repository's releases. The Windows installer asks for the language (Ukrainian or English), installs for the current user without administrator rights and lets you choose the program folder and the folder for downloaded maps. The web version has a separate "Download the app" button at the top that opens this page.
+Download files only from this repository's releases. The Windows installer is a small dark window of its own (Ukrainian or English, switched with a slider; the system language is picked by default). It installs for the current user without administrator rights and asks for the program folder and the folder for downloaded maps; if the program is already installed for all users, it updates that installation in place. The web version has a separate "Download the app" button at the top that opens this page.
 
 ## Development
 
@@ -71,6 +71,7 @@ npm run build:web   # the standalone web version (PWA) -> out/web
 ```
 
 - The `master` branch is protected: changes go in through pull requests, and the workflow `Check` (`.github/workflows/check.yml`: types, tests and the documentation test) must pass before a pull request is merged.
+- The Windows installer `MortarTablet-Setup-<version>.exe` is built by `npm run dist:win` (or `dist:setup`) in two steps: electron-builder makes the usual NSIS installer `MortarTablet-Payload-<version>.exe` (not published), then `scripts/build-setup-ui.mjs` compiles the window from `installer/Installer.cs` with the C# compiler that ships with Windows (.NET Framework 4, no SDK needed), embeds the NSIS installer in it and rewrites `dist/latest.yml` for the automatic updater. With `/S` the window does not appear and passes all arguments to the NSIS installer, which is how the automatic update runs it; `scripts/check-setup-ui.mjs` checks that.
 - `npm run check` is enough before a release; the full build is only needed for publishing. Antivirus software slows packaging down a lot
   (thousands of small files): add the project's `dist` and `node_modules` folders to the Windows Defender exclusions.
 - **Windows, `winCodeSign` error:** if the build fails with `Cannot create symbolic link` while downloading `winCodeSign`, turn on Developer Mode
@@ -86,7 +87,7 @@ npm run build:web   # the standalone web version (PWA) -> out/web
 On the PC the cloud button in the header ("Offline mode") saves the online tiles of Everon, Arland and Kolguyev to disk, so the map works without internet.
 Imported maps are already on disk.
 
-**Where the files go.** Downloaded tiles, imported maps and heights can take several gigabytes. The Windows installer asks for a folder for them (the default is the app's data folder), and later it can be changed in Settings → "Maps and data" → "Open manager" → "Change folder…": the files are moved to the new folder. The choice is kept in `data-dir.txt` in the app's data folder; marks and the log always stay there.
+**Where the files go.** Downloaded tiles, imported maps and heights can take several gigabytes. The Windows installer asks for a folder for them (the default is the app's data folder; it is not asked again when map data already exists), and later it can be changed in Settings → "Maps and data" → "Open manager" → "Change folder…": the files are moved to the new folder. The choice is kept in `data-dir.txt` in the app's data folder; marks and the log always stay there.
 
 ## Standalone version (no PC)
 
