@@ -10,3 +10,4 @@ dist/
 .web-cache/
 /resources/legal/npm-notices.txt
 .wrangler/
+dist-preview/
