@@ -168,7 +168,9 @@ dialog h3{margin:0 0 10px;font-size:18px}
 .about{font-size:14px}
 #aboutDlg{max-height:min(82vh,680px);overflow:auto;width:min(480px,calc(100vw - 24px))}
 #aboutDlg .about h2:first-child{margin-top:0}
-.btn.icon-only{width:34px;padding:0;display:grid;place-items:center;flex:0 0 auto}
+.btn.icon-only{width:34px;padding:0;display:grid;place-items:center;flex:0 0 auto}
+a.btn{text-decoration:none;color:inherit}
+a.btn[hidden]{display:none}
 .btn.icon-only svg{width:18px;height:18px}
 
 .sheet-handle{display:none}

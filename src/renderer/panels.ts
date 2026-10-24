@@ -1419,18 +1419,6 @@ function renderAbout(): void {
   if (!el) return;
   el.innerHTML = t("aboutHtml");
   mountUpdateBox(el);
-  if (isRemote && !isNativeApp) {
-    // сайт у браузері: кнопка на сторінку завантаження застосунків
-    const row = document.createElement("p");
-    const a = document.createElement("a");
-    a.className = "btn";
-    a.href = "download.html";
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.textContent = t("downloadAppBtn");
-    row.appendChild(a);
-    el.appendChild(row);
-  }
   const lic = document.createElement("details");
   lic.className = "about-licenses";
   const sum = document.createElement("summary");
@@ -1737,6 +1725,8 @@ export function initPanels(): void {
   initSheet();
   initImmersive();
   initAboutDialog();
+  // сайт у браузері: кнопка в шапці на сторінку завантаження застосунків (у застосунку на ПК й в APK її нема)
+  $<HTMLAnchorElement>("downloadBtn").hidden = !(isRemote && !isNativeApp);
   initLegend();
   initSquadPanel({
     showTab: () => showTab("squad"),

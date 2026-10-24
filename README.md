@@ -37,7 +37,7 @@ Ready-made builds are on the [releases page](https://github.com/Ingwalde/mortar-
 
 The Windows and macOS builds are not code-signed: Windows SmartScreen asks for confirmation ("More info" → "Run anyway"), and on macOS you open
 the app with right-click → "Open". macOS cannot update an unsigned app by itself, which is why it only reports new versions.
-Download files only from this repository's releases. The web version has a "Download the app" button (in "About" and on the "Squad" tab) that opens this page.
+Download files only from this repository's releases. The web version has a separate "Download the app" button at the top that opens this page.
 
 ## Development
 

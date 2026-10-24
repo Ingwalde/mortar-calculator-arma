@@ -11,11 +11,8 @@ import { onLangChange, t } from "./i18n";
 import { createSquad, joinSquad, leaveSquad, onSquadChange, resumeSquad, retrySquad, sendAdmin, shareLocalMarks, squadInfo, type JoinError } from "./squad";
 import { switchTerrain } from "./state";
 import { openFileButton, renderReport } from "./reportPanel";
-import { isNativeApp, isRemote } from "./platform";
 
 const CALLSIGN_KEY = "mortar.callsign";
-/** Сайт у браузері (не застосунок на ПК і не APK): там пропонуємо сторінку завантаження. */
-const webOnly = isRemote && !isNativeApp;
 
 let busy = false;
 let message = "";
@@ -46,14 +43,6 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""):
   if (cls) e.className = cls;
   if (text) e.textContent = text;
   return e;
-}
-
-export function downloadButton(): HTMLAnchorElement {
-  const a = el("a", "btn", t("downloadAppBtn"));
-  a.href = "download.html";
-  a.target = "_blank";
-  a.rel = "noopener";
-  return a;
 }
 
 function button(label: string, onClick: () => void, cls = "btn"): HTMLButtonElement {
@@ -146,7 +135,6 @@ function renderStart(root: HTMLElement): void {
   if (message) root.appendChild(el("p", "squad-msg", message));
   const extra = el("div", "row squad-extra");
   extra.appendChild(openFileButton());
-  if (webOnly) extra.appendChild(downloadButton());
   root.appendChild(extra);
 }
 
