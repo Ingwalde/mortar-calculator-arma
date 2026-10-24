@@ -26,6 +26,11 @@ import { dataRoot, defaultDataRoot, setDataRoot } from "./dataRoot";
 let currentImport: AbortController | null = null;
 
 export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void {
+  // колір смуги вікна (Windows і Linux): рендерер повідомляє колір поточної теми; приймається лише #RRGGBB
+  ipcMain.handle("window:titleBar", (_e, color: unknown) => {
+    if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color) || process.platform === "darwin") return;
+    getWindow()?.setTitleBarOverlay({ color, symbolColor: "#e3e1d4", height: 35 });
+  });
   ipcMain.handle("store:load", () => loadStore());
   ipcMain.handle("store:save", (_e, data: unknown) => saveStore(data));
 

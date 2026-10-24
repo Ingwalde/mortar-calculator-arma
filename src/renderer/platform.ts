@@ -109,6 +109,7 @@ function createStandaloneApi(): MortarApi {
       chooseRoot: async () => null,
       moveRoot: async () => ({ moved: false })
     },
+    titleBar: { enabled: false, platform: "web", setColor: async () => undefined },
     versions: { node: "", chrome: "", electron: "" }
   };
 }

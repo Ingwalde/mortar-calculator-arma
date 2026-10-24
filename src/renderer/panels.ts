@@ -1334,6 +1334,8 @@ function applyTheme(): void {
   else el.dataset.theme = r.theme;
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (meta) meta.content = THEME_BAR_COLOR[r.theme];
+  // рідні кнопки керування вікном (ПК) у колір смуги поточної теми
+  if (window.api.titleBar.enabled) void window.api.titleBar.setColor(THEME_BAR_COLOR[r.theme]).catch(() => undefined);
   for (const b of document.querySelectorAll<HTMLButtonElement>("#settingsDlg [data-theme-pick]")) {
     b.setAttribute("aria-pressed", String(b.dataset.themePick === r.theme));
   }

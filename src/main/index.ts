@@ -14,6 +14,8 @@ async function removeLegacyLanFiles(): Promise<void> {
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
+/** Висота власної смуги вікна (px). Рідні кнопки керування на піксель нижчі, щоб нижня лінія смуги йшла через усю ширину. */
+export const TITLE_BAR_HEIGHT = 36;
 
 if (isDev) app.commandLine.appendSwitch("remote-debugging-port", "9222");
 
@@ -29,6 +31,11 @@ function createWindow(): void {
     autoHideMenuBar: true,
     // темний заголовок і фон до завантаження сторінки (без білого спалаху); у dev значок береться з build/, у збірці — з exe
     backgroundColor: "#161c18",
+    // власна смуга замість стандартного чорного заголовка: Windows і Linux лишають рідні кнопки (колір задає застосунок), macOS — світлофор
+    titleBarStyle: "hidden",
+    ...(process.platform === "darwin"
+      ? { trafficLightPosition: { x: 14, y: 10 } }
+      : { titleBarOverlay: { color: "#161c18", symbolColor: "#e3e1d4", height: TITLE_BAR_HEIGHT - 1 } }),
     ...(isDev ? { icon: join(app.getAppPath(), "build/icon.png") } : {}),
     webPreferences: {
       preload: join(app.getAppPath(), "out/preload/index.cjs"),
